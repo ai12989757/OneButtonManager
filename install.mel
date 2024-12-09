@@ -1,0 +1,67 @@
+global string $gShelfTopLevel;
+
+string $asInstallScriptLocation=`asInstallScriptLocation`;
+if (`gmatch $asInstallScriptLocation "*\*"`)
+	$asInstallScriptLocation=`substituteAllString $asInstallScriptLocation "\\" "/"`;
+global string $gifButtonPath;
+$gifButtonPath = $asInstallScriptLocation + "src";
+
+int $Language = 0;
+string $file = $gifButtonPath + "/shelfManager/ShelfAutoSetup.mel"; // 要更改的文件路径
+string $newLine = "$gifButtonPath = \""+$gifButtonPath+"\";int $Language = "+$Language+";\n"; // 第二行的新内容
+string $allTXT; // 用于存储所有文本
+$fileId=`fopen $file "r"`; // 读取文件
+$nextLine = `fgetline $fileId`; // 读取第一行
+while(size($nextLine)>0) // 读取所有行，直到文件结束
+{
+    if(`gmatch $nextLine "$gifButtonPath = *"`){
+        $allTXT = $allTXT + $newLine;
+        $nextLine = `fgetline $fileId`;
+    }
+    else{
+        $allTXT = $allTXT + $nextLine;
+        $nextLine = `fgetline $fileId`;
+    }
+}
+fclose $fileId; // 关闭文件
+$fileId=`fopen $file "w"`; // 打开文件为写入
+fprint $fileId $allTXT; // 写入
+fclose $fileId; // 关闭文件
+
+string $command="import sys\n"+
+"PATH = r'"+$asInstallScriptLocation+"src'\n"+
+"if PATH not in sys.path:\n"+
+"    sys.path.append(PATH)\n"+
+"if 'ShelfButtonManager' not in sys.modules:\n"+
+"    from shelfManager import ShelfButtonManager\n"+
+"try:\n"+
+"    reload(ShelfButtonManager)\n"+
+"except:\n"+
+"    from importlib import reload\n"+
+"    reload(ShelfButtonManager)\n"+
+"\n"+
+"adb = ShelfButtonManager.ShelfButtonManager("+$Language+")\n"+
+"adb.autoSetShelf()"; 
+python($command);
+
+if($Language == 0)
+    warning -n "初始化完成，试着右击工具栏看看吧";
+else if($Language == 1)
+    warning -n "Initialization completed, try right-clicking the toolbar";
+
+
+global proc asInstallScriptLocator (){}
+global proc string asInstallScriptLocation ()
+{
+string $whatIs=`whatIs asInstallScriptLocator`;
+string $fullPath=`substring $whatIs 25 999`;
+string $buffer[];
+string $slash="/";
+if (`gmatch $whatIs "*\\\\*"`)//sourced from ScriptEditor
+	$slash="\\";
+int $numTok=`tokenize $fullPath $slash $buffer`;
+int $numLetters=size($fullPath);
+int $numLettersLastFolder=size($buffer[$numTok-1]);
+string $scriptLocation=`substring $fullPath 1 ($numLetters-$numLettersLastFolder)`;
+return $scriptLocation;
+}

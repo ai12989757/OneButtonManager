@@ -1,0 +1,130 @@
+global string $gifButtonPath;
+$gifButtonPath = "D:/MELcopy/OneTools/tools/OneButtonManager/src";int $Language = 1;
+
+string $pythonCode = "import sys\n" +
+                    "sys.dont_write_bytecode = True\n" +
+                    "PATH = r'"+$gifButtonPath+"'\n" +
+                    "if PATH not in sys.path:\n" +
+                    "    sys.path.append(PATH)\n" +
+                    "if 'ShelfButtonManager' not in sys.modules:\n" +
+                    "    from shelfManager import ShelfButtonManager\n" +
+                    "try:\n" +
+                    "    reload(ShelfButtonManager)\n" +
+                    "except:\n" +
+                    "    from importlib import reload\n" +
+                    "    reload(ShelfButtonManager)\n"+
+                    "ShelfButtonManager.ShelfButtonManager("+$Language+").autoSetShelf()";
+python($pythonCode);
+
+proc GifButton_load(string $jsonPath, string $shelfName)
+{
+    global string $gShelfTopLevel;global int $Language;
+    string $allShelf[] = `tabLayout -query -ca $gShelfTopLevel`;
+    if (!stringArrayContains($shelfName, $allShelf)) addNewShelfTab($shelfName);
+    tabLayout -edit -selectTab $shelfName $gShelfTopLevel;
+    global string $gifButtonPath;
+    string $pythonCode = $shelfName+" = ShelfButtonManager.ShelfButtonManager("+$Language+")\n" + $shelfName+".autoLoadGifShelf('"+$jsonPath+"')";
+    python($pythonCode);
+}
+global proc GifButton_AutoLoad()
+{
+    string $userDir = `internalVar -uad`;
+    $userDir = substituteAllString($userDir,"maya","OneTools"); // Documents/OneTools/
+    string $gifButtonJsonPath = $userDir + "data/";
+
+    string $jsonFiles[] = `getFileList -folder $gifButtonJsonPath -filespec "*.json"`;
+    if (size($jsonFiles) != 0)
+    {
+        for($jsonFile in $jsonFiles)
+        {
+            string $jsonPath = $gifButtonJsonPath + $jsonFile;
+            string $shelfName = `match "[^\.]*" $jsonFile`;
+            $shelfName = `substituteAllString $shelfName "shelf_" ""`;
+            if(`gmatch $shelfName "* *"` || `gmatch $shelfName " *"` || `gmatch $shelfName "* "`) continue;
+            else GifButton_load($jsonPath, $shelfName);
+        }
+    }
+}
+
+global proc GifButton_AutoSave()
+{
+    global int $Language;
+    scriptJob -e "quitApplication" ("python(\"from shelfManager import ShelfButtonManager\\nshelf_save = ShelfButtonManager.ShelfButtonManager("+$Language+")\\nshelf_save.autoSaveGifShelf()\")");
+}
+
+global proc int deleteShelfTabNoCheck(string $shelfName) 
+{
+	int $returnStatus = 0;
+	
+	global string $gShelfForm;
+	global string $gShelfTopLevel;
+
+	setParent $gShelfTopLevel;
+	string $shelves[] = `tabLayout -q -ca $gShelfTopLevel`;	
+	int $numShelves = size($shelves);
+
+	int $indexArr[];
+	int $index = 0;
+	int $nItems = 0;
+
+	// Okay, now we can delete the shelf tab
+	
+	int $i = 0;
+	int $nShelves = 0;
+	int $shelfNum = 0;
+
+	//  update the preferences.
+	//
+	$nShelves = `shelfTabLayout -q -numberOfChildren $gShelfTopLevel`;
+	for ($shelfNum = 1; $shelfNum <= $nShelves; $shelfNum++) {
+		if ($shelfName == `optionVar -q ("shelfName" + $shelfNum)`) {
+			break;
+		}
+	}
+	for ($i = $shelfNum; $i <= $nShelves; $i++) {
+		string $align = "left";
+		if ( `optionVar -ex ("shelfAlign" + ($i+1))` )
+			$align = `optionVar -q ("shelfAlign" + ($i+1))`;
+		optionVar 
+			-iv ("shelfLoad" + $i) `optionVar -q ("shelfLoad" + ($i+1))`
+			-sv ("shelfName" + $i) `optionVar -q ("shelfName" + ($i+1))`
+			-sv ("shelfAlign" + $i) $align
+			-sv ("shelfFile" + $i) `optionVar -q ("shelfFile" + ($i+1))`;
+	}
+	optionVar -remove ("shelfLoad" + $nShelves)
+		-remove ("shelfName" + $nShelves)
+		-remove ("shelfAlign" + $nShelves)
+		-remove ("shelfFile" + $nShelves);
+
+	// The optionVars have all been updated, so it's safe to delete and have
+	// the shelfTabChange() method triggered. See Maya-3288.
+	//
+	deleteUI -layout ($gShelfTopLevel + "|" + $shelfName);
+	
+	string $shelfDirs = `internalVar -userShelfDir`;
+	string $shelfArray[];
+	string $PATH_SEPARATOR = `about -win`? ";" : ":";
+	tokenize($shelfDirs, $PATH_SEPARATOR, $shelfArray);
+	for( $i = 0; $i < size($shelfArray); $i++ ) {
+		$fileName = ($shelfArray[$i] + "shelf_" + $shelfName + ".mel");
+		string $deletedFileName = $fileName + ".deleted";
+
+		//	Fix for bug #125494.  Remove the .deleted file if it already exists.
+		//
+		if (`filetest -r $deletedFileName`) {
+			sysFile -delete $deletedFileName;
+		}
+	
+		if (`file -q -exists $fileName`) {
+			sysFile -rename $deletedFileName $fileName;
+			break;
+		}
+	}
+	
+	//  Make sure the new active shelf tab has buttons.
+	shelfTabChange();
+				
+	$returnStatus = 1;
+	
+	return $returnStatus;
+}
