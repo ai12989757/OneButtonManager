@@ -764,8 +764,8 @@ class ShelfButtonManager(QWidget):
         return jsonPath
 
     def codeSwitch(self,command):
-        pythonVersion = sys.version[0:5]
-        if pythonVersion < '3':
+        pythonVersion = sys.version[0:3]
+        if pythonVersion < 3:
             try:
                 command = command.decode('utf-8')
             except:
