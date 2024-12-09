@@ -8,7 +8,7 @@
 
 ## 文件列表
 
-- `GIFButton.py`: 创建和管理Maya工具架按钮的脚本，支持GIF图标的播放和暂停
+- `GIFButton.py`: 创建和管理动态按钮的脚本，支持GIF图标的播放和暂停
 - `ShelfButtonManager.py`: 一个示例，在工具架上添加gif图标
 
 ## 环境

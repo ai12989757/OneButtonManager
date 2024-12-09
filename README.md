@@ -8,7 +8,7 @@
 
 ## File List
 
-- `GIFButton.py`: Script for creating and managing Maya shelf buttons, supporting GIF icon playback and pause
+- `GIFButton.py`: Script for creating and managing Maya GIF buttons, supporting GIF icon playback and pause
 - `ShelfButtonManager.py`: An example of adding gif icons to the shelf
 
 ## Environment
