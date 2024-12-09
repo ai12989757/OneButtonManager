@@ -11,123 +11,71 @@
 - `GIFButton.py`: Script for creating and managing Maya shelf buttons, supporting GIF icon playback and pause
 - `ShelfButtonManager.py`: An example of adding gif icons to the shelf
 
+## Environment
+
+- Maya2020+
+  - Tested with 2020, 2022, 2025
+- PySide2 or PySide6
+- pymel
+
 ## Installation
 
-- Drag and drop `install.mel` into the Maya window, and a dynamic siri button will be added to the toolbar
-  - Click the button to add a new button to the toolbar
-  - Double-click the button to add a separator
-  - Right-click the button to edit the button and toolbar:
-    - Convert existing shelves
-    - Save and load shelf data
-    - Edit button icons, styles, commands, menu items, etc.
-    - Add, move, and delete menu items
+- Drag and drop `install.mel` into the Maya window, and a prompt will indicate successful installation
 
 ## Usage
 
-1. **Initialize shelf layout**:
+### Toolbar Management
 
-   ```python
-   shelf_button_manager = ShelfButtonManager()
-   ```
+- Right-click the menu bar
+  - Add Button
+    - Add a default button with no functionality
+  - Add Separator
+    - Add a default separator
+  - Paste Button
+    - Paste the button from the clipboard
+  - Recycle Bin
+    - Deleted buttons will be placed in the recycle bin and can be restored, up to 20 buttons
+  - Convert Toolbar
+    - Convert the existing toolbar to a new toolbar, retaining the original functionality
+    - Icons on the new toolbar will be replaced with GIFButton
+      - Right-click the icon to edit the button
+  - Save Toolbar
+    - Save the current toolbar information to a file /Documents/OneTools/data/shelf_xxxx.json
+  - Import Toolbar
+    - Import from files saved by OneButtonManager
+  - Auto Load Toolbar
+    - Automatically load all toolbars that meet the rules in the `/Documents/OneTools/data/` folder when Maya starts
+  - Auto Save Toolbar
+    - Automatically save the toolbar to `/Documents/OneTools/data/` when Maya closes
+  - Language Switch
+    - Switch between Chinese and English
 
-2. **Add button**:
+### Button Editing
 
-   ```python
-   shelf_button_manager.addButton(
-       icon="siri.gif",
-       command='print("siri")',
-       ctrlCommand='print("Ctrl Clicked!")'
-   )
-   shelf_button_manager.gifButton.addmenuItem(
-       label=u"Custom Menu Item",
-       command=u'warning(u"Custom Menu Item")',
-       icon="white/Custom.png",
-       annotation=u"This is a custom menu item"
-   )
-   shelf_button_manager.gifButton.addDefaultMenuItems()
-   ```
+- Right-click the button
+  - Edit
+    - Edit
+      - Open the button editing window
+    - Copy
+      - Copy the button to the clipboard
+    - Cut
+      - Cut the button to the clipboard
+    - Paste
+      - Paste the button from the clipboard to the current button
+  - Delete
+    - Delete the button
+      - Deleted buttons will be placed in the recycle bin and can be restored, up to 20 buttons
 
-3. **Add separator**:
+### Button Editor
 
-   ```python
-   shelf_button_manager.addSeparator()
-   ```
-
-4. **Save shelf data**:
-
-   ```python
-   shelf_button_manager.saveGifShelf()
-   ```
-
-5. **Load shelf data**:
-
-   ```python
-   shelf_button_manager.loadGifShelf()
-   ```
-
-## Example
-
-- Here is a complete example that creates several sample icons in a custom toolbar, demonstrating how to use these features:
-
-```python
-def main():
-    sys.dont_write_bytecode = True
-    
-    gShelfTopLevel = mel.eval('$temp=$gShelfTopLevel')
-    if 'Custom' in tabLayout(gShelfTopLevel, q=True, ca=True):
-        deleteUI('Custom', lay=True)
-    mel.eval('addNewShelfTab("Custom")')
-    
-    if "Custom" not in shelfTabLayout(gShelfTopLevel, q=True, ca=True):
-        mel.eval('addNewShelfTab("Custom")')
-    else:
-        shelfTabLayout(gShelfTopLevel, edit=True, selectTab="Custom")
-
-    shelf_button_manager = ShelfButtonManager()
-    
-    shelf_button_manager.addButton(
-        icon="siri.gif",
-        command='print("siri")',
-        ctrlCommand='print("Ctrl Clicked!")'
-    )
-    shelf_button_manager.gifButton.addDefaultMenuItems()
-
-    shelf_button_manager.addSeparator()
-
-    shelf_button_manager.addButton(
-        icon="cat4.gif",
-        command='print("cat4")',
-        ctrlCommand='print("Ctrl Clicked!")'
-    )
-    shelf_button_manager.gifButton.addDefaultMenuItems()
-
-    shelf_button_manager.addButton(icon="cat3.gif",command='print("cat3")')
-    shelf_button_manager.gifButton.addMenuItem(
-        label=u"Custom Menu Item",
-        command=u'warning(u"Custom Menu Item")',
-        icon="white/Custom.png",
-        annotation=u"This is a custom menu item"
-    )
-    shelf_button_manager.gifButton.menu.addSeparator()
-    shelf_button_manager.gifButton.addDefaultMenuItems()
-
-    shelf_button_manager.addButton(
-        icon="cat2.gif",
-        annotation=u'test',
-        command='print("cat2")'
-    )
-    shelf_button_manager.gifButton.addDefaultMenuItems()
-
-    shelf_button_manager.addButton(
-        icon="cat1.gif",
-        annotation=u'annotateInfo',
-        command='print("cat1")'
-    )
-    shelf_button_manager.gifButton.addDefaultMenuItems()
-```
-
-## Dependencies
-
-- Maya2020+
-- PySide2 or PySide6
-- pymel
+- Change Icon
+- Change Command
+- Change Tooltip
+- Change Menu
+  - Add Menu Item
+  - Edit Menu Item
+    - Modify Menu Name
+    - Modify Menu Command
+    - Modify Menu Icon
+    - Modify Menu Tooltip
+  - Delete Menu Item
