@@ -536,7 +536,7 @@ class ButtonEditorWindow(QDialog):
             self.menuPythonRadioButton.setChecked(commandType == "python")
         
         # 获取python版本
-        pythonVersion = float(sys.version[0:3])
+        pythonVersion = int(sys.version[0:1])
         commandText = menuItem['command']
         if commandText != 'None' and commandText != '' and commandText is not None:
             if pythonVersion < 3:
@@ -904,7 +904,7 @@ class ButtonEditorWindow(QDialog):
             self.commandPythonRadioButton.setChecked(True)
             self.commandMelRadioButton.setChecked(False)
         # 获取python版本
-        pythonVersion = sys.version[0:3]
+        pythonVersion = int(sys.version[0:1])
         commandText = self.buttonDict[commandList[row]]
         if commandText != 'None' and commandText != '' and commandText is not None:
             if pythonVersion < 3:
