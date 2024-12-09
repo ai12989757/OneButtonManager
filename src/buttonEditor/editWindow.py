@@ -423,15 +423,16 @@ class ButtonEditorWindow(QDialog):
 
         # 应用布局
         self.applyLayout = QHBoxLayout()
+        # 应用按钮
         self.applyButton = QPushButton(sl(u"应用", self.language))
         self.applyButton.clicked.connect(lambda: self.applyEditButton(False))
-        self.applyCloseButton = QPushButton(u"应用并关闭")
         # 应用并关闭按钮
-        self.applyCloseButton.clicked.connect(lambda: self.applyEditButton(True))
         self.applyCloseButton = QPushButton(sl(u"应用并关闭", self.language))
+        self.applyCloseButton.clicked.connect(lambda: self.applyEditButton(True))
         # 关闭按钮
         self.closeButton = QPushButton(sl(u"关闭", self.language))
         self.closeButton.clicked.connect(self.close)
+
         self.applyLayout.addWidget(self.applyButton)
         self.applyLayout.addWidget(self.applyCloseButton)
         self.applyLayout.addWidget(self.closeButton)
@@ -1039,7 +1040,6 @@ class ButtonEditorWindow(QDialog):
         # 移除事件过滤器
         self.menuCommandEdit.removeEventFilter(self)
         self.commandEdit.removeEventFilter(self)
-        # 更新 json 文件
         # 关闭窗口
         if close:
             self.close()

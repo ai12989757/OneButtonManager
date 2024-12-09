@@ -98,7 +98,7 @@ class ShelfButtonManager(QWidget):
         currentShelf = shelfTabLayout(self.gShelfTopLevel, q=True, st=True)
         
         # 清除所有按钮后重新添加
-        #self.autoSaveGifShelf()
+        self.autoSaveGifShelf()
         # mel.eval('GifButton_AutoLoad')
 
         # 获取 self.OneToolsDataDir 下的所有 json 文件
@@ -120,7 +120,8 @@ class ShelfButtonManager(QWidget):
                 if shelfName not in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
                     mel.eval('addNewShelfTab("'+shelfName+'")')
 
-                shelfTabLayout(self.gShelfTopLevel, e=True, st=shelfName)
+                evalCode = 'shelfTabLayout -e -st '+shelfName+' $gShelfTopLevel;'
+                mel.eval(evalCode)
                 self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
                 self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
                 if shelfLayout(shelfName, q=True, ca=True) is not None:
@@ -133,7 +134,7 @@ class ShelfButtonManager(QWidget):
                         pass
                 self.shelfManagers[shelfName].loadShelfData(jsonData)
                 self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
-        shelfTabLayout(self.gShelfTopLevel, e=True, st=currentShelf)
+        evalCode = 'shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;'
 
     # 工具栏右击菜单
     def createContextMenu(self):
@@ -946,7 +947,8 @@ class ShelfButtonManager(QWidget):
             if result == 'No':
                 return
 
-        shelfTabLayout(self.gShelfTopLevel, e=True, st=shelfName)
+        evalCode = 'shelfTabLayout -e -st '+shelfName+' $gShelfTopLevel;'
+        mel.eval(evalCode)
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
         if shelfLayout(shelfName, q=True, ca=True) is not None:
@@ -975,7 +977,8 @@ class ShelfButtonManager(QWidget):
         if shelfName not in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
             mel.eval('addNewShelfTab("'+shelfName+'")')
 
-        shelfTabLayout(self.gShelfTopLevel, e=True, st=shelfName)
+        evalCode = 'shelfTabLayout -e -st '+shelfName+' $gShelfTopLevel;'
+        mel.eval(evalCode)
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
         if shelfLayout(shelfName, q=True, ca=True) is not None:
@@ -1016,9 +1019,11 @@ class ShelfButtonManager(QWidget):
         currentShelf = shelfTabLayout(self.gShelfTopLevel, q=True, st=True)
         mayaVersion = int(mel.eval('getApplicationVersionAsFloat'))
         shelfDataDir = self.OneToolsDataDir
-        shelfList = []
+
         for jsonName in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
-            shelfTabLayout(self.gShelfTopLevel,e=True, st=jsonName)
+            # shelfTabLayout(self.gShelfTopLevel,e=True, st=jsonName) # 切换工具栏，但使用python出错，会多出很多没用的，改用mel
+            evalCode = 'shelfTabLayout -e -st '+jsonName+' $gShelfTopLevel;'
+            mel.eval(evalCode)
             if shelfLayout(jsonName,q=True,ca=True) is not None:
                 for i in shelfLayout(jsonName,q=True,ca=True):
                     if mayaVersion < 2022:
