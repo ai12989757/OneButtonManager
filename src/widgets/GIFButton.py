@@ -639,6 +639,7 @@ class GIFButton(QPushButton):
             startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
+        self.setIconSize(self.iconSizeValue)
         #QApplication.restoreOverrideCursor() # 还原光标样式
         #setToolTo('selectSuperContext')
         if event.button() == Qt.LeftButton:
