@@ -846,19 +846,20 @@ class ShelfButtonManager(QWidget):
         # 如果imagePath不存在,则查找icons文件夹
         else:
             if ':\\' in imagePath:
-                if imagePath.replace(':\\', '') in InternalIconDict['InternalIcon']:
-                    pass
-                elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
-                    imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
+                pass
+            #     if imagePath.replace(':\\', '') in InternalIconDict['InternalIcon']:
+            #         pass
+            #     elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
+            #         imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
+            # else:
+            #     if imagePath in InternalIconDict['InternalIcon']:
+            #         imagePath = ':\\'+imagePath
+            #     elif imagePath in InternalIconDict['plugIcon']:
+            #         imagePath = InternalIconDict['plugIcon'][imagePath]
+            #     else:
+            #         imagePath = 'white/undetected.png'
             else:
-                if imagePath in InternalIconDict['InternalIcon']:
-                    imagePath = ':\\'+imagePath
-                elif imagePath in InternalIconDict['plugIcon']:
-                    imagePath = InternalIconDict['plugIcon'][imagePath]
-                else:
-                    imagePath = 'white/undetected.png'
-        if imagePath == '':
-            imagePath = 'white/undetected.png'
+                imagePath = ':\\'+imagePath
         return imagePath
 
     def loadShelfData(self, shelfData):
