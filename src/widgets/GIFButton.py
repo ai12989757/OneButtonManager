@@ -488,7 +488,7 @@ class GIFButton(QPushButton):
             self.current_frame = self.movie.currentPixmap()
             self.setIcon(QIcon(self.current_frame))
 
-    def iconChanged(self, key = 'ctrl' or 'default' or 'shift' or 'alt' or 'ctrlAlt' or 'ctrlShift' or 'altShift' or 'ctrlAltShift'):
+    def iconChanged(self, key = 'ctrl' or 'default' or 'shift' or 'alt' or 'ctrlAlt' or 'ctrlShift' or 'altShift' or 'ctrlAltShift' or 'hi'):
         self.icon = self.icon
         iconName = self.icon.split('/')[-1].split('.')[0]
         self.iconKey = self.icon if key == 'default' else self.icon.replace(iconName, iconName + '_' +key)
@@ -508,6 +508,7 @@ class GIFButton(QPushButton):
                 self.setIcon(QIcon(self.iconKey))
             
     def enterEvent(self, event):
+        self.iconChanged('hi')
         if not self.dragging:
             effect = QGraphicsDropShadowEffect(self)
             effect.setColor(QColor(255, 255, 255))
@@ -570,9 +571,9 @@ class GIFButton(QPushButton):
             elif self.style == "pause" and self.movie:
                 self.movie.setPaused(True)  # 暂停播放 GIF
             
-            # 如果iconImage 不是 default，说明图标被更改了，需要恢复原图标
-            if self.iconImage != 'default':
-                self.iconChanged('default')
+        # 如果iconImage 不是 default，说明图标被更改了，需要恢复原图标
+        if self.iconImage != 'default':
+            self.iconChanged('default')
             #QObject.event(self, event)
 
     def mouseMoveEvent(self, event):
