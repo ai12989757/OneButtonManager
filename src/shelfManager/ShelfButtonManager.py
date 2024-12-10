@@ -856,9 +856,7 @@ class ShelfButtonManager(QWidget):
                 elif imagePath in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath]
                 else:
-                    imagePath = 'white/undetected.png'
-            else:
-                imagePath = ':\\'+imagePath
+                    imagePath = ':\\'+imagePath 
         return imagePath
 
     def loadShelfData(self, shelfData):
