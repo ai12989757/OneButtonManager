@@ -607,7 +607,7 @@ class ShelfButtonManager(QWidget):
                     warning(i,i.__class__.__name__)
                 #print(i.__class__.__name__)
 
-            oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
+            #oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
             #print(data)
             # 重新添加GIFButton
             for i in data.keys():
@@ -812,12 +812,12 @@ class ShelfButtonManager(QWidget):
 
     def getInternalIconDict(self):
         InternalIconDict = {}
-        InternalIconDict['InternalIcon'] = {}
+        # InternalIconDict['InternalIcon'] = {}
 
-        # 获取所有内部图标
-        InternalIcon = resourceManager(nameFilter="*")
-        for i in InternalIcon:
-            InternalIconDict['InternalIcon'][i] = 1
+        # # 获取所有内部图标
+        # InternalIcon = resourceManager(nameFilter="*")
+        # for i in InternalIcon:
+        #     InternalIconDict['InternalIcon'][i] = 1
 
         # 获取所有插件图标
         InternalIconDict['plugIcon'] = {}
@@ -829,7 +829,7 @@ class ShelfButtonManager(QWidget):
                         # 值为图片的绝对路径
                         InternalIconDict['plugIcon'][fileName] = os.path.join(root, fileName)  # 值为图片的绝对路径
 
-        # 获取maya图标
+        # 获取maya 安装目录下icons文件夹里的图标
         mayaIconPath = os.environ['MAYA_LOCATION'] + '/icons/'
         for root, dirs, files in os.walk(mayaIconPath):
             for fileName in files:
@@ -846,12 +846,12 @@ class ShelfButtonManager(QWidget):
         # 如果imagePath不存在,则查找icons文件夹
         else:
             if ':\\' in imagePath:
-                if imagePath.replace(':\\', '') in InternalIconDict['InternalIcon']:
+                if resourceManager(nameFilter=imagePath.replace(':\\', '')):
                     pass
                 elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
             else:
-                if imagePath in InternalIconDict['InternalIcon']:
+                if resourceManager(nameFilter=imagePath):
                     imagePath = ':\\'+imagePath
                 elif imagePath in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath]
