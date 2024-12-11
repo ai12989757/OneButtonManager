@@ -332,6 +332,14 @@ class ButtonEditorWindow(QDialog):
         # 设置向右对齐
         self.menuIconLayout1.setAlignment(Qt.AlignRight|Qt.AlignBottom)
         self.menuIconEditLayoutAll.addLayout(self.menuIconLayout1)
+        # 内置图标浏览按钮
+        self.menuMayaIconBrowerButton = QPushButton()
+        self.menuMayaIconBrowerButton.setIcon(QIcon(":\\mayaIcon.png"))
+        self.menuMayaIconBrowerButton.setFixedSize(QSize(14, 24))
+        self.menuMayaIconBrowerButton.setStyleSheet("""QPushButton {border: none;}""")
+        self.menuMayaIconBrowerButton.clicked.connect(self.setMenuMayaIcon)
+        self.menuMayaIconBrowerButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuMayaIconBrowerButton, event) # 光标进入时显示描边效果
+        self.menuMayaIconBrowerButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuMayaIconBrowerButton,event) # 光标离开时隐藏描边效果
         # 添加菜单按钮 上移 下移 添加 删除
         self.menuUpButton = QPushButton()
         self.menuUpButton.setIcon(QIcon(":\\moveLayerUp.png"))
@@ -361,6 +369,8 @@ class ButtonEditorWindow(QDialog):
         self.menuRemoveButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuRemoveButton, event)
         self.menuRemoveButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuRemoveButton, event)
         self.menuRemoveButton.setStyleSheet("""QPushButton {border: none;}""")
+        # 添加 menu 编辑按钮
+        self.menuIconLayout1.addWidget(self.menuMayaIconBrowerButton)
         self.menuIconLayout1.addWidget(self.menuUpButton)
         self.menuIconLayout1.addWidget(self.menuDownButton)
         self.menuIconLayout1.addWidget(self.menuAddButton)
@@ -661,6 +671,24 @@ class ButtonEditorWindow(QDialog):
 
     def hideMenuIconBorder(self, setButton,event):
         setButton.setGraphicsEffect(None)
+
+    def setMenuMayaIcon(self):
+        import maya.app.general.resourceBrowser as resourceBrowser
+        resBrowser = resourceBrowser.resourceBrowser()
+        icon = resBrowser.run()
+        del resBrowser
+        return path
+        if icon:
+            if ':\\' not in icon:
+                icon = ':\\'+icon
+            try:
+                if self.menuListWidget.currentRow() != -1:
+                    row = self.menuListWidget.currentRow()
+                    menuItem = self.menuItems[row]
+                    if icon != self.tempIcon:
+                        menuItem["icon"] = icon
+            except:
+                pass
 
     def setMenuIcon(self, icon):
         if icon:
