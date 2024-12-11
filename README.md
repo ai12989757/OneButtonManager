@@ -15,8 +15,6 @@
 
 - Maya2020+
   - Tested with 2020, 2022, 2025
-- PySide2 or PySide6
-- pymel
 
 ## Installation
 

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+from maya import mel
 import maya.OpenMayaUI as omui
 try:
     from shiboken6 import wrapInstance
 except ImportError:
     from shiboken2 import wrapInstance
 
-from pymel.core import *
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *

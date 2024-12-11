@@ -3,12 +3,13 @@ import os
 import sys
 import json
 import codecs
+from maya import mel
 import maya.OpenMayaUI as omui
 try:
     from shiboken6 import wrapInstance
 except ImportError:
     from shiboken2 import wrapInstance
-from pymel.core import *
+
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -35,8 +36,7 @@ class ShelfButtonManager(QWidget):
         self.InternalIconDict = self.getInternalIconDict()
 
         self.shelfManagers = {} # 添加一个字典来保存每个 shelf 的 ShelfButtonManager 实例
-        self.gShelfTopLevel = mel.eval('$temp=$gShelfTopLevel')
-        self.currentShelf = shelfTabLayout(self.gShelfTopLevel, q=True, selectTab=True)
+        self.currentShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
 
         self.mayaVersion = mel.eval('getApplicationVersionAsFloat')
 
@@ -44,7 +44,7 @@ class ShelfButtonManager(QWidget):
         self.PATH = self.PATH.replace('\\', '/')
         self.iconPath = self.PATH.replace('src/shelfManager', 'icons/')
 
-        self.OneToolsDir = internalVar(uad=True).replace('maya/','OneTools') # Documents/OneTools/
+        self.OneToolsDir = mel.eval('internalVar -uad').replace('maya/','OneTools') # Documents/OneTools/
         if not os.path.exists(self.OneToolsDir): 
             os.makedirs(self.OneToolsDir)
         self.OneToolsDataDir = self.OneToolsDir + '/data/' # Documents/OneTools/data/
@@ -69,7 +69,7 @@ class ShelfButtonManager(QWidget):
             self.shelfLayoutInfo.setContentsMargins(0, 5, 0, 0) # layout向下移动5个像素
 
         self.iconH = 42
-        self.iconH = shelfLayout(self.currentShelf, q=True, h=True) - 10
+        self.iconH = mel.eval('shelfLayout -q -h '+self.currentShelf) - 10
 
         self.menu = None
 
@@ -95,7 +95,7 @@ class ShelfButtonManager(QWidget):
         with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'w', encoding='utf-8') as f:
             f.writelines(data)
 
-        currentShelf = shelfTabLayout(self.gShelfTopLevel, q=True, st=True)
+        currentShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
         
         # 清除所有按钮后重新添加
         self.autoSaveGifShelf()
@@ -117,16 +117,16 @@ class ShelfButtonManager(QWidget):
                 shelfName = jsonData['shelfName']
 
                 # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
-                if shelfName not in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
+                if shelfName not in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
                     mel.eval('addNewShelfTab("'+shelfName+'")')
 
                 evalCode = 'shelfTabLayout -e -st '+shelfName+' $gShelfTopLevel;'
                 mel.eval(evalCode)
                 self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
                 self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
-                if shelfLayout(shelfName, q=True, ca=True) is not None:
-                    for i in shelfLayout(shelfName, q=True, ca=True):
-                        deleteUI(i)
+                if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
+                    for i in mel.eval('shelfLayout -q -ca '+shelfName):
+                        mel.eval('deleteUI '+i)
                     try:
                         for i in self.shelfManagers[shelfName].getButtonList()[1]:
                             i.deleteLater()
@@ -206,7 +206,7 @@ class ShelfButtonManager(QWidget):
             self.recycleMenu.addAction(action)
    
     def pasteButton(self):
-        shelf_backup = internalVar(uad=True).replace('maya','OneTools/data/shelf_backup/')
+        shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
         shelf_copy = shelf_backup + 'shelf_copy.json'
 
         with codecs.open(shelf_copy, 'r', encoding='utf-8') as f:
@@ -337,33 +337,34 @@ class ShelfButtonManager(QWidget):
 
     def autoSetShelf(self):
         self.menu = self.createContextMenu()
-        userSetupFile = internalVar(usd=True)+'/userSetup.mel'
+        userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
         setupCode = 'source "'+self.PATH+'/ShelfAutoSetup.mel";\n'
         if not os.path.exists(userSetupFile):
             with open(userSetupFile, 'w') as f:
                 f.write(setupCode)
             return
         
-        with codecs.open(internalVar(usd=True)+'/userSetup.mel', 'r', 'utf-8') as f:
+        with codecs.open(userSetupFile, 'r', 'utf-8') as f:
             userSetup = f.read()
         if 'ShelfAutoSetup' in userSetup:
             return
         # 写入 userSetup 文件
-        with codecs.open(internalVar(usd=True)+'/userSetup.mel', 'a', 'utf-8') as f:
+        with codecs.open(userSetupFile, 'a', 'utf-8') as f:
             f.write(setupCode)
 
     def setAutoLoadJob(self):
+        userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
         for i in self.menu.actions():
             if i.text() == sl(u"自动加载工具栏",self.language):
                 if i.switch == False:
                     i.setIcon(QIcon(':\\switchOn.png'))
                     i.switch = True
-                    with open(internalVar(usd=True)+'/userSetup.mel', 'r') as f:
+                    with open(userSetupFile, 'r') as f:
                         userSetup = f.read()
                     if 'GifButton_AutoLoad' in userSetup:
                         return
                     # 写入 userSetup 文件
-                    with open(internalVar(usd=True)+'/userSetup.mel', 'a') as f:
+                    with open(userSetupFile, 'a') as f:
                         setupCode = 'GifButton_AutoLoad;\n'
                         f.write(setupCode)
                     
@@ -375,10 +376,10 @@ class ShelfButtonManager(QWidget):
                 elif i.switch == True:
                     i.setIcon(QIcon(':\\switchOff.png'))
                     # 删除 userSetup 文件中的自动加载工具栏代码
-                    with open(internalVar(usd=True)+'/userSetup.mel', 'r') as f:
+                    with open(userSetupFile, 'r') as f:
                         userSetup = f.read()
                     userSetup = userSetup.replace('GifButton_AutoLoad;\n', '')
-                    with open(internalVar(usd=True)+'/userSetup.mel', 'w') as f:
+                    with open(userSetupFile, 'w') as f:
                         f.write(userSetup)
                     i.switch = False
                     if self.language == 0:
@@ -389,21 +390,22 @@ class ShelfButtonManager(QWidget):
 
     def setAutoSaveJob(self):
         for i in self.menu.actions():
+            userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
             if i.text() == sl(u"自动保存工具栏",self.language):
                 userSetup = ''
-                with open(internalVar(usd=True)+'/userSetup.mel', 'r') as f:
+                with open(userSetupFile, 'r') as f:
                     userSetup = f.read()
                 if i.switch == False:
                     i.setIcon(QIcon(':\\switchOn.png'))
                     if 'GifButton_AutoSave' not in userSetup:
-                        with open(internalVar(usd=True)+'/userSetup.mel', 'a') as f:
+                        with open(userSetupFile, 'a') as f:
                             setupCode = 'GifButton_AutoSave;\n'
                             f.write(setupCode)
-                    for job in scriptJob(lj=True):
+                    for job in mel.eval('scriptJob -lj'):
                         if 'autoSaveGifShelf' in job:
                             break
-                    jboCode = 'scriptJob -e "quitApplication" "from shelfManager import ShelfButtonManager\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\nshelf_save.autoSaveGifShelf()"'
-                    scriptJob(e=('quitApplication', jboCode))
+                    jboCode = 'scriptJob -e "quitApplication" "python(\\"from shelfManager import ShelfButtonManager\\\\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\\\\nshelf_save.autoSaveGifShelf()\\")"'
+                    mel.eval(jboCode)
                     i.switch = True
                     if self.language == 0:
                         mel.eval(u'print("// 结果: 开启自动保存工具栏\\n")')
@@ -416,12 +418,12 @@ class ShelfButtonManager(QWidget):
                     if 'GifButton_AutoSave' in userSetup:
                         # 删除 userSetup 文件中的自动加载工具栏代码
                         userSetup = userSetup.replace('GifButton_AutoSave;\n', '')
-                        with open(internalVar(usd=True)+'/userSetup.mel', 'w') as f:
+                        with open(userSetupFile, 'w') as f:
                             f.write(userSetup)
-                    for job in scriptJob(lj=True):
+                    for job in mel.eval('scriptJob -lj'):
                         if 'autoSaveGifShelf' in job:
                             job = int(job.split(': ')[0]) # 获取job的id
-                            scriptJob(k=job) 
+                            mel.eval('scriptJob -kill '+str(job))
                     i.switch = False
                     if self.language == 0:
                         mel.eval(u'print("// 结果: 关闭自动保存工具栏\\n")')
@@ -432,14 +434,15 @@ class ShelfButtonManager(QWidget):
     def menuShowCheck(self):
         # 查询 userSetup 文件中是否有自动加载工具栏的代码
         userSetup = ''
-        if os.path.exists(internalVar(usd=True)+'/userSetup.mel'):
-            with open(internalVar(usd=True)+'/userSetup.mel', 'r') as f:
+        userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
+        if os.path.exists(userSetupFile):
+            with open(userSetupFile, 'r') as f:
                 userSetup = f.read()
 
         for i in self.menu.actions():
             if i.text() == sl(u"自动保存工具栏",self.language):
 
-                for job in scriptJob(lj=True):
+                for job in mel.eval('scriptJob -lj'):
                     if 'autoSaveGifShelf' in job:
                         i.setIcon(QIcon(':\\switchOn.png'))
                         i.switch = True
@@ -549,25 +552,25 @@ class ShelfButtonManager(QWidget):
     
     def getMayaShelfButtonData(self, mayaShelfButtonName):
         data = OrderedDict()
-        data['label'] = shelfButton(mayaShelfButtonName, q=True, label=True)
-        data['annotation'] = shelfButton(mayaShelfButtonName, q=True, annotation=True)
-        data['image'] = shelfButton(mayaShelfButtonName, q=True, image=True)
-        data['sourceType'] = shelfButton(mayaShelfButtonName, q=True, sourceType=True)
-        data['command'] = shelfButton(mayaShelfButtonName, q=True, command=True)
-        data['doubleClickCommand'] = shelfButton(mayaShelfButtonName, q=True, doubleClickCommand=True)
-        data['doubleClickCommandSourceType'] = shelfButton(mayaShelfButtonName, q=True, sourceType=True, doubleClickCommand=True)
+        data['label'] = mel.eval('shelfButton -q -label '+mayaShelfButtonName)
+        data['annotation'] = mel.eval('shelfButton -q -annotation '+mayaShelfButtonName)
+        data['image'] = mel.eval('shelfButton -q -image1 '+mayaShelfButtonName)
+        data['sourceType'] = mel.eval('shelfButton -q -sourceType '+mayaShelfButtonName)
+        data['command'] = mel.eval('shelfButton -q -command '+mayaShelfButtonName)
+        data['doubleClickCommand'] = mel.eval('shelfButton -q -doubleClickCommand '+mayaShelfButtonName)
+        data['doubleClickCommandSourceType'] = mel.eval('shelfButton -q -sourceType -doubleClickCommand '+mayaShelfButtonName)
         data['menuItem'] = OrderedDict()
-        popupMenuName = shelfButton(mayaShelfButtonName, q=True, popupMenuArray=True)[0]
-        if shelfButton(mayaShelfButtonName, q=True, numberOfPopupMenus=True):
-            if popupMenu(popupMenuName, q=True, itemArray=True) is not None:
-                if len(popupMenu(popupMenuName, q=True, itemArray=True)) > 4:
-                    for index, menuItemName in enumerate(popupMenu(popupMenuName, q=True, itemArray=True)[4:]):
+        popupMenuName = mel.eval('shelfButton -q -popupMenuArray '+mayaShelfButtonName)[0]
+        if mel.eval('shelfButton -q -numberOfPopupMenus '+mayaShelfButtonName):
+            if mel.eval('popupMenu -q -itemArray '+popupMenuName):
+                if len(mel.eval('popupMenu -q -itemArray '+popupMenuName)) > 4:
+                    for index, menuItemName in enumerate(mel.eval('popupMenu -q -itemArray '+popupMenuName)[4:]):
                         menuData = OrderedDict()
-                        menuData['label'] = menuItem(menuItemName, q=True, label=True)
-                        menuData['command'] = menuItem(menuItemName, q=True, command=True)
-                        menuData['annotation'] = menuItem(menuItemName, q=True, annotation=True)
-                        menuData['image'] = menuItem(menuItemName, q=True, image=True)
-                        menuData['sourceType'] = menuItem(menuItemName, q=True, sourceType=True)
+                        menuData['label'] = mel.eval('menuItem -q -label '+menuItemName)
+                        menuData['command'] = mel.eval('menuItem -q -command '+menuItemName)
+                        menuData['annotation'] = mel.eval('menuItem -q -annotation '+menuItemName)
+                        menuData['image'] = mel.eval('menuItem -q -image '+menuItemName)
+                        menuData['sourceType'] = mel.eval('menuItem -q -sourceType '+menuItemName)
                         if menuData['label'] is not None and menuData['command'] is not None:
                             data['menuItem'][index] = menuData
             else:
@@ -575,14 +578,16 @@ class ShelfButtonManager(QWidget):
             return data
 
     def toGIF(self):
-        if shelfLayout(self.currentShelf, q=True, ca=True) is not None:
-            shelfMel = internalVar(userShelfDir=True) + 'shelf_'+self.currentShelf+'.mel' # 当前 shelf 的 mel 文件
+        if mel.eval('shelfLayout -q -ca '+self.currentShelf) is not None:
+            shelfMel = mel.eval('internalVar -userShelfDir') + 'shelf_'+self.currentShelf+'.mel' # 当前 shelf 的 mel 文件
             shelf_backup = self.OneToolsDataDir + 'shelf_backup/' # 备份文件夹
             if not os.path.exists(shelf_backup):
                 os.makedirs(shelf_backup)
-            saveShelf(self.currentShelf, shelfMel.replace('.mel', '')) # 保存当前 shelf
+            
+            mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel.replace('.mel', '')+'")' ) # 保存当前 shelf
+
             # 使用robocopy备份文件 robocopy /e path file
-            os.system('robocopy /e '+internalVar(userShelfDir=True)+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
+            os.system('robocopy /e '+mel.eval('internalVar -userShelfDir')+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
             # aveAllShelves(self.gShelfTopLevel)
             self.buttonList = self.getButtonList()[1]
             # 新建字典保存按钮数据
@@ -596,13 +601,13 @@ class ShelfButtonManager(QWidget):
                     i.deleteLater()
                 elif i.__class__.__name__ == 'QFrame':
                     data[index] = 'separator'
-                    deleteUI(i.objectName())
+                    mel.eval('deleteUI '+i.objectName())
                 elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
                     if 'separator' in i.objectName() or 'Separator' in i.objectName():
                         data[index] = 'separator'
                     else:
                         data[index] = self.getMayaShelfButtonData(i.objectName())
-                    deleteUI(i.objectName())
+                    mel.eval('deleteUI '+i.objectName())
                 else:
                     warning(i,i.__class__.__name__)
                 #print(i.__class__.__name__)
@@ -623,145 +628,130 @@ class ShelfButtonManager(QWidget):
             mel.eval(u'print("// 结果: 转换成功\\n")') 
 
     def toDef(self):
-        # 查询 GIF shelf是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
-        if self.currentShelf in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
-            #mel.eval('deleteShelfTabNoCheck("'+self.currentShelf+'")')
-            for i in shelfLayout(self.currentShelf,q=True,ca=True):
-                if 'separator' in i or 'Separator' in i:
-                    separator(i,e=True,vis=True)
-                else:
-                    shelfButton(i,e=True,vis=True)
-        #mel.eval('addNewShelfTab("'+self.currentShelf+'")')
-        #shelfTabLayout(self.gShelfTopLevel, e=True, st=self.currentShelf)
-
-        #self.shelfLayoutInfo.deleteLater()
-        # 隐藏self.shelfLayoutInfo.parent()
-        self.shelfLayoutInfo.parent().hide()
-
-        # # 移除 shelfParent.layout() 里的 giftLayout 属性
-        # del self.shelfParent.giftLayout
+        pass
 
     def toJson(self):
-        filePath = internalVar(userShelfDir=True) + 'shelf_'+self.currentShelf+'.mel'
-        if not os.path.exists(filePath):
-            return None
-        jsonPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src', 'data/shelf_tempNeedDelete.json')
-        # 解析文件,去掉前六行和最后一行，再去掉空行,去掉\n
-        def parseFile(filePath):
-            with codecs.open(filePath, 'r', 'gbk') as f:
-                data = f.readlines()
-            data = data[6:-1]
-            data = [i for i in data if i != '\n']
-            return data
+        pass
+        # filePath = internalVar(userShelfDir=True) + 'shelf_'+self.currentShelf+'.mel'
+        # if not os.path.exists(filePath):
+        #     return None
+        # jsonPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src', 'data/shelf_tempNeedDelete.json')
+        # # 解析文件,去掉前六行和最后一行，再去掉空行,去掉\n
+        # def parseFile(filePath):
+        #     with codecs.open(filePath, 'r', 'gbk') as f:
+        #         data = f.readlines()
+        #     data = data[6:-1]
+        #     data = [i for i in data if i != '\n']
+        #     return data
 
-        # separator改为 shelfButton
-        def changeSeparator(data):
-            data = [i.replace('separator', 'shelfButton -separator') for i in data]
-            return data
+        # # separator改为 shelfButton
+        # def changeSeparator(data):
+        #     data = [i.replace('separator', 'shelfButton -separator') for i in data]
+        #     return data
 
-        # 使用 'shelfButton' 分割数据，清除空数据，如果数据里没有'annotation'或'style' 'shelf'则删除
-        def splitData(data):
-            data = ''.join(data)
-            data = data.split('shelfButton')
-            for i in data:
-                if 'separator' in i:
-                    i = 'separator'
-            data = [i for i in data if i != '']
-            return data
+        # # 使用 'shelfButton' 分割数据，清除空数据，如果数据里没有'annotation'或'style' 'shelf'则删除
+        # def splitData(data):
+        #     data = ''.join(data)
+        #     data = data.split('shelfButton')
+        #     for i in data:
+        #         if 'separator' in i:
+        #             i = 'separator'
+        #     data = [i for i in data if i != '']
+        #     return data
 
-        shelfData = parseFile(filePath)
-        shelfData = changeSeparator(shelfData)
-        shelfData = splitData(shelfData)
+        # shelfData = parseFile(filePath)
+        # shelfData = changeSeparator(shelfData)
+        # shelfData = splitData(shelfData)
 
-        data = OrderedDict()
-        # 解析数据，使用四个空格分割数据，删除'-'
-        buttonName = 0
-        shelfDataNew = []
-        for button in shelfData:
-            button = button.split('        -')
-            #button = [i.replace('\n', '') for i in button]
-            # 清除空数据
-            button = [i for i in button if i != '']
-            shelfDataNew.append(button)
-            buttonData = OrderedDict()
-            miNum = 0
+        # data = OrderedDict()
+        # # 解析数据，使用四个空格分割数据，删除'-'
+        # buttonName = 0
+        # shelfDataNew = []
+        # for button in shelfData:
+        #     button = button.split('        -')
+        #     #button = [i.replace('\n', '') for i in button]
+        #     # 清除空数据
+        #     button = [i for i in button if i != '']
+        #     shelfDataNew.append(button)
+        #     buttonData = OrderedDict()
+        #     miNum = 0
             
-            for i in button:
-                if '-separator' in i:
-                    data[buttonName] = 'separator'
-                    break
+        #     for i in button:
+        #         if '-separator' in i:
+        #             data[buttonName] = 'separator'
+        #             break
 
-                # 如果第一个字符是空格，则删除
-                if i[0] == ' ':
-                    i = i[1:]
-                # 以第一个空格为分割点将数据分割成两部分，
-                # 第一部分为键，第二部分为值
-                i = i.split(' ', 1)
-                # 如果数据量不为2，则跳过
-                if len(i) == 2:
-                    # if 'command' in i[0] or 'doubleClickCommand' in i[0] or 'mi' in i[0]:
-                    #     if i[1][-2:] == ' \n':
-                    #         i[1] = i[0][:-2]
-                    i[1] = i[1].replace('\\\"', '\"').replace('\\n', '\n').replace('\\t', '').replace('\\\n', '\\n').replace('\"\\\\\"', '\"\\\"').replace('\\\\\"', '\\"')
-                    if i[1][:1] == '"':
-                        i[1] = i[1][1:]
-                    if i[1][-3:] == '" \n':
-                        i[1] = i[1][:-3]
-                    # 如果i[0]的值在[]里,则写入buttonData
-                    if i[0] in ['annotation', 'label', 'image', 'command','sourceType','doubleClickCommand','mi']:
-                        if i[0] == 'image':
-                            # 如果图标不存在
-                            if not os.path.exists(i[1]):
-                                i[1] = ':\\'+i[1]
-                        if i[0] == 'mi':
-                            i[1] = i[1].replace('    ;\n    ', '')
-                            # 使用第一个 \" 分割i[1]
-                            i[1] = i[1].split('\"', 1)
-                            i[1][1] = i[1][1][4:-4]
-                            buttonData[miNum] = i[1]
-                            miNum += 1
-                        else:
-                            buttonData[i[0]] = i[1]
-                            if i[0] == 'doubleClickCommand':
-                                # 根据 i[1] 里的数据判断是否为python语法
-                                if 'import' in i[1] or 'from' in i[1]:
-                                    buttonData['doubleClickCommandSourceType'] = 'python'
-                                else:
-                                    buttonData['doubleClickCommandSourceType'] = 'mel'
-                            else:
-                                buttonData['doubleClickCommandSourceType'] = ''
-                                buttonData['doubleClickCommand'] = ''
-                    if 'command' not in buttonData.keys():
-                        buttonData['command'] = ''
-                    if 'doubleClickCommand' not in buttonData.keys():
-                        buttonData['doubleClickCommand'] = ''
-                    if 'sourceType' not in buttonData.keys():
-                        buttonData['sourceType'] = 'mel'
-                    if 'annotation' not in buttonData.keys():
-                        buttonData['annotation'] = ''
-                    if 'label' not in buttonData.keys():
-                        buttonData['label'] = ''
-                    if 'image' not in buttonData.keys():
-                        buttonData['image'] = ''
-                    if 'doubleClickCommandSourceType' not in buttonData.keys():
-                        buttonData['doubleClickCommandSourceType'] = ''
+        #         # 如果第一个字符是空格，则删除
+        #         if i[0] == ' ':
+        #             i = i[1:]
+        #         # 以第一个空格为分割点将数据分割成两部分，
+        #         # 第一部分为键，第二部分为值
+        #         i = i.split(' ', 1)
+        #         # 如果数据量不为2，则跳过
+        #         if len(i) == 2:
+        #             # if 'command' in i[0] or 'doubleClickCommand' in i[0] or 'mi' in i[0]:
+        #             #     if i[1][-2:] == ' \n':
+        #             #         i[1] = i[0][:-2]
+        #             i[1] = i[1].replace('\\\"', '\"').replace('\\n', '\n').replace('\\t', '').replace('\\\n', '\\n').replace('\"\\\\\"', '\"\\\"').replace('\\\\\"', '\\"')
+        #             if i[1][:1] == '"':
+        #                 i[1] = i[1][1:]
+        #             if i[1][-3:] == '" \n':
+        #                 i[1] = i[1][:-3]
+        #             # 如果i[0]的值在[]里,则写入buttonData
+        #             if i[0] in ['annotation', 'label', 'image', 'command','sourceType','doubleClickCommand','mi']:
+        #                 if i[0] == 'image':
+        #                     # 如果图标不存在
+        #                     if not os.path.exists(i[1]):
+        #                         i[1] = ':\\'+i[1]
+        #                 if i[0] == 'mi':
+        #                     i[1] = i[1].replace('    ;\n    ', '')
+        #                     # 使用第一个 \" 分割i[1]
+        #                     i[1] = i[1].split('\"', 1)
+        #                     i[1][1] = i[1][1][4:-4]
+        #                     buttonData[miNum] = i[1]
+        #                     miNum += 1
+        #                 else:
+        #                     buttonData[i[0]] = i[1]
+        #                     if i[0] == 'doubleClickCommand':
+        #                         # 根据 i[1] 里的数据判断是否为python语法
+        #                         if 'import' in i[1] or 'from' in i[1]:
+        #                             buttonData['doubleClickCommandSourceType'] = 'python'
+        #                         else:
+        #                             buttonData['doubleClickCommandSourceType'] = 'mel'
+        #                     else:
+        #                         buttonData['doubleClickCommandSourceType'] = ''
+        #                         buttonData['doubleClickCommand'] = ''
+        #             if 'command' not in buttonData.keys():
+        #                 buttonData['command'] = ''
+        #             if 'doubleClickCommand' not in buttonData.keys():
+        #                 buttonData['doubleClickCommand'] = ''
+        #             if 'sourceType' not in buttonData.keys():
+        #                 buttonData['sourceType'] = 'mel'
+        #             if 'annotation' not in buttonData.keys():
+        #                 buttonData['annotation'] = ''
+        #             if 'label' not in buttonData.keys():
+        #                 buttonData['label'] = ''
+        #             if 'image' not in buttonData.keys():
+        #                 buttonData['image'] = ''
+        #             if 'doubleClickCommandSourceType' not in buttonData.keys():
+        #                 buttonData['doubleClickCommandSourceType'] = ''
 
-            # 如果为空则
-            if buttonData:
-                data[buttonName] = buttonData
-            else:
-                data[buttonName] = 'separator'
-            buttonName += 1
+        #     # 如果为空则
+        #     if buttonData:
+        #         data[buttonName] = buttonData
+        #     else:
+        #         data[buttonName] = 'separator'
+        #     buttonName += 1
 
-        # 去掉第一个数据
-        data.pop(0)
-        outJson = OrderedDict()
-        outJson['shelfName'] = self.currentShelf
-        outJson['shelfData'] = data
-        # 写入json文件 D:\MELcopy\OneTools\src\shelfData.json
-        with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
-            json.dump(outJson, f, ensure_ascii=False, indent=4)
-        return jsonPath
+        # # 去掉第一个数据
+        # data.pop(0)
+        # outJson = OrderedDict()
+        # outJson['shelfName'] = self.currentShelf
+        # outJson['shelfData'] = data
+        # # 写入json文件 D:\MELcopy\OneTools\src\shelfData.json
+        # with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
+        #     json.dump(outJson, f, ensure_ascii=False, indent=4)
+        # return jsonPath
 
     def codeSwitch(self,command):
         pythonVersion = int(sys.version[0:1])
@@ -821,8 +811,8 @@ class ShelfButtonManager(QWidget):
 
         # 获取所有插件图标
         InternalIconDict['plugIcon'] = {}
-        for module in moduleInfo(listModules=True):
-            iconsPath = moduleInfo(moduleName=module, path=True) + '/icons/'
+        for module in mel.eval('moduleInfo -listModules'):
+            iconsPath = mel.eval('moduleInfo -path -mn "'+module+'"') + '/icons/'
             if os.path.exists(iconsPath):
                 for root, dirs, files in os.walk(iconsPath):
                     for fileName in files:
@@ -846,7 +836,7 @@ class ShelfButtonManager(QWidget):
         # 如果imagePath不存在,则查找icons文件夹
         else:
             if ':\\' in imagePath:
-                if resourceManager(nameFilter=imagePath.replace(':\\', '')):
+                if mel.eval('resourceManager -nameFilter '+imagePath.replace(':\\', '')):
                     pass
                 elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
@@ -917,7 +907,7 @@ class ShelfButtonManager(QWidget):
 
     def loadGifShelf(self):
         # 打开文件对话框
-        jsonPath = fileDialog2(fm=1, ff='*.json', okc=u'导入')[0]
+        jsonPath = mel.eval('fileDialog2 -fm 1 -ff "*.json" -okc "导入"')[0]
         if not jsonPath:
             return
         jsonData = {}
@@ -930,18 +920,19 @@ class ShelfButtonManager(QWidget):
         shelfName = jsonData['shelfName']
 
         # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
-        if shelfName not in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
+        if shelfName not in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
             mel.eval('addNewShelfTab("'+shelfName+'")')
         else:
             # 弹出窗口
-            result = confirmDialog(
-                title=u'警告',
-                message=u'工具栏已存在,是否覆盖?',
-                button=['Yes', 'No'],
-                defaultButton='Yes',
-                cancelButton='No',
-                dismissString='No'
-            )
+            result = mel.eval('confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
+            # result = confirmDialog(
+            #     title=u'警告',
+            #     message=u'工具栏已存在,是否覆盖?',
+            #     button=['Yes', 'No'],
+            #     defaultButton='Yes',
+            #     cancelButton='No',
+            #     dismissString='No'
+            # )
             if result == 'No':
                 return
 
@@ -949,9 +940,9 @@ class ShelfButtonManager(QWidget):
         mel.eval(evalCode)
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
-        if shelfLayout(shelfName, q=True, ca=True) is not None:
-            for i in shelfLayout(shelfName, q=True, ca=True):
-                deleteUI(i)
+        if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
+            for i in mel.eval('shelfLayout -q -ca '+shelfName):
+                mel.eval('deleteUI '+i)
             try:
                 for i in self.shelfManagers[shelfName].getButtonList()[1]:
                     i.deleteLater()
@@ -972,16 +963,16 @@ class ShelfButtonManager(QWidget):
                 jsonData = json.load(f, object_pairs_hook=OrderedDict)
         shelfName = jsonData['shelfName']
         # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
-        if shelfName not in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
+        if shelfName not in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
             mel.eval('addNewShelfTab("'+shelfName+'")')
 
         evalCode = 'shelfTabLayout -e -st '+shelfName+' $gShelfTopLevel;'
         mel.eval(evalCode)
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
-        if shelfLayout(shelfName, q=True, ca=True) is not None:
+        if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
             for i in shelfLayout(shelfName, q=True, ca=True):
-                deleteUI(i)
+                mel.eval('deleteUI '+i)
             try:
                 for i in self.shelfManagers[shelfName].getButtonList()[1]:
                     i.deleteLater()
@@ -1014,16 +1005,16 @@ class ShelfButtonManager(QWidget):
         查询所有工具架
         保存拥有仅GIFButton的工具架
         '''
-        currentShelf = shelfTabLayout(self.gShelfTopLevel, q=True, st=True)
+        currentShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
         mayaVersion = int(mel.eval('getApplicationVersionAsFloat'))
         shelfDataDir = self.OneToolsDataDir
 
-        for jsonName in shelfTabLayout(self.gShelfTopLevel, q=True, ca=True):
+        for jsonName in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
             # shelfTabLayout(self.gShelfTopLevel,e=True, st=jsonName) # 切换工具栏，但使用python出错，会多出很多没用的，改用mel
             evalCode = 'shelfTabLayout -e -st '+jsonName+' $gShelfTopLevel;'
             mel.eval(evalCode)
-            if shelfLayout(jsonName,q=True,ca=True) is not None:
-                for i in shelfLayout(jsonName,q=True,ca=True):
+            if mel.eval('shelfLayout -q -ca '+jsonName) is not None:
+                for i in mel.eval('shelfLayout -q -ca '+jsonName):
                     if mayaVersion < 2022:
                         if i != '':
                             break
@@ -1047,21 +1038,20 @@ class ShelfButtonManager(QWidget):
                         json.dump(jsonData, f, ensure_ascii=False, indent=4)
                     mel.eval(u'print("// 结果: '+jsonPath+'")')
         # 切换回当前工具栏
-        shelfTabLayout(self.gShelfTopLevel,e=True, st=currentShelf)
+        mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
 
 def main():
     sys.dont_write_bytecode = True
     
     # mel.eval('workspaceControl -e -ih 58 -minimumHeight 58 -heightProperty "fixed" "Shelf";global string $gPlayBackSlider;timeControl -e -h 28 $gPlayBackSlider;')
-    gShelfTopLevel = mel.eval('$temp=$gShelfTopLevel')
-    if 'Custom' in shelfTabLayout(gShelfTopLevel, q=True, ca=True):
-        deleteUI('Custom', lay=True)
+    if 'Custom' in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
+        mel.eval('deleteUI Custom')
     mel.eval('addNewShelfTab("Custom")')
     
-    if "Custom" not in shelfTabLayout(gShelfTopLevel, q=True, ca=True):
+    if "Custom" not in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
         mel.eval('addNewShelfTab("Custom")')
     else:
-        shelfTabLayout(gShelfTopLevel, edit=True, selectTab="Custom")
+        mel.eval('shelfTabLayout -e -st Custom $gShelfTopLevel;')
 
     shelf_button_manager = ShelfButtonManager(0) # 切换shelf需要初始化 ShelfButtonManager
     

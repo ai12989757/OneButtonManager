@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pymel.core import *
+from maya import mel
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *

@@ -3,13 +3,13 @@ import os
 import sys
 import json
 import codecs # 用于python2.7中读取json文件encoding问题
+from maya import mel
 import maya.OpenMayaUI as omui
 try:
     from shiboken6 import wrapInstance
 except ImportError:
     from shiboken2 import wrapInstance
 
-from pymel.core import *
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -354,14 +354,15 @@ class GIFButton(QPushButton):
         self.buttonIndex = 0
         self.menuIndex = 0
         
-        self.value = [('startPos:'+str(self.startPos)+'Type:'+str(type(self.startPos))),
-                            ('currentPos:'+str(self.currentPos)+'Type:'+str(type(self.currentPos))),
-                            ('delta:'+str(self.delta)+'Type:'+str(type(self.delta))),
-                            ('valueX:'+str(self.valueX)+'Type:'+str(type(self.valueX))),
-                            ('valueY:'+str(self.valueY)+'Type:'+str(type(self.valueY))),
-                            ('minValue:'+str(self.minValue)+'Type:'+str(type(self.minValue))),
-                            ('maxValue:'+str(self.maxValue)+'Type:'+str(type(self.maxValue))),
-                            ('buttonList:'+str(self.buttonList)+'Type:'+str(type(self.buttonList)))
+        self.value = [('startPos:'+str(self.startPos)+' Type:'+str(type(self.startPos))),
+                            ('currentPos:'+str(self.currentPos)+' Type:'+str(type(self.currentPos))),
+                            ('delta:'+str(self.delta)+' Type:'+str(type(self.delta))),
+                            ('valueX:'+str(self.valueX)+' Type:'+str(type(self.valueX))),
+                            ('valueY:'+str(self.valueY)+' Type:'+str(type(self.valueY))),
+                            ('minValue:'+str(self.minValue)+' Type:'+str(type(self.minValue))),
+                            ('maxValue:'+str(self.maxValue)+' Type:'+str(type(self.maxValue))),
+                            ('mouseState: "leftPress" "leftRelease" "leftMoving" "ctrlLeftMoving" "shiftLeftMoving" "altLeftMoving" Type:'+str(type(self.mouseState))),
+                            ('buttonList:'+str(self.buttonList)+' Type:'+str(type(self.buttonList)))
                          ]
         
         # 设置注释
@@ -457,8 +458,9 @@ class GIFButton(QPushButton):
             else:
                 self.movie.stop()  # 停止播放 GIF
 
-        gShelfTopLevel = mel.eval('$temp=$gShelfTopLevel')
-        getH = layout(shelfTabLayout(gShelfTopLevel, q=True, st=True),q=True,h=True) - 8
+        mel.eval('$temp=$gShelfTopLevel')
+        getHLayout = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
+        getH = mel.eval('layout -q -h "'+getHLayout+'"') - 8
 
         self.pixmap = QPixmap(icon)
         self.pixmap = self.pixmap.scaledToHeight(self.size, Qt.SmoothTransformation)
@@ -578,49 +580,52 @@ class GIFButton(QPushButton):
 
     def mouseMoveEvent(self, event):
         # 鼠标中键拖动输出
-        if self.dragging:
-            # 更改光标样式
-            # QApplication.setOverrideCursor(Qt.SizeHorCursor)
-            #setToolTo('moveSuperContext')
-            #om.MGlobal.displayWarning("Changing cursor shape")
-            # om.MGlobal.displayWarning("Changing cursor shape")
-            # omui.MGlobal.setCursor(omui.MCursor.kSizeHor)
-            self.currentPos = event.pos()
-            self.delta = self.currentPos - self.startPos
-            #print(self.delta.x())
-            self.valueX += self.delta.x()
-            self.valueY += self.delta.y()
-            self.startPos = self.currentPos
-            # 初始化最小值和最大值
-            if not hasattr(self, 'minValue') or not hasattr(self, 'maxValue'):
-                self.minValue = self.valueX
-                self.maxValue = self.valueX
+        self.dragging = True
+        # 更改光标样式
+        # QApplication.setOverrideCursor(Qt.SizeHorCursor)
+        #setToolTo('moveSuperContext')
+        #om.MGlobal.displayWarning("Changing cursor shape")
+        # om.MGlobal.displayWarning("Changing cursor shape")
+        # omui.MGlobal.setCursor(omui.MCursor.kSizeHor)
+        self.currentPos = event.pos()
+        self.delta = self.currentPos - self.startPos
+        #print(self.delta.x())
+        self.valueX += self.delta.x()
+        self.valueY += self.delta.y()
+        self.startPos = self.currentPos
+        # 初始化最小值和最大值
+        if not hasattr(self, 'minValue') or not hasattr(self, 'maxValue'):
+            self.minValue = self.valueX
+            self.maxValue = self.valueX
 
-            # 更新最小值和最大值
-            if self.valueX < self.minValue:
-                self.minValue = self.valueX
-            if self.valueX > self.maxValue:
-                self.maxValue = self.valueX
-            #print(f"Current Value: {self.valueX}, Min Value: {self.minValue}, Max Value: {self.maxValue}")
-            if event.buttons() == Qt.LeftButton:
-                self.mouseState = 'leftMoving'
-                self.executeDragCommand(event)
-        #super(GIFButton, self).mouseMoveEvent(event)
-            # 如果是鼠标中键拖动
-            elif event.buttons() == Qt.MiddleButton:
-                self.move(self.mapToParent(event.pos() - self.startPos))
-                performDrag(self, event)
-            return self.valueX 
+        # 更新最小值和最大值
+        if self.valueX < self.minValue:
+            self.minValue = self.valueX
+        if self.valueX > self.maxValue:
+            self.maxValue = self.valueX
+        #print(f"Current Value: {self.valueX}, Min Value: {self.minValue}, Max Value: {self.maxValue}")
+        if event.buttons() == Qt.LeftButton:
+            self.mouseState = 'leftMoving'
+            self.executeDragCommand(event)
+    #super(GIFButton, self).mouseMoveEvent(event)
+        # 如果是鼠标中键拖动
+        elif event.buttons() == Qt.MiddleButton:
+            self.move(self.mapToParent(event.pos() - self.startPos))
+            performDrag(self, event)
          
     def executeDragCommand(self, event):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
+            self.mouseState = 'ctrlLeftMoving'
             if self.ctrlDragCommand: exec(self.ctrlDragCommand)
         elif modifiers & Qt.ShiftModifier:
+            self.mouseState = 'shiftLeftMoving'
             if self.shiftDragCommand: exec(self.shiftDragCommand)
         elif modifiers & Qt.AltModifier:
+            self.mouseState = 'altLeftMoving'
             if self.altDragCommand: exec(self.altDragCommand)
         else:
+            self.mouseState = 'leftMoving'
             if self.dragCommand: exec(self.dragCommand)
 
     def mousePressEvent(self, event):
@@ -633,25 +638,22 @@ class GIFButton(QPushButton):
             self.mouseState = 'leftPress'
             self.setIconSize(self.iconSizeValue*1.05*0.9)
             self.executeDragCommand(event)
-            self.dragging = True
             
         if event.button() == Qt.MiddleButton:
-            self.dragging = True
             startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
         self.setIconSize(self.iconSizeValue)
-        #QApplication.restoreOverrideCursor() # 还原光标样式
-        #setToolTo('selectSuperContext')
-        if event.button() == Qt.LeftButton:
-            self.mouseState = 'leftRelease'
-            self.executeDragCommand(event)
         self.dragging = False
         self.eventPos = event.pos()
+        #QApplication.restoreOverrideCursor() # 还原光标样式
+        #setToolTo('selectSuperContext')
         #QApplication.setOverrideCursor(Qt.ArrowCursor)
         # 还原光标样式
         # omui.MGlobal.setCursor(omui.MCursor.kArrow)
-
+        if event.button() == Qt.LeftButton:
+            self.mouseState = 'leftRelease'
+            self.executeDragCommand(event)
         if event.button() == Qt.MiddleButton:
             self.singleClick = 0
             endDrag(self, event)
@@ -759,7 +761,7 @@ class GIFButton(QPushButton):
         return data
     
     def copyButton(self):
-        shelf_backup = internalVar(uad=True).replace('maya','OneTools/data/shelf_backup/')
+        shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
         shelf_copy = shelf_backup + 'shelf_copy.json'
         # 在 Python 2.7 中，open 函数不支持 encoding 参数。你需要使用 codecs 模块来处理文件的编码。
         if not os.path.exists(shelf_copy):
@@ -781,7 +783,7 @@ class GIFButton(QPushButton):
     def pasteButton(self):
         oldButtonData = self.getGIFButtonData(self)
 
-        shelf_backup = internalVar(uad=True).replace('maya','OneTools/data/shelf_backup/')
+        shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
         shelf_copy = shelf_backup + 'shelf_copy.json'
         # 在 Python 2.7 中，open 函数不支持 encoding 参数。你需要使用 codecs 模块来处理文件的编码。
         with codecs.open(shelf_copy, 'r', 'utf-8') as f:
@@ -824,7 +826,7 @@ class GIFButton(QPushButton):
             #self.update()
 
     def deleteButton(self):
-        shelf_backup = internalVar(uad=True).replace('maya','OneTools/data/shelf_backup/')
+        shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
 
         if not os.path.exists(shelf_backup):
             os.makedirs(shelf_backup)
@@ -923,7 +925,7 @@ class GIFButton(QPushButton):
     def buttonEditor(self):
         from buttonEditor import editWindow
         editButton = self
-        if window("ButtonEditorWindow",q=True, ex=True):
-            deleteUI("ButtonEditorWindow")
+        if mel.eval('window -exists ButtonEditorWindow'):
+            mel.eval('deleteUI ButtonEditorWindow')
         btw = editWindow.ButtonEditorWindow(editButton=editButton,language=self.language)
         btw.show()
