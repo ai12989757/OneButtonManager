@@ -166,20 +166,27 @@ class ButtonEditorWindow(QDialog):
         self.iconPathLayout = QHBoxLayout()
         self.iconPathLabel = QLabel(sl(u"路径:", self.language))
         self.iconPathLineEdit = QLineEdit()
-        # D:\MELcopy\OneTools\src\../icons/
+        # # 设置图标图片 /icons/
         self.iconPathLineEdit.setText(self.gifButton.icon.replace(iconPath, '')) 
         self.iconPathButton = QPushButton()
-        # 设置图标图片
         self.iconPathButton.setIcon(QIcon(iconPath+"white/OpenFile.png"))
-        # 设置按钮大小
         self.iconPathButton.setIconSize(QSize(24, 24))
         self.iconPathButton.setStyleSheet("""QPushButton {background-color: rgba(0, 0, 0, 0);border: none;}""")
         self.iconPathButton.clicked.connect(self.browseIconPath)
         self.iconPathButton.enterEvent = lambda event: self.showMenuIconBorder(self.iconPathButton, event)
         self.iconPathButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.iconPathButton, event)
+        # 内置图标浏览按钮
+        self.MayaIconBrowerButton = QPushButton()
+        self.MayaIconBrowerButton.setIcon(QIcon(":\\mayaIcon.png"))
+        self.MayaIconBrowerButton.setFixedSize(QSize(24, 24))
+        self.MayaIconBrowerButton.setStyleSheet("""QPushButton {border: none;}""")
+        self.MayaIconBrowerButton.clicked.connect(self.browseMayaIconPath)
+        self.MayaIconBrowerButton.enterEvent = lambda event: self.showMenuIconBorder(self.MayaIconBrowerButton, event) # 光标进入时显示描边效果
+        self.MayaIconBrowerButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.MayaIconBrowerButton,event) # 光标离开时隐藏描边效果
         self.iconPathLayout.addWidget(self.iconPathLabel)
         self.iconPathLayout.addWidget(self.iconPathLineEdit)
         self.iconPathLayout.addWidget(self.iconPathButton)
+        self.iconPathLayout.addWidget(self.MayaIconBrowerButton)
         self.iconParamLayout.addLayout(self.iconPathLayout)
         # 图标风格 三个单选按钮
         self.iconStyleLayout = QHBoxLayout()
@@ -335,7 +342,7 @@ class ButtonEditorWindow(QDialog):
         # 内置图标浏览按钮
         self.menuMayaIconBrowerButton = QPushButton()
         self.menuMayaIconBrowerButton.setIcon(QIcon(":\\mayaIcon.png"))
-        self.menuMayaIconBrowerButton.setFixedSize(QSize(14, 24))
+        self.menuMayaIconBrowerButton.setFixedSize(QSize(14, 14))
         self.menuMayaIconBrowerButton.setStyleSheet("""QPushButton {border: none;}""")
         self.menuMayaIconBrowerButton.clicked.connect(self.setMenuMayaIcon)
         self.menuMayaIconBrowerButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuMayaIconBrowerButton, event) # 光标进入时显示描边效果
@@ -677,22 +684,14 @@ class ButtonEditorWindow(QDialog):
         resBrowser = resourceBrowser.resourceBrowser()
         icon = resBrowser.run()
         del resBrowser
-        return path
         if icon:
-            if ':\\' not in icon:
-                icon = ':\\'+icon
-            try:
-                if self.menuListWidget.currentRow() != -1:
-                    row = self.menuListWidget.currentRow()
-                    menuItem = self.menuItems[row]
-                    if icon != self.tempIcon:
-                        menuItem["icon"] = icon
-            except:
-                pass
+            icon = ':\\'+icon
+            self.setMenuIcon(icon)
+            self.updataMenuAction()
 
     def setMenuIcon(self, icon):
         if icon:
-            if not os.path.exists(icon):
+            if ':\\' not in icon and not os.path.exists(icon):
                 icon = iconPath+icon
             self.menuIconButton.movie = None
             if icon.endswith('.gif'):
@@ -951,6 +950,24 @@ class ButtonEditorWindow(QDialog):
             if ('Drag' in commandList[row] or 'drag' in commandList[row]):
                 self.commandEdit.setPlaceholderText(sl(u"请输入命令\n使用 print(self.value) 获取可调用的值\n例子: \n# 沿x轴移动当前选中对象，移动距离为拖动值*0.1\nmove(self.valueX*0.1,0,0)",self.language))
 
+    def browseMayaIconPath(self):
+        import maya.app.general.resourceBrowser as resourceBrowser
+        resBrowser = resourceBrowser.resourceBrowser()
+        iconFile = resBrowser.run()
+        del resBrowser
+        if iconFile:
+            iconFile = ':\\'+iconFile
+            self.iconPath = iconFile
+            # 将路径设置到输入框
+            self.iconPathLineEdit.setText(self.iconPath.replace(self.iconPathDrt, ''))
+            # 更新图标
+            self.gifButton.movie = None
+            self.gifButton.icon = self.iconPath
+            self.gifButton.iconChanged('default')
+            self.gifButton.pixmap = QPixmap(self.iconPath)
+            self.gifButton.pixmap = self.gifButton.pixmap.scaledToHeight(128, Qt.SmoothTransformation)
+            self.gifButton.setIcon(QIcon(self.gifButton.pixmap))
+
     # 切换命令列表时更新菜单参数
     def browseIconPath(self):
         # 打开文件对话框, 默认打开路径为 iconPath
@@ -974,7 +991,9 @@ class ButtonEditorWindow(QDialog):
                 self.gifButton.movie = None
                 self.gifButton.icon = self.iconPath
                 self.gifButton.iconChanged('default')
-                self.gifButton.setIcon(QIcon(self.iconPath))
+                self.gifButton.pixmap = QPixmap(self.iconPath)
+                self.gifButton.pixmap = self.gifButton.pixmap.scaledToHeight(128, Qt.SmoothTransformation)
+                self.gifButton.setIcon(QIcon(self.gifButton.pixmap))
 
         #return self.iconPath
 
