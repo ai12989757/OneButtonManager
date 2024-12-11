@@ -13,7 +13,7 @@
 
 ## Environment
 
-- Maya2020+
+- Maya2017+
   - Tested with 2020, 2022, 2025
 
 ## Installation

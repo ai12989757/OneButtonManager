@@ -84,7 +84,7 @@ class ShelfButtonManager(QWidget):
         if self.language == language:
             return
         self.language = language
-        #self.menu = self.createContextMenu()
+        self.menu = self.createContextMenu()
         # 修改 ShelfAutoSetup.mel 文件，第二行的语言设置
         with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'r', encoding='utf-8') as f:
             data = f.readlines()
@@ -531,7 +531,7 @@ class ShelfButtonManager(QWidget):
         # self.gifButton.setGeometry(0, 5, 0, 0) # not work
 
     def addSeparator(self):
-        self.separator = GIFButton.Separator(parent=self.shelfParent)
+        self.separator = GIFButton.Separator(parent=self.shelfParent,language=self.language)
         if self.mayaVersion < 2022:
             self.shelfLayoutInfo.addWidget(self.separator)
         elif self.mayaVersion >= 2022:
@@ -841,7 +841,7 @@ class ShelfButtonManager(QWidget):
                 elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
             else:
-                if resourceManager(nameFilter=imagePath):
+                if mel.eval('resourceManager -nameFilter '+imagePath):
                     imagePath = ':\\'+imagePath
                 elif imagePath in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath]
@@ -924,7 +924,10 @@ class ShelfButtonManager(QWidget):
             mel.eval('addNewShelfTab("'+shelfName+'")')
         else:
             # 弹出窗口
-            result = mel.eval('confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
+            if self.language == 0:
+                result = mel.eval('confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
+            elif self.language == 1:
+                result = mel.eval('confirmDialog -title "Warning" -message "The shelf already exists, do you want to overwrite it?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
             # result = confirmDialog(
             #     title=u'警告',
             #     message=u'工具栏已存在,是否覆盖?',

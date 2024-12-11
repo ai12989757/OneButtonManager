@@ -231,8 +231,9 @@ class gifIconMenuAction(QAction):
         self.setIcon(QIcon(self.current_frame))
 
 class Separator(QPushButton):
-    def __init__(self, parent=None, ):
+    def __init__(self, parent=None, language=0):
         super(Separator, self).__init__(parent)
+        self.language = language
         self.setIconSize(QSize(2, 42))
         # 绘制分隔符
         self.pixmap = QPixmap(2, 42)
@@ -247,7 +248,7 @@ class Separator(QPushButton):
         self.iconSizeValue = QSize(21, 42)
         # 添加一个右击菜单
         self.menu = QMenu(self)
-        self.deleteAction = QAction(u"删除", self)
+        self.deleteAction = QAction(QIcon(os.path.join(iconPath, "red/Delete.png")), sl(u"删除",self.language), self)
         self.deleteAction.triggered.connect(self.deleteButton)
         self.menu.addAction(self.deleteAction)
 
@@ -380,7 +381,7 @@ class GIFButton(QPushButton):
         QApplication.instance().removeEventFilter(self)
         # 安装事件过滤器, 用于监听键盘事件,但是导致maya内部窗口异常卡顿，改为在鼠标进入时安装，鼠标离开时卸载
         #QApplication.instance().installEventFilter(self)
-    
+
     def eventFilter(self, obj, event):
         if isinstance(event, QEvent):
             if self.underMouse():
@@ -565,7 +566,7 @@ class GIFButton(QPushButton):
     def leaveEvent(self, event):
         if not self.dragging:
             self.setGraphicsEffect(None)
-            self.colorAnimation.stop()
+            if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
             QApplication.instance().removeEventFilter(self) # 移除事件过滤器
             if self.style == "hover" and self.movie:
                 self.movie.stop()  # 鼠标离开时停止播放 GIF
@@ -579,8 +580,6 @@ class GIFButton(QPushButton):
             #QObject.event(self, event)
 
     def mouseMoveEvent(self, event):
-        # 鼠标中键拖动输出
-        self.dragging = True
         # 更改光标样式
         # QApplication.setOverrideCursor(Qt.SizeHorCursor)
         #setToolTo('moveSuperContext')
@@ -605,27 +604,26 @@ class GIFButton(QPushButton):
             self.maxValue = self.valueX
         #print(f"Current Value: {self.valueX}, Min Value: {self.minValue}, Max Value: {self.maxValue}")
         if event.buttons() == Qt.LeftButton:
-            self.mouseState = 'leftMoving'
-            self.executeDragCommand(event)
-    #super(GIFButton, self).mouseMoveEvent(event)
+            self.executeDragCommand(event,'leftMoving')
+        #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
         elif event.buttons() == Qt.MiddleButton:
             self.move(self.mapToParent(event.pos() - self.startPos))
             performDrag(self, event)
          
-    def executeDragCommand(self, event):
+    def executeDragCommand(self, event,mouseState='leftMoving'):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
-            self.mouseState = 'ctrlLeftMoving'
+            self.mouseState = 'ctrl'+mouseState.capitalize()
             if self.ctrlDragCommand: exec(self.ctrlDragCommand)
         elif modifiers & Qt.ShiftModifier:
-            self.mouseState = 'shiftLeftMoving'
+            self.mouseState = 'shift'+mouseState.capitalize()
             if self.shiftDragCommand: exec(self.shiftDragCommand)
         elif modifiers & Qt.AltModifier:
-            self.mouseState = 'altLeftMoving'
+            self.mouseState = 'alt'+mouseState.capitalize()
             if self.altDragCommand: exec(self.altDragCommand)
         else:
-            self.mouseState = 'leftMoving'
+            self.mouseState = mouseState
             if self.dragCommand: exec(self.dragCommand)
 
     def mousePressEvent(self, event):
@@ -635,9 +633,9 @@ class GIFButton(QPushButton):
         self.singleClick += 1
         self.startPos = event.pos()
         if event.button() == Qt.LeftButton:
-            self.mouseState = 'leftPress'
+            self.executeDragCommand(event,'leftPress')
             self.setIconSize(self.iconSizeValue*1.05*0.9)
-            self.executeDragCommand(event)
+            self.dragging = True
             
         if event.button() == Qt.MiddleButton:
             startDrag(self, event)
@@ -652,8 +650,7 @@ class GIFButton(QPushButton):
         # 还原光标样式
         # omui.MGlobal.setCursor(omui.MCursor.kArrow)
         if event.button() == Qt.LeftButton:
-            self.mouseState = 'leftRelease'
-            self.executeDragCommand(event)
+            self.executeDragCommand(event,'leftRelease')
         if event.button() == Qt.MiddleButton:
             self.singleClick = 0
             endDrag(self, event)
