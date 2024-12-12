@@ -344,13 +344,24 @@ class ShelfButtonManager(QWidget):
                 f.write(setupCode)
             return
         
+        # 按行读取 userSetup 文件
         with codecs.open(userSetupFile, 'r', 'utf-8') as f:
-            userSetup = f.read()
-        if 'ShelfAutoSetup' in userSetup:
-            return
+            userSetup = f.readlines()
+        # 删除 'ShelfAutoSetup' 行
+        userSetup = [line for line in userSetup if 'ShelfAutoSetup' not in line]
+        # 检查并添加 'GifButton_AutoLoad;' 行 如果有则删除
+        if 'GifButton_AutoLoad' in ''.join(userSetup):
+            userSetup = [line for line in userSetup if 'GifButton_AutoLoad' not in line]
+            setupCode += 'GifButton_AutoLoad;\n'
+        # 检查并添加 'GifButton_AutoSave;' 行
+        if 'GifButton_AutoSave;' in ''.join(userSetup):
+            userSetup = [line for line in userSetup if 'GifButton_AutoSave' not in line]
+            setupCode += 'GifButton_AutoSave;\n'
+        # 添加 setupCode 到 userSetup
+        userSetup.append(setupCode)
         # 写入 userSetup 文件
-        with codecs.open(userSetupFile, 'a', 'utf-8') as f:
-            f.write(setupCode)
+        with codecs.open(userSetupFile, 'w', 'utf-8') as f:
+            f.writelines(userSetup)
 
     def setAutoLoadJob(self):
         userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
@@ -369,7 +380,7 @@ class ShelfButtonManager(QWidget):
                         f.write(setupCode)
                     
                     if self.language == 0:
-                        mel.eval('print("// 结果: 开启自动加载工具栏\\n")')
+                        mel.eval(u'print("// 结果: 开启自动加载工具栏\\n")')
                     elif self.language == 1:
                         mel.eval('print("// Result: Auto load GIFShelf when Maya starts\\n")')
                     break
@@ -401,11 +412,9 @@ class ShelfButtonManager(QWidget):
                         with open(userSetupFile, 'a') as f:
                             setupCode = 'GifButton_AutoSave;\n'
                             f.write(setupCode)
-                    for job in mel.eval('scriptJob -lj'):
-                        if 'autoSaveGifShelf' in job:
-                            break
-                    jboCode = 'scriptJob -e "quitApplication" "python(\\"from shelfManager import ShelfButtonManager\\\\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\\\\nshelf_save.autoSaveGifShelf()\\")"'
-                    mel.eval(jboCode)
+                    if not any('autoSaveGifShelf' in job for job in mel.eval('scriptJob -lj')):
+                        jboCode = 'scriptJob -e "quitApplication" "python(\\"from shelfManager import ShelfButtonManager\\\\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\\\\nshelf_save.autoSaveGifShelf()\\")"'
+                        mel.eval(jboCode)
                     i.switch = True
                     if self.language == 0:
                         mel.eval(u'print("// 结果: 开启自动保存工具栏\\n")')
@@ -443,7 +452,7 @@ class ShelfButtonManager(QWidget):
             if i.text() == sl(u"自动保存工具栏",self.language):
 
                 for job in mel.eval('scriptJob -lj'):
-                    if 'autoSaveGifShelf' in job:
+                    if 'autoSaveGifShelf' in job and 'GifButton_AutoSave' in userSetup:
                         i.setIcon(QIcon(':\\switchOn.png'))
                         i.switch = True
                         break

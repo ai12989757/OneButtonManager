@@ -52,15 +52,7 @@ class ButtonEditorWindow(QDialog):
         self.resize(800, 900)
         self.iconPathDrt = iconPath.replace('\\', '/').replace('src/../', '')
 
-        # 创建一个整体垂直布局
-        self.globalLayout = QVBoxLayout(Alignment=Qt.AlignTop)
-        self.setLayout(self.globalLayout)
-
-        # 布局第一行 图标 和 图标参数
-        self.iconLayout = QHBoxLayout(Alignment=Qt.AlignTop)
-        self.globalLayout.addLayout(self.iconLayout)
-
-        # 图标
+        # 初始化图标
         self.buttonDict = {
             'icon': self.editButton.icon,
             'label': self.editButton.label,
@@ -86,19 +78,6 @@ class ButtonEditorWindow(QDialog):
             'language': self.language
         }
 
-        self.gifButton = GIFButton.GIFButton(**self.buttonDict)
-                                   
-        # 断开所有gifIconMenuAction的movie
-        for acticon in self.gifButton.menu.actions():
-            if not acticon.isSeparator() and hasattr(acticon, 'movie') and acticon.movie:
-                pass
-                #print(acticon.movie)
-                # acticon.movie.frameChanged.disconnect(None, None, None)
-                # acticon.movie.stop()
-                # acticon.movie = None
-                    
-        #self.gifButton.setFixedSize(QSize(128, 128))
-        self.iconLayout.addWidget(self.gifButton)
         self.menuItems =  OrderedDict()
         self.menuItemIndex = 0
 
@@ -114,6 +93,8 @@ class ButtonEditorWindow(QDialog):
             for i, acticon in enumerate(self.editButton.menu.actions())
             if not acticon.isSeparator() and acticon.text() not in [sl(u'编辑', self.language), sl(u'删除', self.language)]
         }
+
+        self.gifButton = GIFButton.GIFButton(**self.buttonDict)
         # 预览按钮添加菜单项
         for key in self.menuItems.keys():
             menuItem = self.menuItems[key]
@@ -124,12 +105,30 @@ class ButtonEditorWindow(QDialog):
                 icon=menuItem["icon"],
                 annotation=menuItem["annotation"]
             )
-            
+
+        self.setUI()
+
+    def setUI(self):
+        # 创建一个整体垂直布局
+        self.globalLayout = QVBoxLayout(Alignment=Qt.AlignTop)
+        self.setLayout(self.globalLayout)
+        # 布局第一行 图标 和 图标参数
+        self.createIconEditLayout()
+        # 布局第二行 两个TAP页 点击命令 和 右击菜单
+        self.createCommandEditLayout()
+        # 布局第三行 应用按钮
+        self.createApplyLayout()
+
+    def createIconEditLayout(self):
+        # 左右两个布局 左边是图标预览，右边是图标参数
+        self.iconLayout = QHBoxLayout(Alignment=Qt.AlignTop)
+        self.globalLayout.addLayout(self.iconLayout)
+        # 图标预览
+        self.iconLayout.addWidget(self.gifButton)
         # 图标参数布局
         self.iconParamLayout = QVBoxLayout()
         self.iconLayout.addLayout(self.iconParamLayout)
-
-        # 图标标签 标签 输入框
+        # 图标标签 名称 输入框
         self.iconLabelLayout = QHBoxLayout()
         self.iconLabel = QLabel(sl(u"名称:", self.language))
         self.iconLabelLineEdit = QLineEdit()
@@ -137,27 +136,13 @@ class ButtonEditorWindow(QDialog):
         self.iconLabelLayout.addWidget(self.iconLabel)
         self.iconLabelLayout.addWidget(self.iconLabelLineEdit)
         self.iconParamLayout.addLayout(self.iconLabelLayout)
-        # 图标路径 图标 输入框 按钮
+        # 图标路径 路劲 输入框 按钮 maya按钮
         self.iconPathLayout = QHBoxLayout()
         self.iconPathLabel = QLabel(sl(u"路径:", self.language))
         self.iconPathLineEdit = QLineEdit()
-        # # 设置图标图片 /icons/
         self.iconPathLineEdit.setText(self.gifButton.icon.replace(iconPath, '')) 
-        self.iconPathButton = QPushButton()
-        self.iconPathButton.setIcon(QIcon(iconPath+"white/OpenFile.png"))
-        self.iconPathButton.setIconSize(QSize(24, 24))
-        self.iconPathButton.setStyleSheet("""QPushButton {background-color: rgba(0, 0, 0, 0);border: none;}""")
-        self.iconPathButton.clicked.connect(self.browseIconPath)
-        self.iconPathButton.enterEvent = lambda event: self.showMenuIconBorder(self.iconPathButton, event)
-        self.iconPathButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.iconPathButton, event)
-        # 内置图标浏览按钮
-        self.MayaIconBrowerButton = QPushButton()
-        self.MayaIconBrowerButton.setIcon(QIcon(":\\mayaIcon.png"))
-        self.MayaIconBrowerButton.setFixedSize(QSize(24, 24))
-        self.MayaIconBrowerButton.setStyleSheet("""QPushButton {border: none;}""")
-        self.MayaIconBrowerButton.clicked.connect(self.browseMayaIconPath)
-        self.MayaIconBrowerButton.enterEvent = lambda event: self.showMenuIconBorder(self.MayaIconBrowerButton, event) # 光标进入时显示描边效果
-        self.MayaIconBrowerButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.MayaIconBrowerButton,event) # 光标离开时隐藏描边效果
+        self.iconPathButton = self.createIconButton( 20,20, iconPath + "white/OpenFile.png", self.browseIconPath)
+        self.MayaIconBrowerButton = self.createIconButton( 20,20, ":\\mayaIcon.png", self.browseMayaIconPath)
         self.iconPathLayout.addWidget(self.iconPathLabel)
         self.iconPathLayout.addWidget(self.iconPathLineEdit)
         self.iconPathLayout.addWidget(self.iconPathButton)
@@ -166,24 +151,9 @@ class ButtonEditorWindow(QDialog):
         # 图标风格 三个单选按钮
         self.iconStyleLayout = QHBoxLayout()
         self.iconStyleLabel = QLabel(sl(u"动画:", self.language))
-        self.iconStyleAuto = QRadioButton(sl(u"循环播放", self.language))
-        # 连接点击事件
-        self.iconStyleAuto.clicked.connect(lambda: self.iconStyleChanged('auto'))
-        if self.gifButton.style == "auto":
-            self.iconStyleAuto.setChecked(True)
-        self.iconStyleHover = QRadioButton(sl(u"离开停止", self.language))
-        self.iconStyleHover.clicked.connect(lambda: self.iconStyleChanged('hover'))
-        if self.gifButton.style == "hover":
-            self.iconStyleHover.setChecked(True)
-        self.iconStylePause = QRadioButton(sl(u"离开暂停", self.language))
-        self.iconStylePause.clicked.connect(lambda: self.iconStyleChanged('pause'))
-        if self.gifButton.style == "pause":
-            self.iconStylePause.setChecked(True)
-        # 如果 不是 GIF 图片，则禁用动画按钮
-        if not self.gifButton.icon.lower().endswith('.gif'):
-            self.iconStyleAuto.setEnabled(False)
-            self.iconStyleHover.setEnabled(False)
-            self.iconStylePause.setEnabled(False)
+        self.iconStyleAuto = self.createRadioButton(sl(u"循环播放", self.language), 'auto')
+        self.iconStyleHover = self.createRadioButton(sl(u"离开停止", self.language), 'hover')
+        self.iconStylePause = self.createRadioButton(sl(u"离开暂停", self.language), 'pause')
         self.iconStyleLayout.addWidget(self.iconStyleLabel)
         self.iconStyleLayout.addWidget(self.iconStyleAuto)
         self.iconStyleLayout.addWidget(self.iconStyleHover)
@@ -202,14 +172,19 @@ class ButtonEditorWindow(QDialog):
         self.iconAnnotationLayout.addWidget(self.iconAnnotationLineEdit)
         self.iconParamLayout.addLayout(self.iconAnnotationLayout)
 
-        # 命令参数布局
-        self.commandLayout = QHBoxLayout()
-        # 向上对齐 iconLayout
-        self.commandLayout.setAlignment(Qt.AlignTop)
-        self.globalLayout.addLayout(self.commandLayout,stretch=1)
+    def createCommandEditLayout(self):
+        # 总命令布局
+        self.commandAllLayout = QHBoxLayout()
+        self.commandAllLayout.setAlignment(Qt.AlignTop)
+        self.globalLayout.addLayout(self.commandAllLayout,stretch=1)
+        # 命令编辑总布局 点击命令 和 右击菜单
         self.commandTabWidget = QTabWidget()
-        self.commandLayout.addWidget(self.commandTabWidget)
-        # 命令布局，左边是命令列表，右边是命令输入框
+        self.commandAllLayout.addWidget(self.commandTabWidget)
+        self.createClickCommandEditLayout()
+        self.createMenuCommandEditLayout()
+        
+    def createClickCommandEditLayout(self):
+         # 命令布局，左边是命令列表，右边是命令输入框
         self.commandTab = QWidget()
         self.commandLayout = QHBoxLayout()
         self.commandListLayout = QVBoxLayout()
@@ -217,29 +192,24 @@ class ButtonEditorWindow(QDialog):
         # 命令布局
         self.commandTab.setLayout(self.commandLayout)
         self.commandTabWidget.addTab(self.commandTab, sl(u"点击命令", self.language))
-
         # 添加一个左右分区可以拖动调节的分区
         self.splitter = QSplitter(Qt.Horizontal)
         self.commandListLayout.addWidget(self.splitter)
+        
         # 创建一个命令列表
         self.commandListWidget = QListWidget()
         self.splitter.addWidget(self.commandListWidget)
-        self.commandListWidget.addItem(sl(u"点击命令", self.language))
-        self.commandListWidget.addItem(sl(u"双击命令", self.language))
-        self.commandListWidget.addItem(sl(u"Ctrl单击", self.language))
-        self.commandListWidget.addItem(sl(u"Alt单击", self.language))
-        self.commandListWidget.addItem(sl(u"Shift单击", self.language))
-        self.commandListWidget.addItem(sl(u"Ctrl+Alt单击", self.language))
-        self.commandListWidget.addItem(sl(u"Ctrl+Shift单击", self.language))
-        self.commandListWidget.addItem(sl(u"Alt+Shift单击", self.language))
-        self.commandListWidget.addItem(sl(u"Ctrl+Alt+Shift单击", self.language))
-        self.commandListWidget.addItem(sl(u"左击拖动", self.language))
-        self.commandListWidget.addItem(sl(u"Ctrl左击拖动", self.language))
-        self.commandListWidget.addItem(sl(u"Alt左击拖动", self.language))
-        self.commandListWidget.addItem(sl(u"Shift左击拖动", self.language))
+        commandItems = [
+            u"点击命令", u"双击命令", u"Ctrl单击", u"Alt单击", u"Shift单击",
+            u"Ctrl+Alt单击", u"Ctrl+Shift单击", u"Alt+Shift单击", u"Ctrl+Alt+Shift单击",
+            u"左击拖动", u"Ctrl左击拖动", u"Alt左击拖动", u"Shift左击拖动"
+        ]
+        for item in commandItems:
+            self.commandListWidget.addItem(sl(item, self.language))
 
         self.commandEditWidget = QWidget()
         self.commandEditLayout = QVBoxLayout()
+        self.commandEditLayout.setContentsMargins(0, 0, 0, 0)
         self.commandEditWidget.setLayout(self.commandEditLayout)
         self.commandTypeLayout = QHBoxLayout()
         self.commandEditLayout.addLayout(self.commandTypeLayout)
@@ -257,10 +227,6 @@ class ButtonEditorWindow(QDialog):
         self.commandEdit = QTextEdit()
         self.commandEditLayout.addWidget(self.commandEdit)
         self.commandEdit.textChanged.connect(self.editCommand)
-        # 菜单参数布局
-        self.menuLayout = QHBoxLayout()
-        self.globalLayout.addLayout(self.menuLayout)
-        self.menuCommandEdit = QTextEdit()  # Ensure menuEdit is defined
         self.highlighter = KeywordHighlighter(self.commandEdit.document())
         # 不自动换行
         self.commandEdit.setLineWrapMode(QTextEdit.NoWrap)
@@ -275,27 +241,29 @@ class ButtonEditorWindow(QDialog):
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 7)
 
-        # 菜单布局，左边是菜单图标、菜单控制按钮、菜单列表，右边是语言选择、菜单提示、菜单命令输入框
+    def createMenuCommandEditLayout(self):
+        # 菜单TAP
         self.menuTab = QWidget()
         self.menuLayout = QHBoxLayout()
+        self.commandTabWidget.addTab(self.menuTab, sl(u"右击菜单", self.language))
+        self.menuTab.setLayout(self.menuLayout)
+        # 菜单布局，左边是菜单图标、菜单控制按钮、菜单列表，右边是语言选择、菜单提示、菜单命令输入框
         self.menuListLayout = QVBoxLayout()
         self.menuLayout.addLayout(self.menuListLayout)
 
-        # 菜单布局
-        self.menuTab.setLayout(self.menuLayout)
-        self.commandTabWidget.addTab(self.menuTab, sl(u"右击菜单", self.language))
         # 添加一个左右分区可以拖动调节的分区
         self.menuSplitter = QSplitter(Qt.Horizontal)
         self.menuListLayout.addWidget(self.menuSplitter)
         # 创建一个菜单列表
         self.menuListLeftWidget = QWidget() # 菜单命令列表总体布局
-        self.menuIconLayout = QHBoxLayout() # 菜单命令列表按钮布局
         self.menuListLeftLayout = QVBoxLayout() # 菜单命令列表总体布局
+        self.menuListLeftLayout.setContentsMargins(0, 0, 0, 0)
         self.menuListLeftWidget.setLayout(self.menuListLeftLayout)
         self.menuIconEditLayoutAll = QHBoxLayout() # 菜单图标编辑总体布局 左边一个图标 右边三行
         self.menuIconEditLayout = QVBoxLayout() # 菜单图标编辑布局 存放单个图标
         self.menuListLeftLayout.addLayout(self.menuIconEditLayoutAll)
         self.menuIconEditLayoutAll.addLayout(self.menuIconEditLayout)
+
         self.menuIconButton = QPushButton()
         self.menuIconButton.setFixedSize(QSize(42, 42))
         self.menuIconButton.setIconSize(QSize(42, 42))
@@ -315,42 +283,12 @@ class ButtonEditorWindow(QDialog):
         self.menuIconLayout1.setAlignment(Qt.AlignRight|Qt.AlignBottom)
         self.menuIconEditLayoutAll.addLayout(self.menuIconLayout1)
         # 内置图标浏览按钮
-        self.menuMayaIconBrowerButton = QPushButton()
-        self.menuMayaIconBrowerButton.setIcon(QIcon(":\\mayaIcon.png"))
-        self.menuMayaIconBrowerButton.setFixedSize(QSize(14, 14))
-        self.menuMayaIconBrowerButton.setStyleSheet("""QPushButton {border: none;}""")
-        self.menuMayaIconBrowerButton.clicked.connect(self.setMenuMayaIcon)
-        self.menuMayaIconBrowerButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuMayaIconBrowerButton, event) # 光标进入时显示描边效果
-        self.menuMayaIconBrowerButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuMayaIconBrowerButton,event) # 光标离开时隐藏描边效果
+        self.menuMayaIconBrowerButton = self.createIconButton(14,14, ":\\mayaIcon.png", self.setMenuMayaIcon)
         # 添加菜单按钮 上移 下移 添加 删除
-        self.menuUpButton = QPushButton()
-        self.menuUpButton.setIcon(QIcon(":\\moveLayerUp.png"))
-        self.menuUpButton.setFixedSize(QSize(14, 24))
-        self.menuUpButton.setStyleSheet("""QPushButton {border: none;}""")
-        self.menuUpButton.clicked.connect(self.moveMenuItemUp)
-        self.menuUpButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuUpButton, event) # 光标进入时显示描边效果
-        self.menuUpButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuUpButton,event) # 光标离开时隐藏描边效果
-        self.menuDownButton = QPushButton()
-        self.menuDownButton.setIcon(QIcon(":\\moveLayerDown.png"))
-        self.menuDownButton.setFixedSize(QSize(14, 24))
-        self.menuDownButton.setStyleSheet("""QPushButton {border: none;}""")
-        self.menuDownButton.clicked.connect(self.moveMenuItemDown)
-        self.menuDownButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuDownButton, event)
-        self.menuDownButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuDownButton, event)
-        self.menuAddButton = QPushButton()
-        self.menuAddButton.setIcon(QIcon(":\\newLayerEmpty.png"))
-        self.menuAddButton.setFixedSize(QSize(14, 24))
-        self.menuAddButton.setStyleSheet("""QPushButton {border: none;}""")
-        self.menuAddButton.clicked.connect(self.addMenuItem)
-        self.menuAddButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuAddButton, event)
-        self.menuAddButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuAddButton, event)
-        self.menuRemoveButton = QPushButton()
-        self.menuRemoveButton.setIcon(QIcon(":\\delete.png"))
-        self.menuRemoveButton.setFixedSize(QSize(14, 24))
-        self.menuRemoveButton.clicked.connect(self.removeMenuItem)
-        self.menuRemoveButton.enterEvent = lambda event: self.showMenuIconBorder(self.menuRemoveButton, event)
-        self.menuRemoveButton.leaveEvent = lambda event: self.hideMenuIconBorder(self.menuRemoveButton, event)
-        self.menuRemoveButton.setStyleSheet("""QPushButton {border: none;}""")
+        self.menuUpButton = self.createIconButton(14,20, ":\\moveLayerUp.png", self.moveMenuItemUp)
+        self.menuDownButton = self.createIconButton(14,20, ":\\moveLayerDown.png", self.moveMenuItemDown)
+        self.menuAddButton = self.createIconButton(14,20, ":\\newLayerEmpty.png", self.addMenuItem)
+        self.menuRemoveButton = self.createIconButton(14,20, ":\\delete.png", self.removeMenuItem)
         # 添加 menu 编辑按钮
         self.menuIconLayout1.addWidget(self.menuMayaIconBrowerButton)
         self.menuIconLayout1.addWidget(self.menuUpButton)
@@ -362,7 +300,7 @@ class ButtonEditorWindow(QDialog):
         self.menuListLeftLayout.addWidget(self.menuListWidget)
         self.menuSplitter.addWidget(self.menuListLeftWidget)
         # 创建一个菜单输入框
-        #self.menuCommandEdit = QTextEdit()
+        self.menuCommandEdit = QTextEdit()
         # 高亮显示 self.keywords[] 中的关键字
         self.highlighter = KeywordHighlighter(self.menuCommandEdit.document())
         # 不自动换行
@@ -375,6 +313,7 @@ class ButtonEditorWindow(QDialog):
         #self.menuCommandEdit.setTabChangesFocus(False)
         self.menuCommandEditWidget = QWidget()
         self.menuCommandEditLayout = QVBoxLayout()
+        self.menuCommandEditLayout.setContentsMargins(0, 0, 0, 0)
 
         self.menuCommandEditWidget.setLayout(self.menuCommandEditLayout)
         self.menuTypeLayout = QHBoxLayout()
@@ -399,9 +338,6 @@ class ButtonEditorWindow(QDialog):
         self.menuAnnotationLayout.addWidget(self.menuAnnotationLineEdit)
         self.menuCommandEditLayout.addWidget(self.menuCommandEdit)
         self.menuSplitter.addWidget(self.menuCommandEditWidget)
-        # splitter 左30% 右70%
-        self.menuSplitter.setStretchFactor(0, 3)
-        self.menuSplitter.setStretchFactor(1, 7)
         # # 添加菜单项
         for key in self.menuItems.keys():
             menuItem = self.menuItems[key]
@@ -412,7 +348,10 @@ class ButtonEditorWindow(QDialog):
         self.menuListWidget.currentRowChanged.connect(self.updateMenuEdit)
         # 双击菜单项时更新菜单输入框，双击时编辑菜单项名称
         self.menuListWidget.itemDoubleClicked.connect(self.editMenuName)
+        self.menuSplitter.setStretchFactor(0, 3)
+        self.menuSplitter.setStretchFactor(1, 7)
 
+    def createApplyLayout(self):
         # 应用布局
         self.applyLayout = QHBoxLayout()
         # 应用按钮
@@ -429,7 +368,27 @@ class ButtonEditorWindow(QDialog):
         self.applyLayout.addWidget(self.applyCloseButton)
         self.applyLayout.addWidget(self.closeButton)
         self.globalLayout.addLayout(self.applyLayout)
-                                     
+
+    def createIconButton(self, sizeW, sizeH, iconPath, clickHandler):
+        button = QPushButton()
+        button.setIcon(QIcon(iconPath))
+        #button.setIconSize(QSize(sizeW, sizeH))
+        button.setFixedSize(QSize(sizeW, sizeH))
+        button.setStyleSheet("QPushButton {background-color: rgba(0, 0, 0, 0);border: none;}")
+        button.clicked.connect(clickHandler)
+        button.enterEvent = lambda event: self.showMenuIconBorder(button, event)
+        button.leaveEvent = lambda event: self.hideMenuIconBorder(button, event)
+        return button
+
+    def createRadioButton(self, text, style):
+        radioButton = QRadioButton(text)
+        radioButton.clicked.connect(lambda: self.iconStyleChanged(style))
+        if self.gifButton.style == style:
+            radioButton.setChecked(True)
+        if not self.gifButton.icon.lower().endswith('.gif'):
+            radioButton.setEnabled(False)
+        return radioButton
+
     def editMenuCommandType(self):
         row = self.menuListWidget.currentRow()
         if row == -1 or row not in self.menuItems:
@@ -739,50 +698,59 @@ class ButtonEditorWindow(QDialog):
         if index == 0:
             self.commandEdit.installEventFilter(self)
             self.menuCommandEdit.removeEventFilter(self)
-        else:
+        elif index == 1:
             self.commandEdit.removeEventFilter(self)
             self.menuCommandEdit.installEventFilter(self)
 
-    def eventFilter(self, obj, event):
-        if (obj == self.menuCommandEdit or obj == self.commandEdit) and event.type() == QEvent.KeyPress:
-            # 按下 Tab 键时不插入制表符，而是输入 4 个空格
-            if event.key() == Qt.Key_Tab:
-                cursor = obj.textCursor()
-                if cursor.hasSelection():
-                    # 获取选中的文本
-                    selected_text = cursor.selectedText()
-                    # 获取选中的行数
-                    start = cursor.selectionStart()
-                    end = cursor.selectionEnd()
-                    cursor.setPosition(start)
-                    cursor.movePosition(QTextCursor.StartOfLine)
-                    start_line = cursor.blockNumber()
-                    cursor.setPosition(end)
-                    cursor.movePosition(QTextCursor.StartOfLine)
-                    end_line = cursor.blockNumber()
-                    # 在每一行的前端添加 4 个空格
-                    for line in range(start_line, end_line + 1):
-                        cursor.movePosition(QTextCursor.StartOfLine)
-                        cursor.insertText(" " * 4)
-                        cursor.movePosition(QTextCursor.NextBlock)
-                else:
-                    cursor.insertText(" " * 4)
-                return True
-            # 按下 Shift + Tab 时删除 4 个空格
-            elif event.key() == Qt.Key_Backtab:
-                cursor = obj.textCursor()
+    def handleTabPress(self, obj):
+        cursor = obj.textCursor()
+        if cursor.hasSelection():
+            # 获取选中的文本
+            selected_text = cursor.selectedText()
+            # 获取选中的行数
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            cursor.setPosition(start)
+            cursor.movePosition(QTextCursor.StartOfLine)
+            start_line = cursor.blockNumber()
+            cursor.setPosition(end)
+            cursor.movePosition(QTextCursor.StartOfLine)
+            end_line = cursor.blockNumber()
+            # 在每一行的前端添加 4 个空格
+            for line in range(start_line, end_line + 1):
                 cursor.movePosition(QTextCursor.StartOfLine)
-                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 4)
-                selected_text = cursor.selectedText()
-                if selected_text.startswith(" "):
-                    if selected_text == "    ":
-                        cursor.removeSelectedText()
-                    else:
-                        # 删除不足 4 个的空格
-                        cursor.movePosition(QTextCursor.StartOfLine)
-                        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, selected_text.count(" "))
-                        cursor.removeSelectedText()
-                return True
+                cursor.insertText(" " * 4)
+                cursor.movePosition(QTextCursor.NextBlock)
+        else:
+            cursor.insertText(" " * 4)
+        return True
+
+    def handleShiftTabPress(self, obj):
+        cursor = obj.textCursor()
+        cursor.movePosition(QTextCursor.StartOfLine)
+        cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 4)
+        selected_text = cursor.selectedText()
+        if selected_text.startswith(" "):
+            if selected_text == "    ":
+                cursor.removeSelectedText()
+            else:
+                # 删除不足 4 个的空格
+                cursor.movePosition(QTextCursor.StartOfLine)
+                cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, selected_text.count(" "))
+                cursor.removeSelectedText()
+        return True
+
+    def eventFilter(self, obj, event):
+        if hasattr(self, 'menuCommandEdit') and obj == self.menuCommandEdit and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Tab:
+                return self.handleTabPress(obj)
+            elif event.key() == Qt.Key_Backtab:
+                return self.handleShiftTabPress(obj)
+        elif hasattr(self, 'commandEdit') and obj == self.commandEdit and event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Tab:
+                return self.handleTabPress(obj)
+            elif event.key() == Qt.Key_Backtab:
+                return self.handleShiftTabPress(obj)
         return QObject.eventFilter(self, obj, event)
     
     def editCommandType(self):

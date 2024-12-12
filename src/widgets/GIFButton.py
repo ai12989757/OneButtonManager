@@ -180,16 +180,16 @@ class menuSeparator(QAction):
         self.setEnabled(False)
 
 class gifIconMenuAction(QAction):
-    def __init__(self, parent=None, icon=None, label=None, annotation=None, sourceType= None, command=None, checkable=False):
+    def __init__(self, parent=None, **kwargs):
         super(gifIconMenuAction, self).__init__(parent)
         self.movie = None
         self.current_frame = None
-        self.iconPath = icon
-        self.label = label
-        self.annotation = annotation
-        self.sourceType = sourceType
-        self.command = command
-        self.checkable = checkable
+        self.iconPath = kwargs.get('icon', None)
+        self.label = kwargs.get('label', None)
+        self.annotation = kwargs.get('annotation', None)
+        self.sourceType = kwargs.get('sourceType', None)
+        self.command = kwargs.get('command', None)
+        self.checkable = kwargs.get('checkable', False)
 
         if self.checkable:
             self.setCheckable(True)
@@ -239,12 +239,7 @@ class Separator(QPushButton):
         self.pixmap = QPixmap(2, 42)
         self.pixmap.fill(QColor(158, 158, 158, 255)) # rgba(158, 158, 158, 255)
         self.setIcon(self.pixmap)
-        self.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(0, 0, 0, 0);
-                border: none;
-            }
-        """)
+        self.setStyleSheet("""QPushButton {background-color: rgba(0, 0, 0, 0);border: none;}""")
         self.iconSizeValue = QSize(21, 42)
         # 添加一个右击菜单
         self.menu = QMenu(self)
