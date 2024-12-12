@@ -81,43 +81,21 @@ class ButtonEditorWindow(QDialog):
             'altDragCommand': self.editButton.altDragCommand,
             'shiftDragCommand': self.editButton.shiftDragCommand,
             'ctrlDragCommand': self.editButton.ctrlDragCommand,
-            'menuShowCommand': self.editButton.menuShowCommand
+            'menuShowCommand': self.editButton.menuShowCommand,
+            'size': 128,
+            'language': self.language
         }
-        self.gifButton = GIFButton.GIFButton(icon=self.buttonDict['icon'], 
-                                   label=self.buttonDict['label'], 
-                                   annotation=self.buttonDict['annotation'], 
-                                   style=self.buttonDict['style'], 
-                                   sourceType=self.buttonDict['sourceType'], 
-                                   command=self.buttonDict['command'], 
-                                   doubleClickCommandSourceType=self.buttonDict['doubleClickCommandSourceType'], 
-                                   doubleClickCommand=self.buttonDict['doubleClickCommand'], 
-                                   ctrlCommand=self.buttonDict['ctrlCommand'], 
-                                   altCommand=self.buttonDict['altCommand'], 
-                                   shiftCommand=self.buttonDict['shiftCommand'], 
-                                   ctrlAltCommand=self.buttonDict['ctrlAltCommand'], 
-                                   altShiftCommand=self.buttonDict['altShiftCommand'], 
-                                   ctrlShiftCommand=self.buttonDict['ctrlShiftCommand'], 
-                                   ctrlAltShiftCommand=self.buttonDict['ctrlAltShiftCommand'], 
-                                   dragCommand=self.buttonDict['dragCommand'], 
-                                   altDragCommand=self.buttonDict['altDragCommand'], 
-                                   shiftDragCommand=self.buttonDict['shiftDragCommand'], 
-                                   ctrlDragCommand=self.buttonDict['ctrlDragCommand'],
-                                   menuShowCommand=self.buttonDict['menuShowCommand'],
-                                   size=128,
-                                   language=self.language
-                                   )
+
+        self.gifButton = GIFButton.GIFButton(**self.buttonDict)
                                    
         # 断开所有gifIconMenuAction的movie
         for acticon in self.gifButton.menu.actions():
-            if acticon.isSeparator():
+            if not acticon.isSeparator() and hasattr(acticon, 'movie') and acticon.movie:
                 pass
-            else:
-                if acticon.movie:
-                    pass
-                    #print(acticon.movie)
-                    # acticon.movie.frameChanged.disconnect(None, None, None)
-                    # acticon.movie.stop()
-                    # acticon.movie = None
+                #print(acticon.movie)
+                # acticon.movie.frameChanged.disconnect(None, None, None)
+                # acticon.movie.stop()
+                # acticon.movie = None
                     
         #self.gifButton.setFixedSize(QSize(128, 128))
         self.iconLayout.addWidget(self.gifButton)
@@ -125,20 +103,17 @@ class ButtonEditorWindow(QDialog):
         self.menuItemIndex = 0
 
         # 从当前图标获取菜单项
-        for acticon in self.editButton.menu.actions():
-            if acticon.isSeparator():
-                pass
-            else:
-                label = acticon.text()
-                if label not in  [sl(u'编辑',self.language), sl(u'删除',self.language)]:
-                    self.menuItems[self.menuItemIndex] = {
-                        "label": label if hasattr(acticon, 'text') else None,
-                        "sourceType": acticon.sourceType if hasattr(acticon, 'sourceType') else "python",
-                        "command": acticon.command if hasattr(acticon, 'command') else None,
-                        "icon": acticon.iconPath if hasattr(acticon, 'iconPath') else None,
-                        "annotation": acticon.annotation if hasattr(acticon, 'annotation') else None
-                    }
-                self.menuItemIndex += 1
+        self.menuItems = {
+            self.menuItemIndex + i: {
+                "label": acticon.text() if hasattr(acticon, 'text') else None,
+                "sourceType": acticon.sourceType if hasattr(acticon, 'sourceType') else "python",
+                "command": acticon.command if hasattr(acticon, 'command') else None,
+                "icon": acticon.iconPath if hasattr(acticon, 'iconPath') else None,
+                "annotation": acticon.annotation if hasattr(acticon, 'annotation') else None
+            }
+            for i, acticon in enumerate(self.editButton.menu.actions())
+            if not acticon.isSeparator() and acticon.text() not in [sl(u'编辑', self.language), sl(u'删除', self.language)]
+        }
         # 预览按钮添加菜单项
         for key in self.menuItems.keys():
             menuItem = self.menuItems[key]

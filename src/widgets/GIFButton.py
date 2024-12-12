@@ -287,56 +287,32 @@ class Separator(QPushButton):
         self.menu.exec_(event.globalPos())
 
 class GIFButton(QPushButton):
-    def __init__(self, 
-                 icon, 
-                 parent=None, 
-                 label="",
-                 annotation="", 
-                 style="auto", 
-                 sourceType="mel",
-                 command=None, 
-                 doubleClickCommandSourceType="mel",
-                 doubleClickCommand=None,
-                 ctrlCommand=None, 
-                 altCommand=None, 
-                 shiftCommand=None, 
-                 ctrlAltCommand=None, 
-                 altShiftCommand=None, 
-                 ctrlShiftCommand=None, 
-                 ctrlAltShiftCommand=None, 
-                 dragCommand=None, 
-                 altDragCommand=None, 
-                 shiftDragCommand=None, 
-                 ctrlDragCommand=None,
-                 menuShowCommand='',
-                 size=42,
-                 language=0
-                 ):
+    def __init__(self, parent=None, **kwargs):    
         super(GIFButton, self).__init__(parent)
         # 初始化代码
-        self.icon = icon
-        self.label = label
-        self.annotation = annotation
-        self.style = style
+        self.icon = kwargs.get('icon', None)
+        self.label = kwargs.get('label', "")
+        self.annotation = kwargs.get('annotation', "")
+        self.style = kwargs.get('style', "auto")
         self.iconImage = 'default'
-        self.sourceType = sourceType
-        self.command = command
-        self.doubleClickCommandSourceType = doubleClickCommandSourceType
-        self.doubleClickCommand = doubleClickCommand
-        self.ctrlCommand = ctrlCommand
-        self.altCommand = altCommand
-        self.shiftCommand = shiftCommand
-        self.ctrlAltCommand = ctrlAltCommand
-        self.altShiftCommand = altShiftCommand
-        self.ctrlShiftCommand = ctrlShiftCommand
-        self.ctrlAltShiftCommand = ctrlAltShiftCommand
-        self.dragCommand = dragCommand
-        self.altDragCommand = altDragCommand
-        self.shiftDragCommand = shiftDragCommand
-        self.ctrlDragCommand = ctrlDragCommand
-        self.menuShowCommand = menuShowCommand
-        self.size = size
-        self.language = language
+        self.sourceType = kwargs.get('sourceType', "mel")
+        self.command = kwargs.get('command', None)
+        self.doubleClickCommandSourceType = kwargs.get('doubleClickCommandSourceType', "mel")
+        self.doubleClickCommand = kwargs.get('doubleClickCommand', None)
+        self.ctrlCommand = kwargs.get('ctrlCommand', None)
+        self.altCommand = kwargs.get('altCommand', None)
+        self.shiftCommand = kwargs.get('shiftCommand', None)
+        self.ctrlAltCommand = kwargs.get('ctrlAltCommand', None)
+        self.altShiftCommand = kwargs.get('altShiftCommand', None)
+        self.ctrlShiftCommand = kwargs.get('ctrlShiftCommand', None)
+        self.ctrlAltShiftCommand = kwargs.get('ctrlAltShiftCommand', None)
+        self.dragCommand = kwargs.get('dragCommand', None)
+        self.altDragCommand = kwargs.get('altDragCommand', None)
+        self.shiftDragCommand = kwargs.get('shiftDragCommand', None)
+        self.ctrlDragCommand = kwargs.get('ctrlDragCommand', None)
+        self.menuShowCommand = kwargs.get('menuShowCommand', '')
+        self.size = kwargs.get('size', 42)
+        self.language = kwargs.get('language', 0)
 
         self.dragging = False
         self.mouseState = ''         # 鼠标状态: 左击按下 leftPress, 左击释放 leftRelease, 左击拖拽 leftMoving
@@ -374,7 +350,7 @@ class GIFButton(QPushButton):
         self.iconKey = self.icon 
         self.setIconStyle(self.icon)
 
-        self.menu = QMenu(label,self)  # 初始化右键菜单
+        self.menu = QMenu(self.label,self)  # 初始化右键菜单
         self.menu.setTearOffEnabled(True) # 设置菜单可拖动
 
         # 移除事件过滤器

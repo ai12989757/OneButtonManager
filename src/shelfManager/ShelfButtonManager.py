@@ -463,57 +463,37 @@ class ShelfButtonManager(QWidget):
         self.addButton(icon='white/undetected.png')
         self.gifButton.addDefaultMenuItems()
             
-    def addButton(self, 
-                icon=None, 
-                style="auto",
-                label="",
-                annotation=None, 
-                sourceType="mel",
-                command=None, 
-                doubleClickCommandSourceType="mel",
-                doubleClickCommand=None,
-                ctrlCommand=None, 
-                altCommand=None,
-                shiftCommand=None,
-                ctrlAltCommand=None,
-                altShiftCommand=None,
-                ctrlShiftCommand=None,
-                ctrlAltShiftCommand=None,
-                dragCommand=None,
-                altDragCommand=None,
-                shiftDragCommand=None,
-                ctrlDragCommand=None,
-                menuShowCommand=None
-                ):
+    def addButton(self, **kwargs):
         # 检查 icon 是否为绝对路径，如果不是则添加 iconPath
+        icon = kwargs.get('icon', None)
         if icon and not os.path.isabs(icon) and ':\\' not in icon:
             icon = os.path.join(self.iconPath, icon)
 
         self.gifButton = GIFButton.GIFButton(
-                                icon=icon,
-                                parent=self.shelfParent,
-                                label=label,
-                                annotation=annotation, 
-                                style=style, 
-                                sourceType=sourceType,
-                                command=command, 
-                                doubleClickCommandSourceType=doubleClickCommandSourceType,
-                                doubleClickCommand=doubleClickCommand,
-                                ctrlCommand=ctrlCommand, 
-                                altCommand=altCommand,
-                                shiftCommand=shiftCommand,
-                                ctrlAltCommand=ctrlAltCommand,
-                                altShiftCommand=altShiftCommand,
-                                ctrlShiftCommand=ctrlShiftCommand,
-                                ctrlAltShiftCommand=ctrlAltShiftCommand,
-                                dragCommand=dragCommand,
-                                altDragCommand=altDragCommand,
-                                shiftDragCommand=shiftDragCommand,
-                                ctrlDragCommand=ctrlDragCommand,
-                                menuShowCommand=menuShowCommand,
-                                size=self.iconH,
-                                language=self.language
-                                )
+            parent=self.shelfParent,
+            icon=icon,
+            label=kwargs.get('label', ""),
+            annotation=kwargs.get('annotation', None),
+            style=kwargs.get('style', "auto"),
+            sourceType=kwargs.get('sourceType', "mel"),
+            command=kwargs.get('command', None),
+            doubleClickCommandSourceType=kwargs.get('doubleClickCommandSourceType', "mel"),
+            doubleClickCommand=kwargs.get('doubleClickCommand', None),
+            ctrlCommand=kwargs.get('ctrlCommand', None),
+            altCommand=kwargs.get('altCommand', None),
+            shiftCommand=kwargs.get('shiftCommand', None),
+            ctrlAltCommand=kwargs.get('ctrlAltCommand', None),
+            altShiftCommand=kwargs.get('altShiftCommand', None),
+            ctrlShiftCommand=kwargs.get('ctrlShiftCommand', None),
+            ctrlAltShiftCommand=kwargs.get('ctrlAltShiftCommand', None),
+            dragCommand=kwargs.get('dragCommand', None),
+            altDragCommand=kwargs.get('altDragCommand', None),
+            shiftDragCommand=kwargs.get('shiftDragCommand', None),
+            ctrlDragCommand=kwargs.get('ctrlDragCommand', None),
+            menuShowCommand=kwargs.get('menuShowCommand', None),
+            size=self.iconH,
+            language=self.language
+        )
         if self.mayaVersion < 2022:
             self.shelfLayoutInfo.addWidget(self.gifButton)
         elif self.mayaVersion >= 2022:
