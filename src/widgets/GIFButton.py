@@ -586,16 +586,16 @@ class GIFButton(QPushButton):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
             self.mouseState = 'ctrl'+mouseState.capitalize()
-            if self.ctrlDragCommand: exec(self.ctrlDragCommand)
+            if self.ctrlDragCommand: exec(self.ctrlDragCommand, globals())
         elif modifiers & Qt.ShiftModifier:
             self.mouseState = 'shift'+mouseState.capitalize()
-            if self.shiftDragCommand: exec(self.shiftDragCommand)
+            if self.shiftDragCommand: exec(self.shiftDragCommand, globals())
         elif modifiers & Qt.AltModifier:
             self.mouseState = 'alt'+mouseState.capitalize()
-            if self.altDragCommand: exec(self.altDragCommand)
+            if self.altDragCommand: exec(self.altDragCommand, globals())
         else:
             self.mouseState = mouseState
-            if self.dragCommand: exec(self.dragCommand)
+            if self.dragCommand: exec(self.dragCommand, globals())
 
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
@@ -665,21 +665,21 @@ class GIFButton(QPushButton):
                 commendText = "mel.eval(" + commendText + ")"
 
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand)
+                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, globals())
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand)
+                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand, globals())
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: exec(self.ctrlAltCommand)
+                if self.ctrlAltCommand: exec(self.ctrlAltCommand, globals())
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: exec(self.altShiftCommand)
+                if self.altShiftCommand: exec(self.altShiftCommand, globals())
             elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: exec(self.ctrlCommand)
+                if self.ctrlCommand: exec(self.ctrlCommand, globals())
             elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: exec(self.shiftCommand)
+                if self.shiftCommand: exec(self.shiftCommand, globals())
             elif modifiers & Qt.AltModifier:
-                if self.altCommand: exec(self.altCommand) 
+                if self.altCommand: exec(self.altCommand, globals())
             else:
-                if self.command: exec(commendText)
+                if self.command: exec(self.command, globals())
         return False
 
     def doubleClickCommandText(self):
