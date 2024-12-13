@@ -679,7 +679,8 @@ class GIFButton(QPushButton):
             elif modifiers & Qt.AltModifier:
                 if self.altCommand: exec(self.altCommand, globals())
             else:
-                if self.command: exec(self.command, globals())
+                if commendText and self.sourceType == 'python': exec(commendText, globals())
+                elif commendText and self.sourceType == 'mel': exec(commendText)
         return False
 
     def doubleClickCommandText(self):
@@ -688,7 +689,8 @@ class GIFButton(QPushButton):
         elif self.doubleClickCommandSourceType == 'mel':
             commendText = repr(self.doubleClickCommand)
             commendText = "mel.eval(" + commendText + ")"
-        exec(commendText)
+        if commendText and self.doubleClickCommandSourceType == 'python': exec(commendText, globals())
+        elif commendText and self.doubleClickCommandSourceType == 'mel': exec(commendText)
 
     def getGIFButtonData(self,button):
         # 获取按钮数据
