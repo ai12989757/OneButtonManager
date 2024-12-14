@@ -586,16 +586,16 @@ class GIFButton(QPushButton):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
             self.mouseState = 'ctrl'+mouseState.capitalize()
-            if self.ctrlDragCommand: exec(self.ctrlDragCommand, globals())
+            if self.ctrlDragCommand: exec(self.ctrlDragCommand,  dict(globals(), **{'self': self}))
         elif modifiers & Qt.ShiftModifier:
             self.mouseState = 'shift'+mouseState.capitalize()
-            if self.shiftDragCommand: exec(self.shiftDragCommand, globals())
+            if self.shiftDragCommand: exec(self.shiftDragCommand,  dict(globals(), **{'self': self}))
         elif modifiers & Qt.AltModifier:
             self.mouseState = 'alt'+mouseState.capitalize()
-            if self.altDragCommand: exec(self.altDragCommand, globals())
+            if self.altDragCommand: exec(self.altDragCommand,  dict(globals(), **{'self': self}))
         else:
             self.mouseState = mouseState
-            if self.dragCommand: exec(self.dragCommand, globals())
+            if self.dragCommand: exec(self.dragCommand, dict(globals(), **{'self': self}))
 
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
@@ -665,21 +665,21 @@ class GIFButton(QPushButton):
                 commendText = "mel.eval(" + commendText + ")"
 
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, globals())
+                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand, globals())
+                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: exec(self.ctrlAltCommand, globals())
+                if self.ctrlAltCommand: exec(self.ctrlAltCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: exec(self.altShiftCommand, globals())
+                if self.altShiftCommand: exec(self.altShiftCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: exec(self.ctrlCommand, globals())
+                if self.ctrlCommand: exec(self.ctrlCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: exec(self.shiftCommand, globals())
+                if self.shiftCommand: exec(self.shiftCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.AltModifier:
-                if self.altCommand: exec(self.altCommand, globals())
+                if self.altCommand: exec(self.altCommand, dict(globals(), **{'self': self}))
             else:
-                if commendText and self.sourceType == 'python': exec(commendText, globals())
+                if commendText and self.sourceType == 'python': exec(commendText, dict(globals(), **{'self': self}))
                 elif commendText and self.sourceType == 'mel': exec(commendText)
         return False
 
@@ -689,7 +689,7 @@ class GIFButton(QPushButton):
         elif self.doubleClickCommandSourceType == 'mel':
             commendText = repr(self.doubleClickCommand)
             commendText = "mel.eval(" + commendText + ")"
-        if commendText and self.doubleClickCommandSourceType == 'python': exec(commendText, globals())
+        if commendText and self.doubleClickCommandSourceType == 'python': exec(commendText, dict(globals(), **{'self': self}))
         elif commendText and self.doubleClickCommandSourceType == 'mel': exec(commendText)
 
     def getGIFButtonData(self,button):

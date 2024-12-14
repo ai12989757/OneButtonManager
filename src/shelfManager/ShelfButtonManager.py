@@ -576,7 +576,9 @@ class ShelfButtonManager(QWidget):
             mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel.replace('.mel', '')+'")' ) # 保存当前 shelf
 
             # 使用robocopy备份文件 robocopy /e path file
-            os.system('robocopy /e '+mel.eval('internalVar -userShelfDir')+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
+            shelf_backupFile = shelf_backup + 'shelf_'+self.currentShelf+'.mel'
+            if not os.path.exists(shelf_backupFile): # 如果备份文件不存在则备份,避免覆盖原始数据
+                os.system('robocopy /e '+mel.eval('internalVar -userShelfDir')+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
             # aveAllShelves(self.gShelfTopLevel)
             self.buttonList = self.getButtonList()[1]
             # 新建字典保存按钮数据
@@ -584,23 +586,37 @@ class ShelfButtonManager(QWidget):
             for index,i in enumerate(self.buttonList):
                 if i.__class__.__name__ == 'GIFButton':
                     data[index] = self.getGIFButtonData(i)
-                    i.deleteLater()
-                elif i.__class__.__name__ == 'Separator' or i.__class__.__name__ == 'QFrame':
+                elif i.__class__.__name__ == 'Separator':
                     data[index] = 'separator'
-                    i.deleteLater()
                 elif i.__class__.__name__ == 'QFrame':
                     data[index] = 'separator'
-                    mel.eval('deleteUI '+i.objectName())
                 elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
                     if 'separator' in i.objectName() or 'Separator' in i.objectName():
                         data[index] = 'separator'
                     else:
                         data[index] = self.getMayaShelfButtonData(i.objectName())
-                    mel.eval('deleteUI '+i.objectName())
                 else:
-                    warning(i,i.__class__.__name__)
-                #print(i.__class__.__name__)
+                    mel.eval('warning -n "未知类型: ' + i.__class__.__name__ + '"')
+                    return
 
+            # 保存按钮数据到json文件
+            shelfData = OrderedDict()
+            shelfData['shelfName'] = self.currentShelf
+            shelfData['shelfData'] = data
+            
+            jsonPath = self.OneToolsDataDir + 'shelf_backup/shelf_'+self.currentShelf+'.json'
+            with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
+                json.dump(shelfData, f, ensure_ascii=False, indent=4)
+    
+            # 删除当前shelf的所有按钮
+            for index,i in enumerate(self.buttonList):
+                if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'Separator':
+                    i.deleteLater()
+                elif i.__class__.__name__ == 'QFrame':
+                    data[index] = 'separator'
+                    mel.eval('deleteUI '+i.objectName())
+                elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
+                    mel.eval('deleteUI '+i.objectName())
             #oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
             #print(data)
             # 重新添加GIFButton
@@ -621,126 +637,6 @@ class ShelfButtonManager(QWidget):
 
     def toJson(self):
         pass
-        # filePath = internalVar(userShelfDir=True) + 'shelf_'+self.currentShelf+'.mel'
-        # if not os.path.exists(filePath):
-        #     return None
-        # jsonPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src', 'data/shelf_tempNeedDelete.json')
-        # # 解析文件,去掉前六行和最后一行，再去掉空行,去掉\n
-        # def parseFile(filePath):
-        #     with codecs.open(filePath, 'r', 'gbk') as f:
-        #         data = f.readlines()
-        #     data = data[6:-1]
-        #     data = [i for i in data if i != '\n']
-        #     return data
-
-        # # separator改为 shelfButton
-        # def changeSeparator(data):
-        #     data = [i.replace('separator', 'shelfButton -separator') for i in data]
-        #     return data
-
-        # # 使用 'shelfButton' 分割数据，清除空数据，如果数据里没有'annotation'或'style' 'shelf'则删除
-        # def splitData(data):
-        #     data = ''.join(data)
-        #     data = data.split('shelfButton')
-        #     for i in data:
-        #         if 'separator' in i:
-        #             i = 'separator'
-        #     data = [i for i in data if i != '']
-        #     return data
-
-        # shelfData = parseFile(filePath)
-        # shelfData = changeSeparator(shelfData)
-        # shelfData = splitData(shelfData)
-
-        # data = OrderedDict()
-        # # 解析数据，使用四个空格分割数据，删除'-'
-        # buttonName = 0
-        # shelfDataNew = []
-        # for button in shelfData:
-        #     button = button.split('        -')
-        #     #button = [i.replace('\n', '') for i in button]
-        #     # 清除空数据
-        #     button = [i for i in button if i != '']
-        #     shelfDataNew.append(button)
-        #     buttonData = OrderedDict()
-        #     miNum = 0
-            
-        #     for i in button:
-        #         if '-separator' in i:
-        #             data[buttonName] = 'separator'
-        #             break
-
-        #         # 如果第一个字符是空格，则删除
-        #         if i[0] == ' ':
-        #             i = i[1:]
-        #         # 以第一个空格为分割点将数据分割成两部分，
-        #         # 第一部分为键，第二部分为值
-        #         i = i.split(' ', 1)
-        #         # 如果数据量不为2，则跳过
-        #         if len(i) == 2:
-        #             # if 'command' in i[0] or 'doubleClickCommand' in i[0] or 'mi' in i[0]:
-        #             #     if i[1][-2:] == ' \n':
-        #             #         i[1] = i[0][:-2]
-        #             i[1] = i[1].replace('\\\"', '\"').replace('\\n', '\n').replace('\\t', '').replace('\\\n', '\\n').replace('\"\\\\\"', '\"\\\"').replace('\\\\\"', '\\"')
-        #             if i[1][:1] == '"':
-        #                 i[1] = i[1][1:]
-        #             if i[1][-3:] == '" \n':
-        #                 i[1] = i[1][:-3]
-        #             # 如果i[0]的值在[]里,则写入buttonData
-        #             if i[0] in ['annotation', 'label', 'image', 'command','sourceType','doubleClickCommand','mi']:
-        #                 if i[0] == 'image':
-        #                     # 如果图标不存在
-        #                     if not os.path.exists(i[1]):
-        #                         i[1] = ':\\'+i[1]
-        #                 if i[0] == 'mi':
-        #                     i[1] = i[1].replace('    ;\n    ', '')
-        #                     # 使用第一个 \" 分割i[1]
-        #                     i[1] = i[1].split('\"', 1)
-        #                     i[1][1] = i[1][1][4:-4]
-        #                     buttonData[miNum] = i[1]
-        #                     miNum += 1
-        #                 else:
-        #                     buttonData[i[0]] = i[1]
-        #                     if i[0] == 'doubleClickCommand':
-        #                         # 根据 i[1] 里的数据判断是否为python语法
-        #                         if 'import' in i[1] or 'from' in i[1]:
-        #                             buttonData['doubleClickCommandSourceType'] = 'python'
-        #                         else:
-        #                             buttonData['doubleClickCommandSourceType'] = 'mel'
-        #                     else:
-        #                         buttonData['doubleClickCommandSourceType'] = ''
-        #                         buttonData['doubleClickCommand'] = ''
-        #             if 'command' not in buttonData.keys():
-        #                 buttonData['command'] = ''
-        #             if 'doubleClickCommand' not in buttonData.keys():
-        #                 buttonData['doubleClickCommand'] = ''
-        #             if 'sourceType' not in buttonData.keys():
-        #                 buttonData['sourceType'] = 'mel'
-        #             if 'annotation' not in buttonData.keys():
-        #                 buttonData['annotation'] = ''
-        #             if 'label' not in buttonData.keys():
-        #                 buttonData['label'] = ''
-        #             if 'image' not in buttonData.keys():
-        #                 buttonData['image'] = ''
-        #             if 'doubleClickCommandSourceType' not in buttonData.keys():
-        #                 buttonData['doubleClickCommandSourceType'] = ''
-
-        #     # 如果为空则
-        #     if buttonData:
-        #         data[buttonName] = buttonData
-        #     else:
-        #         data[buttonName] = 'separator'
-        #     buttonName += 1
-
-        # # 去掉第一个数据
-        # data.pop(0)
-        # outJson = OrderedDict()
-        # outJson['shelfName'] = self.currentShelf
-        # outJson['shelfData'] = data
-        # # 写入json文件 D:\MELcopy\OneTools\src\shelfData.json
-        # with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
-        #     json.dump(outJson, f, ensure_ascii=False, indent=4)
-        # return jsonPath
 
     def codeSwitch(self,command):
         pythonVersion = int(sys.version[0:1])
