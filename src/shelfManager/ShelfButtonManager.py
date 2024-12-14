@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import codecs
+import datetime
 from maya import mel
 import maya.OpenMayaUI as omui
 try:
@@ -576,9 +577,14 @@ class ShelfButtonManager(QWidget):
             mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel.replace('.mel', '')+'")' ) # 保存当前 shelf
 
             # 使用robocopy备份文件 robocopy /e path file
-            shelf_backupFile = shelf_backup + 'shelf_'+self.currentShelf+'.mel'
-            if not os.path.exists(shelf_backupFile): # 如果备份文件不存在则备份,避免覆盖原始数据
-                os.system('robocopy /e '+mel.eval('internalVar -userShelfDir')+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
+            # 获取当前日期和时间
+            current_datetime = datetime.datetime.now()
+            # 格式化日期和时间
+            formatted_datetime = current_datetime.strftime('%Y%m%d_%H%M%S')
+            # 在文件名后添加日期时间
+            shelf_backupFile = shelf_backup + 'shelf_' + self.currentShelf + '.mel.' + formatted_datetime
+            os.system('robocopy /e '+mel.eval('internalVar -userShelfDir')+' '+shelf_backup+' shelf_'+self.currentShelf+'.mel')
+            os.rename(shelf_backup + 'shelf_' + self.currentShelf + '.mel', shelf_backupFile)
             # aveAllShelves(self.gShelfTopLevel)
             self.buttonList = self.getButtonList()[1]
             # 新建字典保存按钮数据
@@ -596,7 +602,7 @@ class ShelfButtonManager(QWidget):
                     else:
                         data[index] = self.getMayaShelfButtonData(i.objectName())
                 else:
-                    mel.eval('warning -n "未知类型: ' + i.__class__.__name__ + '"')
+                    mel.eval('warning -n "未知类型: ' + i.__class__.__name__ + ', 请联系开发者"')
                     return
 
             # 保存按钮数据到json文件
