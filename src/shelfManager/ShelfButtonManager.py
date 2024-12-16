@@ -801,7 +801,7 @@ class ShelfButtonManager(QWidget):
 
     def loadGifShelf(self):
         # 打开文件对话框
-        jsonPath = mel.eval('fileDialog2 -fm 1 -ff "*.json" -okc "导入"')[0]
+        jsonPath = mel.eval(u'fileDialog2 -fm 1 -ff "*.json" -okc "导入"')[0]
         if not jsonPath:
             return
         jsonData = {}
@@ -819,7 +819,7 @@ class ShelfButtonManager(QWidget):
         else:
             # 弹出窗口
             if self.language == 0:
-                result = mel.eval('confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
+                result = mel.eval(u'confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
             elif self.language == 1:
                 result = mel.eval('confirmDialog -title "Warning" -message "The shelf already exists, do you want to overwrite it?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
             # result = confirmDialog(
