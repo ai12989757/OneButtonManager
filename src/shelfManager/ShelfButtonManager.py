@@ -127,12 +127,15 @@ class ShelfButtonManager(QWidget):
                 self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
                 if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
                     for i in mel.eval('shelfLayout -q -ca '+shelfName):
-                        mel.eval('deleteUI '+i)
-                    try:
-                        for i in self.shelfManagers[shelfName].getButtonList()[1]:
+                        try:
+                            mel.eval('deleteUI '+i)
+                        except:
+                            pass
+                    for i in self.shelfManagers[shelfName].getButtonList()[1]:
+                        try:
                             i.deleteLater()
-                    except:
-                        pass
+                        except:
+                            pass
                 self.shelfManagers[shelfName].loadShelfData(jsonData)
                 self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
         evalCode = 'shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;'
