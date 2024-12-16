@@ -496,8 +496,9 @@ class ButtonEditorWindow(QDialog):
                 except:
                     pass
         
-            if "mel.eval(" in commandText:
-                commandText = commandText.replace("mel.eval('", "")[:-2]
+            # 如果开头是 mel.eval(' 则去掉
+            if commandText[:9] == "mel.eval('":
+                commandText = commandText[9:-2]
 
             self.menuCommandEdit.setText(commandText)
         else:
@@ -882,9 +883,11 @@ class ButtonEditorWindow(QDialog):
                     commandText = commandText.decode('utf-8')
                 except:
                     pass
-            if "mel.eval(" in commandText:
-                commandText = commandText.replace("mel.eval('", "")[:-2]
             
+            # 如果开头是 mel.eval(' 则去掉
+            if commandText[:9] == "mel.eval('":
+                commandText = commandText[9:-2]
+
             self.commandEdit.setText(commandText)
 
         else:
