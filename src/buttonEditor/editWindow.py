@@ -443,7 +443,7 @@ class ButtonEditorWindow(QDialog):
         if row == -1:
             return
         if row == self.menuListWidget.count() - 1:
-            self.setMenuIcon('white/Edit_popupMenu.png')
+            self.setMenuIcon('white/Menu.png')
             self.menuPythonRadioButton.setChecked(True)
             self.menuPythonRadioButton.setEnabled(False)
             self.menuMelRadioButton.setChecked(False)

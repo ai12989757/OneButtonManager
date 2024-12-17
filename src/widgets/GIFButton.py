@@ -862,12 +862,12 @@ class GIFButton(QPushButton):
     def addDefaultMenuItems(self):
         self.menu.addSeparator()
 
-        editAction = QAction(QIcon(os.path.join(iconPath, "white/Edit.png")), sl(u"编辑",self.language), self)
+        editAction = QAction(QIcon(os.path.join(iconPath, "white/Edit_popupMenu.png")), sl(u"编辑",self.language), self)
         self.menu.addAction(editAction)
 
         editMenu = QMenu(sl(u"编辑",self.language), self)
         editAction.setMenu(editMenu)
-        editMenu.addAction(QIcon(os.path.join(iconPath, "white/Edit_popupMenu.png")), sl(u"编辑",self.language), self.buttonEditor).setStatusTip(sl(u"点击打开编辑窗口",self.language))
+        editMenu.addAction(QIcon(os.path.join(iconPath, "white/Edit.png")), sl(u"编辑",self.language), self.buttonEditor).setStatusTip(sl(u"点击打开编辑窗口",self.language))
         editMenu.addSeparator()
         editMenu.addAction(QIcon(os.path.join(iconPath, "white/Copy.png")), sl(u"复制",self.language), self.copyButton).setStatusTip(sl(u"复制按钮",self.language))
         editMenu.addAction(QIcon(os.path.join(iconPath, "white/Cut.png")), sl(u"剪切",self.language), self.cutButton).setStatusTip(sl(u"剪切按钮",self.language))
