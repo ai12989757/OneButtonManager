@@ -609,11 +609,9 @@ class GIFButton(QPushButton):
         self.setIconSize(self.iconSizeValue)
         self.dragging = False
         self.eventPos = event.pos()
-        #QApplication.restoreOverrideCursor() # 还原光标样式
-        #setToolTo('selectSuperContext')
-        #QApplication.setOverrideCursor(Qt.ArrowCursor)
-        # 还原光标样式
-        # omui.MGlobal.setCursor(omui.MCursor.kArrow)
+        # 清除effect
+        self.setGraphicsEffect(None)
+        if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
         if event.button() == Qt.MiddleButton:
