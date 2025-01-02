@@ -110,7 +110,7 @@ class ButtonEditorWindow(QDialog):
 
     def setUI(self):
         # 创建一个整体垂直布局
-        self.globalLayout = QVBoxLayout(Alignment=Qt.AlignTop)
+        self.globalLayout = QVBoxLayout()
         self.setLayout(self.globalLayout)
         # 布局第一行 图标 和 图标参数
         self.createIconEditLayout()
