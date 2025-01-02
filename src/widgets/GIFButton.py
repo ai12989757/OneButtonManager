@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 import json
 import codecs # 用于python2.7中读取json文件encoding问题
 from maya import mel
-import maya.OpenMayaUI as omui
-try:
-    from shiboken6 import wrapInstance
-except ImportError:
-    from shiboken2 import wrapInstance
 
 try:
     from PySide6.QtCore import *

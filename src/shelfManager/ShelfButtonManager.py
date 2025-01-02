@@ -871,7 +871,7 @@ class ShelfButtonManager(QWidget):
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
         if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
-            for i in shelfLayout(shelfName, q=True, ca=True):
+            for i in mel.eval('shelfLayout -q -ca '+shelfName):
                 mel.eval('deleteUI '+i)
             try:
                 for i in self.shelfManagers[shelfName].getButtonList()[1]:

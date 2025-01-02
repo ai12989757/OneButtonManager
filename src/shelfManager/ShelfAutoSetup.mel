@@ -37,11 +37,14 @@ global proc GifButton_AutoLoad()
     {
         for($jsonFile in $jsonFiles)
         {
-            string $jsonPath = $gifButtonJsonPath + $jsonFile;
-            string $shelfName = `match "[^\.]*" $jsonFile`;
-            $shelfName = `substituteAllString $shelfName "shelf_" ""`;
-            if(`gmatch $shelfName "* *"` || `gmatch $shelfName " *"` || `gmatch $shelfName "* "`) continue;
-            else GifButton_load($jsonPath, $shelfName);
+            if(`gmatch $jsonFile "*shelf_*"`)
+            {
+                string $jsonPath = $gifButtonJsonPath + $jsonFile;
+                string $shelfName = `match "[^\.]*" $jsonFile`;
+                $shelfName = `substituteAllString $shelfName "shelf_" ""`;
+                if(`gmatch $shelfName "* *"` || `gmatch $shelfName " *"` || `gmatch $shelfName "* "`) continue;
+                else GifButton_load($jsonPath, $shelfName);
+            }
         }
     }
 }
