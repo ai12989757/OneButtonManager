@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 import json
 import codecs # 用于python2.7中读取json文件encoding问题
 from maya import mel
-import maya.OpenMayaUI as omui
-try:
-    from shiboken6 import wrapInstance
-except ImportError:
-    from shiboken2 import wrapInstance
 
 try:
     from PySide6.QtCore import *
@@ -615,11 +609,9 @@ class GIFButton(QPushButton):
         self.setIconSize(self.iconSizeValue)
         self.dragging = False
         self.eventPos = event.pos()
-        #QApplication.restoreOverrideCursor() # 还原光标样式
-        #setToolTo('selectSuperContext')
-        #QApplication.setOverrideCursor(Qt.ArrowCursor)
-        # 还原光标样式
-        # omui.MGlobal.setCursor(omui.MCursor.kArrow)
+        # 清除effect
+        self.setGraphicsEffect(None)
+        if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
         if event.button() == Qt.MiddleButton:
