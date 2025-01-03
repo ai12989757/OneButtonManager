@@ -607,12 +607,10 @@ class ShelfButtonManager(QWidget):
                     data[index] = 'separator'
                 elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
                     if not i.objectName():
-                        print(i)
                         continue
                     if 'separator' in i.objectName() or 'Separator' in i.objectName():
                         data[index] = 'separator'
                     else:
-                        print(i.objectName())
                         if mel.eval('shelfButton -q -ex '+i.objectName()):
                             data[index] = self.getMayaShelfButtonData(i.objectName())
                 else:
