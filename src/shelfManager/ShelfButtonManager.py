@@ -750,12 +750,16 @@ class ShelfButtonManager(QWidget):
                 elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
             else:
-                if mel.eval('resourceManager -nameFilter '+imagePath):
-                    imagePath = ':\\'+imagePath
-                elif imagePath in InternalIconDict['plugIcon']:
-                    imagePath = InternalIconDict['plugIcon'][imagePath]
-                else:
-                    imagePath = ':\\'+imagePath 
+                try:
+                    if mel.eval('resourceManager -nameFilter '+imagePath):
+                        imagePath = ':\\'+imagePath
+                    elif imagePath in InternalIconDict['plugIcon']:
+                        imagePath = InternalIconDict['plugIcon'][imagePath]
+                    else:
+                        imagePath = ':\\'+imagePath 
+                except:
+                    pass
+
         return imagePath
 
     def loadShelfData(self, shelfData):
