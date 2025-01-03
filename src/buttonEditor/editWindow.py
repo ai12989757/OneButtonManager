@@ -121,7 +121,7 @@ class ButtonEditorWindow(QDialog):
 
     def createIconEditLayout(self):
         # 左右两个布局 左边是图标预览，右边是图标参数
-        self.iconLayout = QHBoxLayout(Alignment=Qt.AlignTop)
+        self.iconLayout = QHBoxLayout()
         self.globalLayout.addLayout(self.iconLayout)
         # 图标预览
         self.iconLayout.addWidget(self.gifButton)
