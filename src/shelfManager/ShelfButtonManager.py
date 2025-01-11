@@ -545,9 +545,15 @@ class ShelfButtonManager(QWidget):
     
     def getMayaShelfButtonData(self, mayaShelfButtonName):
         data = OrderedDict()
-        data['label'] = mel.eval('shelfButton -q -label '+mayaShelfButtonName)
-        data['annotation'] = mel.eval('shelfButton -q -annotation '+mayaShelfButtonName)
-        data['image'] = mel.eval('shelfButton -q -image1 '+mayaShelfButtonName)
+        try:
+            data['label'] = mel.eval('shelfButton -q -label '+mayaShelfButtonName)
+        except:
+            data['label'] = None
+        try:
+            data['annotation'] = mel.eval('shelfButton -q -annotation '+mayaShelfButtonName)
+        except:
+            data['annotation'] = None
+        data['image'] = mel.eval('shelfButton -q -image '+mayaShelfButtonName)
         data['sourceType'] = mel.eval('shelfButton -q -sourceType '+mayaShelfButtonName)
         data['command'] = mel.eval('shelfButton -q -command '+mayaShelfButtonName)
         data['doubleClickCommand'] = mel.eval('shelfButton -q -doubleClickCommand '+mayaShelfButtonName)
@@ -577,7 +583,7 @@ class ShelfButtonManager(QWidget):
             if not os.path.exists(shelf_backup):
                 os.makedirs(shelf_backup)
             
-            mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel.replace('.mel', '')+'")' ) # 保存当前 shelf
+            mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel+'")' ) # 保存当前 shelf
 
             # 使用robocopy备份文件 robocopy /e path file
             # 获取当前日期和时间
@@ -600,10 +606,13 @@ class ShelfButtonManager(QWidget):
                 elif i.__class__.__name__ == 'QFrame':
                     data[index] = 'separator'
                 elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
+                    if not i.objectName():
+                        continue
                     if 'separator' in i.objectName() or 'Separator' in i.objectName():
                         data[index] = 'separator'
                     else:
-                        data[index] = self.getMayaShelfButtonData(i.objectName())
+                        if mel.eval('shelfButton -q -ex '+i.objectName()):
+                            data[index] = self.getMayaShelfButtonData(i.objectName())
                 else:
                     if self.language == 0:
                         mel.eval(u'warning -n "未知类型: ' + i.__class__.__name__ + ', 请联系开发者"')
@@ -628,7 +637,10 @@ class ShelfButtonManager(QWidget):
                     data[index] = 'separator'
                     mel.eval('deleteUI '+i.objectName())
                 elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
-                    mel.eval('deleteUI '+i.objectName())
+                    try:
+                        mel.eval('deleteUI '+i.objectName())
+                    except:
+                        i.deleteLater()
             #oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
             #print(data)
             # 重新添加GIFButton
@@ -738,12 +750,16 @@ class ShelfButtonManager(QWidget):
                 elif imagePath.replace(':\\', '') in InternalIconDict['plugIcon']:
                     imagePath = InternalIconDict['plugIcon'][imagePath.replace(':\\', '')]
             else:
-                if mel.eval('resourceManager -nameFilter '+imagePath):
-                    imagePath = ':\\'+imagePath
-                elif imagePath in InternalIconDict['plugIcon']:
-                    imagePath = InternalIconDict['plugIcon'][imagePath]
-                else:
-                    imagePath = ':\\'+imagePath 
+                try:
+                    if mel.eval('resourceManager -nameFilter '+imagePath):
+                        imagePath = ':\\'+imagePath
+                    elif imagePath in InternalIconDict['plugIcon']:
+                        imagePath = InternalIconDict['plugIcon'][imagePath]
+                    else:
+                        imagePath = ':\\'+imagePath 
+                except:
+                    pass
+
         return imagePath
 
     def loadShelfData(self, shelfData):
@@ -864,7 +880,7 @@ class ShelfButtonManager(QWidget):
         self.shelfManagers[shelfName] = ShelfButtonManager(self.language)  # 使用字典保存每个 shelf 的 ShelfButtonManager 实例
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
         if mel.eval('shelfLayout -q -ca '+shelfName) is not None:
-            for i in shelfLayout(shelfName, q=True, ca=True):
+            for i in mel.eval('shelfLayout -q -ca '+shelfName):
                 mel.eval('deleteUI '+i)
             try:
                 for i in self.shelfManagers[shelfName].getButtonList()[1]:
