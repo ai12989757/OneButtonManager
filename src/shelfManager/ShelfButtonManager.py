@@ -821,18 +821,11 @@ class ShelfButtonManager(QWidget):
             mel.eval('addNewShelfTab("'+shelfName+'")')
         else:
             # 弹出窗口
+            result = ''
             if self.language == 0:
                 result = mel.eval(u'confirmDialog -title "警告" -message "工具栏已存在,是否覆盖?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
             elif self.language == 1:
                 result = mel.eval('confirmDialog -title "Warning" -message "The shelf already exists, do you want to overwrite it?" -button "Yes" -button "No" -defaultButton "Yes" -cancelButton "No" -dismissString "No";')
-            # result = confirmDialog(
-            #     title=u'警告',
-            #     message=u'工具栏已存在,是否覆盖?',
-            #     button=['Yes', 'No'],
-            #     defaultButton='Yes',
-            #     cancelButton='No',
-            #     dismissString='No'
-            # )
             if result == 'No':
                 return
 
