@@ -3,6 +3,7 @@ import os
 import json
 import codecs # 用于python2.7中读取json文件encoding问题
 from maya import mel
+import maya.cmds as cmds
 
 try:
     from PySide6.QtCore import *
@@ -457,7 +458,6 @@ class GIFButton(QPushButton):
             self.setIcon(QIcon(self.current_frame))
 
     def iconChanged(self, key = 'ctrl' or 'default' or 'shift' or 'alt' or 'ctrlAlt' or 'ctrlShift' or 'altShift' or 'ctrlAltShift' or 'hi'):
-        self.icon = self.icon
         iconName = self.icon.split('/')[-1].split('.')[0]
         self.iconKey = self.icon if key == 'default' else self.icon.replace(iconName, iconName + '_' +key)
         # 检查iconKey是否存在
@@ -474,7 +474,7 @@ class GIFButton(QPushButton):
             else:
                 self.movie = None
                 self.setIcon(QIcon(self.iconKey))
-            
+        
     def enterEvent(self, event):
         self.iconChanged('hi')
         if not self.dragging:
@@ -655,24 +655,26 @@ class GIFButton(QPushButton):
             elif self.sourceType == 'mel':
                 commendText = repr(self.command)
                 commendText = "mel.eval(" + commendText + ")"
-
+            context = dict(globals(), **{'self': self})
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, dict(globals(), **{'self': self}))
+                if self.ctrlAltShiftCommand: cmds.evalDeferred(lambda: exec(self.ctrlAltShiftCommand, context))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand, dict(globals(), **{'self': self}))
+                if self.ctrlShiftCommand: cmds.evalDeferred(lambda: exec(self.ctrlShiftCommand, context))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: exec(self.ctrlAltCommand, dict(globals(), **{'self': self}))
+                if self.ctrlAltCommand: cmds.evalDeferred(lambda: exec(self.ctrlAltCommand, context))
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: exec(self.altShiftCommand, dict(globals(), **{'self': self}))
+                if self.altShiftCommand: cmds.evalDeferred(lambda: exec(self.altShiftCommand, context))
             elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: exec(self.ctrlCommand, dict(globals(), **{'self': self}))
+                if self.ctrlCommand: cmds.evalDeferred(lambda: exec(self.ctrlCommand, context))
             elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: exec(self.shiftCommand, dict(globals(), **{'self': self}))
+                if self.shiftCommand: cmds.evalDeferred(lambda: exec(self.shiftCommand, context))
             elif modifiers & Qt.AltModifier:
-                if self.altCommand: exec(self.altCommand, dict(globals(), **{'self': self}))
+                if self.altCommand: cmds.evalDeferred(lambda: exec(self.altCommand, context))
             else:
-                if commendText and self.sourceType == 'python': exec(commendText, dict(globals(), **{'self': self}))
-                elif commendText and self.sourceType == 'mel': exec(commendText)
+                if commendText and self.sourceType == 'python': 
+                    cmds.evalDeferred(lambda: exec(commendText, context))
+                elif commendText and self.sourceType == 'mel': 
+                    mel.eval(commendText)
         return False
 
     def doubleClickCommandText(self):
