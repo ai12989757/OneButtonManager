@@ -1,5 +1,5 @@
 global string $gifButtonPath;
-$gifButtonPath = "/OneButtonManager/src";int $Language = 1;
+$gifButtonPath = "D:/git/OneButtonManager/src";int $Language = 0;
 
 string $pythonCode = "import sys\n" +
                     "sys.dont_write_bytecode = True\n" +
