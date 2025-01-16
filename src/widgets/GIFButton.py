@@ -674,7 +674,7 @@ class GIFButton(QPushButton):
                 if commendText and self.sourceType == 'python': 
                     cmds.evalDeferred(lambda: exec(commendText, context))
                 elif commendText and self.sourceType == 'mel': 
-                    mel.eval(commendText)
+                    exec(commendText)
         return False
 
     def doubleClickCommandText(self):
