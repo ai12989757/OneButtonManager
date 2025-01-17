@@ -456,14 +456,45 @@ class GIFButton(QPushButton):
             self.current_frame = self.movie.currentPixmap()
             self.setIcon(QIcon(self.current_frame))
 
+    def enhanceIcon(self, iconPath):
+        image = None
+        if isinstance(iconPath, str):
+            if iconPath.lower().endswith('.gif'):
+                return
+            image = QImage(iconPath)
+        elif isinstance(iconPath, QPixmap):
+            image = iconPath.toImage()
+        else:
+            return
+        pixmap = QPixmap(image)
+        image = image.scaled(float(pixmap.width())/float(pixmap.height())*self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        # 增加对比度
+        for y in range(image.height()):
+            for x in range(image.width()):
+                pixel = image.pixel(x, y)
+                color = image.pixelColor(x, y)
+                alpha = color.alpha()
+                if alpha > 200:
+                #if color.red() > 0 or color.green() > 0 or color.blue() > 0:
+                    # 转换为 HSV
+                    hsv = color.toHsv()
+                    h, s, v= hsv.hue(), hsv.saturation(), hsv.value()
+                    
+                    # 调整 S 和 V 的值
+                    s = min(255, int(s * 1.3))  # 增加饱和度
+                    v = min(255, int(v * 1.2))  # 增加亮度
+                    # 转换回 RGB
+                    enhancedColor = QColor.fromHsv(h, s, v)
+                    image.setPixelColor(x, y, enhancedColor)
+        return QIcon(QPixmap.fromImage(image))
+    
     def iconChanged(self, key = 'ctrl' or 'default' or 'shift' or 'alt' or 'ctrlAlt' or 'ctrlShift' or 'altShift' or 'ctrlAltShift' or 'hi'):
-        self.icon = self.icon
         iconName = self.icon.split('/')[-1].split('.')[0]
         self.iconKey = self.icon if key == 'default' else self.icon.replace(iconName, iconName + '_' +key)
         # 检查iconKey是否存在
-        if os.path.exists(self.iconKey):
-            self.iconImage = key
-            if self.icon.lower().endswith('.gif'):
+        self.iconImage = key
+        if self.icon.lower().endswith('.gif'):
+            if os.path.exists(self.iconKey):
                 self.setIcon(QIcon(self.iconKey))
                 self.movie = QMovie(self.iconKey)  # 初始化 QMovie
                 self.movie.frameChanged.connect(self.updateIcon)  # 连接帧更新信号到槽函数
@@ -472,9 +503,23 @@ class GIFButton(QPushButton):
                 else:
                     self.movie.stop()  # 停止播放 GIF
             else:
-                self.movie = None
-                self.setIcon(QIcon(self.iconKey))
-            
+                self.iconImage = 'default'
+        else:
+            if key != 'default' and key != 'hi':
+                # 混合两张图片
+                ctrlIcon = f"D:/MELcopy/OneTools/tools/CreateCtrl4Line/icons/{key}.png"
+                defaultIcon = self.icon
+                ctrlIcon = QPixmap(ctrlIcon).scaledToHeight(self.size, Qt.SmoothTransformation)
+                defaultIcon = QPixmap(defaultIcon).scaledToHeight(self.size, Qt.SmoothTransformation)
+                # 混合两张图片
+                painter = QPainter(defaultIcon)
+                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+                painter.drawPixmap(0, 0, ctrlIcon)
+                painter.end()
+                self.setIcon(self.enhanceIcon(defaultIcon))
+            else:
+                self.setIcon(self.enhanceIcon(self.icon))
+                
     def enterEvent(self, event):
         self.iconChanged('hi')
         if not self.dragging:
@@ -540,9 +585,12 @@ class GIFButton(QPushButton):
                 self.movie.setPaused(True)  # 暂停播放 GIF
             
         # 如果iconImage 不是 default，说明图标被更改了，需要恢复原图标
-        if self.iconImage != 'default':
-            self.iconChanged('default')
-            #QObject.event(self, event)
+        if not self.icon.lower().endswith('.gif'):
+            self.setIcon(QIcon(self.pixmap))
+        else:
+            if self.iconImage != 'default':
+                self.iconChanged('default')
+        #QObject.event(self, event)
 
     def mouseMoveEvent(self, event):
         # 更改光标样式
@@ -609,8 +657,9 @@ class GIFButton(QPushButton):
         self.setIconSize(self.iconSizeValue)
         self.dragging = False
         self.eventPos = event.pos()
-        # 清除effect
-        self.setGraphicsEffect(None)
+        # 清除effect,如果光标不在按钮上
+        if not self.rect().contains(self.eventPos):
+            self.setGraphicsEffect(None)
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
@@ -650,12 +699,6 @@ class GIFButton(QPushButton):
         self.singleClickWait.stop()
         if self.rect().contains(self.eventPos):
             modifiers = QApplication.keyboardModifiers()
-            if self.sourceType == 'python':
-                commendText = self.command
-            elif self.sourceType == 'mel':
-                commendText = repr(self.command)
-                commendText = "mel.eval(" + commendText + ")"
-
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
                 if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, dict(globals(), **{'self': self}))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
@@ -671,11 +714,17 @@ class GIFButton(QPushButton):
             elif modifiers & Qt.AltModifier:
                 if self.altCommand: exec(self.altCommand, dict(globals(), **{'self': self}))
             else:
-                if commendText and self.sourceType == 'python': exec(commendText, dict(globals(), **{'self': self}))
-                elif commendText and self.sourceType == 'mel': exec(commendText)
+                if not self.command: return
+                if self.sourceType == 'python': exec(self.command, dict(globals(), **{'self': self}))
+                elif self.sourceType == 'mel':
+                    commendText = repr(self.command)
+                    commendText = "mel.eval(" + commendText + ")"
+                    exec(commendText)
         return False
 
     def doubleClickCommandText(self):
+        if not self.doubleClickCommand:
+            return
         if self.doubleClickCommandSourceType == 'python':
             commendText = self.doubleClickCommand
         elif self.doubleClickCommandSourceType == 'mel':
