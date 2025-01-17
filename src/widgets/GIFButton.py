@@ -615,6 +615,8 @@ class GIFButton(QPushButton):
         self.singleClick += 1
         self.startPos = event.pos()
         if event.button() == Qt.LeftButton:
+            # 开启撤回快
+            cmds.undoInfo(openChunk=True)
             self.executeDragCommand(event,'leftPress')
             self.setIconSize(self.iconSizeValue*1.05*0.9)
             self.dragging = True
@@ -631,6 +633,7 @@ class GIFButton(QPushButton):
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
+            cmds.undoInfo(closeChunk=True)
         if event.button() == Qt.MiddleButton:
             self.singleClick = 0
             endDrag(self, event)
