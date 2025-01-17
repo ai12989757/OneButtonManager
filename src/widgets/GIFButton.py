@@ -235,9 +235,10 @@ class gifIconMenuAction(QAction):
         self.setIcon(QIcon(self.current_frame))
 
 class Separator(QPushButton):
-    def __init__(self, parent=None, language=0):
+    def __init__(self, parent=None, language=0,dragMove=True):
         super(Separator, self).__init__(parent)
         self.language = language
+        self.dragMove = dragMove
         self.setIconSize(QSize(2, 42))
         # 绘制分隔符
         self.pixmap = QPixmap(2, 42)
@@ -265,8 +266,9 @@ class Separator(QPushButton):
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
         if event.button() == Qt.MiddleButton:
-            self.dragging = True
-            startDrag(self, event)
+            if self.dragMove:
+                self.dragging = True
+                startDrag(self, event)
 
     def mouseMoveEvent(self, event):
         if self.dragging:
@@ -275,12 +277,14 @@ class Separator(QPushButton):
             self.valueX += self.delta.x()
             self.startPos = self.currentPos
             if event.buttons() == Qt.MiddleButton:
-                performDrag(self, event)
+                if self.dragMove:
+                    performDrag(self, event)
 
     def mouseReleaseEvent(self, event):
         self.dragging = False
         if event.button() == Qt.MiddleButton:
-            endDrag(self, event)
+            if self.dragMove:
+                endDrag(self, event)
     # 添加右键菜单
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
@@ -289,6 +293,7 @@ class GIFButton(QPushButton):
     def __init__(self, parent=None, **kwargs):    
         super(GIFButton, self).__init__(parent)
         # 初始化代码
+        self.dragMove = kwargs.get('dragMove', True) # 是否允许拖动按钮
         self.icon = kwargs.get('icon', None)
         self.label = kwargs.get('label', "")
         self.annotation = kwargs.get('annotation', "")
@@ -590,8 +595,9 @@ class GIFButton(QPushButton):
         #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
         elif event.buttons() == Qt.MiddleButton:
-            self.move(self.mapToParent(event.pos() - self.startPos))
-            performDrag(self, event)
+            if self.dragMove:
+                self.move(self.mapToParent(event.pos() - self.startPos))
+                performDrag(self, event)
          
     def executeDragCommand(self, event,mouseState='leftMoving'):
         modifiers = QApplication.keyboardModifiers()
@@ -622,7 +628,8 @@ class GIFButton(QPushButton):
             self.dragging = True
             
         if event.button() == Qt.MiddleButton:
-            startDrag(self, event)
+            if self.dragMove:
+                startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
         self.setIconSize(self.iconSizeValue)
@@ -635,8 +642,9 @@ class GIFButton(QPushButton):
             self.executeDragCommand(event,'leftRelease')
             cmds.undoInfo(closeChunk=True)
         if event.button() == Qt.MiddleButton:
-            self.singleClick = 0
-            endDrag(self, event)
+            if self.dragMove:
+                self.singleClick = 0
+                endDrag(self, event)
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
