@@ -3,6 +3,7 @@ import os
 import json
 import codecs # 用于python2.7中读取json文件encoding问题
 from maya import mel
+import maya.cmds as cmds
 
 try:
     from PySide6.QtCore import *
@@ -185,6 +186,9 @@ class gifIconMenuAction(QAction):
         self.command = kwargs.get('command', None)
         self.checkable = kwargs.get('checkable', False)
 
+        self.context = globals().copy()
+        self.context.update({'self': self})
+
         if self.checkable:
             self.setCheckable(True)
             
@@ -205,7 +209,12 @@ class gifIconMenuAction(QAction):
             self.setStatusTip(self.annotation)
 
         if self.command:
-            self.triggered.connect(partial(self.execute_command))
+            self.triggered.connect(self.execute_command)
+
+    def execute_python_command(self, command, context):
+        exec(command, context)
+    def execute_mel_command(self, command):
+        exec(command)
 
     def execute_command(self):
         actions = self.parent().menu.actions()
@@ -215,19 +224,21 @@ class gifIconMenuAction(QAction):
                 self.row = index
                 break
         if self.sourceType == 'python':
-            exec(self.command, dict(globals(), **{'self': self, 'row': self.row}))
+            cmds.evalDeferred(lambda: self.execute_python_command(self.command, self.context))
+
         elif self.sourceType == 'mel':
             command = 'mel.eval(' + repr(self.command) + ')'
-            exec(command)
+            cmds.evalDeferred(lambda: self.execute_mel_command(command))
 
     def updateIcon(self):
         self.current_frame = self.movie.currentPixmap()
         self.setIcon(QIcon(self.current_frame))
 
 class Separator(QPushButton):
-    def __init__(self, parent=None, language=0):
+    def __init__(self, parent=None, language=0,dragMove=True):
         super(Separator, self).__init__(parent)
         self.language = language
+        self.dragMove = dragMove
         self.setIconSize(QSize(2, 42))
         # 绘制分隔符
         self.pixmap = QPixmap(2, 42)
@@ -255,8 +266,9 @@ class Separator(QPushButton):
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
         if event.button() == Qt.MiddleButton:
-            self.dragging = True
-            startDrag(self, event)
+            if self.dragMove:
+                self.dragging = True
+                startDrag(self, event)
 
     def mouseMoveEvent(self, event):
         if self.dragging:
@@ -265,12 +277,14 @@ class Separator(QPushButton):
             self.valueX += self.delta.x()
             self.startPos = self.currentPos
             if event.buttons() == Qt.MiddleButton:
-                performDrag(self, event)
+                if self.dragMove:
+                    performDrag(self, event)
 
     def mouseReleaseEvent(self, event):
         self.dragging = False
         if event.button() == Qt.MiddleButton:
-            endDrag(self, event)
+            if self.dragMove:
+                endDrag(self, event)
     # 添加右键菜单
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
@@ -279,6 +293,7 @@ class GIFButton(QPushButton):
     def __init__(self, parent=None, **kwargs):    
         super(GIFButton, self).__init__(parent)
         # 初始化代码
+        self.dragMove = kwargs.get('dragMove', True) # 是否允许拖动按钮
         self.icon = kwargs.get('icon', None)
         self.label = kwargs.get('label', "")
         self.annotation = kwargs.get('annotation', "")
@@ -302,6 +317,9 @@ class GIFButton(QPushButton):
         self.menuShowCommand = kwargs.get('menuShowCommand', '')
         self.size = kwargs.get('size', 42)
         self.language = kwargs.get('language', 0)
+
+        self.context = globals().copy()
+        self.context.update({'self': self})
 
         self.dragging = False
         self.mouseState = ''         # 鼠标状态: 左击按下 leftPress, 左击释放 leftRelease, 左击拖拽 leftMoving
@@ -346,6 +364,11 @@ class GIFButton(QPushButton):
         QApplication.instance().removeEventFilter(self)
         # 安装事件过滤器, 用于监听键盘事件,但是导致maya内部窗口异常卡顿，改为在鼠标进入时安装，鼠标离开时卸载
         #QApplication.instance().installEventFilter(self)
+
+    def execute_python_command(self, command, context):
+        exec(command, context)
+    def execute_mel_command(self, command):
+        exec(command)
 
     def eventFilter(self, obj, event):
         if isinstance(event, QEvent):
@@ -621,23 +644,24 @@ class GIFButton(QPushButton):
         #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
         elif event.buttons() == Qt.MiddleButton:
-            self.move(self.mapToParent(event.pos() - self.startPos))
-            performDrag(self, event)
+            if self.dragMove:
+                self.move(self.mapToParent(event.pos() - self.startPos))
+                performDrag(self, event)
          
     def executeDragCommand(self, event,mouseState='leftMoving'):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
             self.mouseState = 'ctrl'+mouseState.capitalize()
-            if self.ctrlDragCommand: exec(self.ctrlDragCommand,  dict(globals(), **{'self': self}))
+            if self.ctrlDragCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.ctrlDragCommand, self.context))
         elif modifiers & Qt.ShiftModifier:
             self.mouseState = 'shift'+mouseState.capitalize()
-            if self.shiftDragCommand: exec(self.shiftDragCommand,  dict(globals(), **{'self': self}))
+            if self.shiftDragCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.shiftDragCommand, self.context))
         elif modifiers & Qt.AltModifier:
             self.mouseState = 'alt'+mouseState.capitalize()
-            if self.altDragCommand: exec(self.altDragCommand,  dict(globals(), **{'self': self}))
+            if self.altDragCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.altDragCommand, self.context))
         else:
             self.mouseState = mouseState
-            if self.dragCommand: exec(self.dragCommand, dict(globals(), **{'self': self}))
+            if self.dragCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.dragCommand, self.context))
 
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
@@ -646,12 +670,15 @@ class GIFButton(QPushButton):
         self.singleClick += 1
         self.startPos = event.pos()
         if event.button() == Qt.LeftButton:
+            # 开启撤回快
+            cmds.undoInfo(openChunk=True)
             self.executeDragCommand(event,'leftPress')
             self.setIconSize(self.iconSizeValue*1.05*0.9)
             self.dragging = True
             
         if event.button() == Qt.MiddleButton:
-            startDrag(self, event)
+            if self.dragMove:
+                startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
         self.setIconSize(self.iconSizeValue)
@@ -663,9 +690,11 @@ class GIFButton(QPushButton):
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
+            cmds.undoInfo(closeChunk=True)
         if event.button() == Qt.MiddleButton:
-            self.singleClick = 0
-            endDrag(self, event)
+            if self.dragMove:
+                self.singleClick = 0
+                endDrag(self, event)
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
@@ -700,19 +729,19 @@ class GIFButton(QPushButton):
         if self.rect().contains(self.eventPos):
             modifiers = QApplication.keyboardModifiers()
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: exec(self.ctrlAltShiftCommand, dict(globals(), **{'self': self}))
+                if self.ctrlAltShiftCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.ctrlAltShiftCommand, self.context))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: exec(self.ctrlShiftCommand, dict(globals(), **{'self': self}))
+                if self.ctrlShiftCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.ctrlShiftCommand, self.context))
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: exec(self.ctrlAltCommand, dict(globals(), **{'self': self}))
+                if self.ctrlAltCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.ctrlAltCommand, self.context))
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: exec(self.altShiftCommand, dict(globals(), **{'self': self}))
+                if self.altShiftCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.altShiftCommand, self.context))
             elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: exec(self.ctrlCommand, dict(globals(), **{'self': self}))
+                if self.ctrlCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.ctrlCommand, self.context))
             elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: exec(self.shiftCommand, dict(globals(), **{'self': self}))
+                if self.shiftCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.shiftCommand, self.context))
             elif modifiers & Qt.AltModifier:
-                if self.altCommand: exec(self.altCommand, dict(globals(), **{'self': self}))
+                if self.altCommand: cmds.evalDeferred(lambda: self.execute_python_command(self.altCommand, self.context))
             else:
                 if not self.command: return
                 if self.sourceType == 'python': exec(self.command, dict(globals(), **{'self': self}))
@@ -730,8 +759,8 @@ class GIFButton(QPushButton):
         elif self.doubleClickCommandSourceType == 'mel':
             commendText = repr(self.doubleClickCommand)
             commendText = "mel.eval(" + commendText + ")"
-        if commendText and self.doubleClickCommandSourceType == 'python': exec(commendText, dict(globals(), **{'self': self}))
-        elif commendText and self.doubleClickCommandSourceType == 'mel': exec(commendText)
+        if commendText and self.doubleClickCommandSourceType == 'python': cmds.evalDeferred(lambda: self.execute_python_command(commendText, self.context))
+        elif commendText and self.doubleClickCommandSourceType == 'mel': cmds.evalDeferred(lambda: self.execute_mel_command(commendText))
 
     def getGIFButtonData(self,button):
         # 获取按钮数据
