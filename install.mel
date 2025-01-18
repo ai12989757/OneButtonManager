@@ -42,7 +42,6 @@ string $command="import sys\n"+
 "\n"+
 "adb = ShelfButtonManager.ShelfButtonManager("+$Language+")\n"+
 "adb.autoSetShelf()"; 
-print $command;
 python($command);
 
 if($Language == 0)

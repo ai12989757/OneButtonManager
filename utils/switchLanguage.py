@@ -32,6 +32,8 @@ def languageCheckDict():
         get_hashed_string(u"从回收站彻底删除此按钮, 注意: 不可恢复"): ["Permanently delete this button from the recycle bin. Note: Cannot be restored"],
         get_hashed_string(u"转换工具栏"): ["Convert Shelf"],
         get_hashed_string(u"点击转换当前工具栏"): ["Click to convert shelf to GIFShelf"], 
+        get_hashed_string(u"还原工具栏"): ["Restore Shelf"],
+        get_hashed_string(u"点击还原当前工具栏"): ["Click to restore GIFShelf"],
         get_hashed_string(u"保存工具栏"): ["Save Shelf"],
         get_hashed_string(u"点击保存当前工具栏"): ["Click to save GIFShelf"],
         get_hashed_string(u"导入工具栏"): ["Import Shelf"],

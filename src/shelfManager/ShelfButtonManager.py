@@ -72,8 +72,8 @@ class ShelfButtonManager(QWidget):
         self.iconH = 42
         self.iconH = mel.eval('shelfLayout -q -h '+self.currentShelf) - 10
 
-        self.menu = None
-
+        self.menu = None # 右击菜单
+        self.shelf2DefUI = None # 还原工具栏的UI
         # def moveYShelf(self):
         #     self.buttonList = self.getButtonList()[1]
         #     for i in self.buttonList:
@@ -164,6 +164,7 @@ class ShelfButtonManager(QWidget):
         # 工具栏设置
         self.contextMenu.addSeparator()
         self.contextMenu.addAction(QIcon(self.iconPath + 'white/Switch.png'), sl(u"转换工具栏", self.language), self.toGIF).setStatusTip(sl(u"点击转换当前工具栏", self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'green/Restore.png'), sl(u"还原工具栏", self.language), self.toDef).setStatusTip(sl(u"点击还原当前工具栏", self.language))
         self.contextMenu.addAction(QIcon(self.iconPath + 'white/Save.png'), sl(u"保存工具栏", self.language), self.saveGifShelf).setStatusTip(sl(u"点击保存当前工具栏", self.language))
         self.contextMenu.addAction(QIcon(self.iconPath + 'white/Import.png'), sl(u"导入工具栏", self.language), self.loadGifShelf).setStatusTip(sl(u"点击导入工具栏", self.language))
         self.contextMenu.addSeparator()
@@ -205,7 +206,7 @@ class ShelfButtonManager(QWidget):
             action = GIFButton.gifIconMenuAction(icon = jsonData[i]['image'], label = jsonData[i]['label'], annotation = jsonData[i]['annotation'], parent = self.recycleMenu)
             buttonRecycleEdit = QMenu()
             action.setMenu(buttonRecycleEdit)
-            buttonRecycleEdit.addAction(QIcon(self.iconPath + 'white/Restore.png'), sl(u"还原",self.language), self.recycleRestoreButton).setStatusTip(sl(u"将此按钮重新添加到当前工具栏",self.language))
+            buttonRecycleEdit.addAction(QIcon(self.iconPath + 'green/Restore.png'), sl(u"还原",self.language), self.recycleRestoreButton).setStatusTip(sl(u"将此按钮重新添加到当前工具栏",self.language))
             buttonRecycleEdit.addAction(QIcon(self.iconPath + 'red/Delete.png'), sl(u"删除",self.language), self.recycleDeleteButton).setStatusTip(sl(u"从回收站彻底删除此按钮, 注意: 不可恢复",self.language))
             self.recycleMenu.addAction(action)
    
@@ -657,8 +658,59 @@ class ShelfButtonManager(QWidget):
             mel.eval(u'print("// 结果: 转换成功\\n")') 
 
     def toDef(self):
-        pass
+        # 根据保存备份的 mel 文件恢复 shelf
+        shelf_backup = self.OneToolsDataDir + 'shelf_backup/' # 备份文件夹
+        shelf_backupFile = shelf_backup + 'shelf_' + self.currentShelf + '.mel'
+        fileDict = {}
+        for file in os.listdir(shelf_backup):
+            if '.mel' in file:
+                name = file.split('.')[0].replace('shelf_', '')
+                # 获取文件大小
+                fileSize = os.path.getsize(shelf_backup + file)
+                fileSize = round(fileSize / 1024, 2)
+                data = file.split('.')[-1] # 20250118_150204
+                # 时间友好显示
+                data = data[0:4] + '.' + data[4:6] + '.' + data[6:8] + ' ' + data[9:11] + ':' + data[11:13]
+                if name not in fileDict.keys():
+                    fileDict[name] = []
+                fileDict[name].append([name, data, fileSize,False])
 
+        fileList = []
+        for i in fileDict.keys():
+            if len(fileDict[i]) == 1:
+                fileDict[i][0][3] = True
+                fileDict[i][0][2] = str(fileDict[i][0][2]) + 'KB'
+                fileList.append(fileDict[i][0])
+            else:
+                tempSizeList = [j[2] for j in fileDict[i]]
+                tempTimeList = [j[1] for j in fileDict[i]]
+
+                if len(set(tempSizeList)) == 1:
+                    # 文件大小都一样时，比较 tempTimeList 里的值时间最新的
+                    max_index = tempTimeList.index(max(tempTimeList))
+                else:
+                    # 文件大小不一样，比较 tempSizeList 里的值文件大小最大的
+                    max_index = tempSizeList.index(max(tempSizeList))
+
+                fileDict[i][max_index][3] = True
+
+                for j in fileDict[i]:
+                    j[2] = str(j[2]) + 'KB'
+                    fileList.append(j)
+
+        if fileList is None:
+            if self.language == 0:
+                mel.eval(u'warning -n "没有找到备份文件: '+shelf_backupFile+'"')
+            elif self.language == 1:
+                mel.eval('warning -n "No backup file found: '+shelf_backupFile+'"')
+            return 
+        try:
+            self.shelf2DefUI.close()
+        except:
+            pass
+        self.shelf2DefUI = toDefUI(fileList=fileList, language=self.language)
+        self.shelf2DefUI.show()
+        
     def toJson(self):
         pass
 
@@ -949,6 +1001,287 @@ class ShelfButtonManager(QWidget):
                     mel.eval(u'print("// 结果: '+jsonPath+'")')
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
+
+def maya_main_window():
+    """
+    Return the Maya main window widget as a Python object
+    """
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance(int(main_window_ptr), QWidget)
+
+from ...utils import imageManager
+class toDefUI(QWidget):
+    def __init__(self, parent=maya_main_window(), fileList=None, language=0):
+        super(toDefUI, self).__init__(parent)
+        self.iconDir = __file__.replace('\\', '/').replace('src/shelfManager/ShelfButtonManager.py', 'icons/')
+        self.fileList = fileList
+        self.language = language
+        self.win = 'Shift2Default'
+        self.title = 'Shift to Default'
+        self.mPos = None
+        self.width = 400
+        self.height = 430
+        self.setAttribute(Qt.WA_DeleteOnClose) # 设置窗口关闭事件
+        self.createUI() # 创建UI
+        self.load_settings() # 恢复上次的位置和大小
+        
+    def createUI(self):
+        self.setWindowTitle(self.title)
+        self.setObjectName(self.win)
+        #self.resize(self.width, self.height) # 设置窗口大小
+        #self.setGeometry(0, 0, self.width, self.height)
+        #self.setAttribute(Qt.WA_TranslucentBackground)                           # 设置窗口背景透明
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)                  # 设置窗口无边框
+        self.setFixedSize(self.width, self.height)
+
+        self.Alllayout = QVBoxLayout(self)
+        self.setLayout(self.Alllayout)
+        self.Alllayout.setAlignment(Qt.AlignTop|Qt.AlignCenter)
+        # 设置布局间距
+        self.Alllayout.setSpacing(0)
+        # 设置布局边距
+        self.Alllayout.setContentsMargins(0,0,0,0)
+
+        # 标题栏
+        self.titleWidget = titleBar(
+            self, text = self.title, 
+            icon = self.iconDir+'red/Close.png',
+            func = self.close
+            )
+        self.Alllayout.addWidget(self.titleWidget)
+
+        # 主布局
+        self.layout = QVBoxLayout(self)
+        self.Alllayout.addLayout(self.layout)
+        self.layout.setAlignment(Qt.AlignTop|Qt.AlignCenter)
+        self.layout.setSpacing(10)
+        self.layout.setContentsMargins(10,0,10,10)
+        
+        # 图标
+        self.iconLabel = QLabel()
+        self.iconLabel.setToolTip(u'你干嘛，哎哟~')
+        self.iconLabel.setStatusTip(u'你干嘛，哎哟~')
+        self.iconLabel.setPixmap(QPixmap(self.iconDir+'AniBotPo.png',))
+        self.layout.addWidget(self.iconLabel, 0, Qt.AlignCenter)
+
+        # 提示信息
+        self.infoLabel = QLabel()
+        if self.language == 0:
+            self.infoLabel.setText(u'找到下列备份文件')
+        elif self.language == 1:
+            self.infoLabel.setText(u'Found the following backup files')
+        # 设置字体
+        self.infoLabel.setFont(QFont("Microsoft YaHei", 10, QFont.Bold))
+        self.layout.addWidget(self.infoLabel, 0, Qt.AlignCenter)
+
+        # 文件列表
+        self.fileListWidget = QTreeWidget()
+        self.fileListWidget.setColumnCount(4)
+        if self.language == 0:
+            self.fileListWidget.setHeaderLabels(["名称", "日期", "大小", "操作"])
+        elif self.language == 1:
+            self.fileListWidget.setHeaderLabels(["Name", "Date", "Size", "Set"])
+        self.fileListWidget.header().setDefaultAlignment(Qt.AlignLeft)
+        self.fileListWidget.setIndentation(0)  # 去掉第一列里面项目左边的空白
+        #self.fileListWidget.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # 自动调整列宽
+        self.fileListWidget.header().setStretchLastSection(True)  # 自动调整列宽
+        self.fileListWidget.setColumnWidth(0, 90)  # 设置第一列宽度
+        self.fileListWidget.setColumnWidth(1, 140)  # 设置第二列宽度
+        self.fileListWidget.setColumnWidth(2, 80)
+        self.fileListWidget.setColumnWidth(3, 30)  # 设置第四列宽度
+        self.fileListWidget.setFixedHeight(230)
+        self.layout.addWidget(self.fileListWidget)
+        self.fileListWidget.itemDoubleClicked.connect(self.restoreShelf)
+
+        for i in self.fileList:
+            file_item = QTreeWidgetItem(self.fileListWidget)
+            file_item.setText(0, i[0])
+            file_item.setText(1, i[1])
+            file_item.setText(2, i[2])
+            self.fileListWidget.addTopLevelItem(file_item)
+            
+            # 检查是否存在同名文件
+            if i[3]:
+                file_item.setForeground(0, QBrush(QColor('#00CED1')))
+                file_item.setForeground(1, QBrush(QColor('#00CED1')))
+                file_item.setForeground(2, QBrush(QColor('#00CED1')))
+
+            # 恢复按钮
+            restore_button = QPushButton()
+            restore_button.setIcon(QIcon(self.iconDir+'green/Restore.png'))
+            restore_button.setIconSize(QSize(15, 15))
+            restore_button.setStyleSheet('background-color: rgba(0,0,0,0);border: none;')
+            restore_button.enterEvent = partial(self.restore_button_on_enter_event, button=restore_button)
+            restore_button.leaveEvent = partial(self.restore_button_on_leave_event, button=restore_button)
+            restore_button.setToolTip(u'恢复选中的备份文件')
+            restore_button.setStatusTip(u'恢复选中的备份文件')
+            restore_button.clicked.connect(partial(self.restoreShelf, item=file_item, index=0))
+
+            # 删除按钮
+            delete_button = QPushButton()
+            delete_button.setIcon(QIcon(self.iconDir+'red/Recycle.png'))
+            delete_button.setIconSize(QSize(15, 15))
+            delete_button.setStyleSheet('background-color: rgba(0,0,0,0);border: none;')
+            delete_button.enterEvent = partial(self.delete_button_on_enter_event, button=delete_button)
+            delete_button.leaveEvent = partial(self.delete_button_on_leave_event, button=delete_button)
+            delete_button.setToolTip(u'删除选中的备份文件')
+            delete_button.setStatusTip(u'删除选中的备份文件')
+            delete_button.clicked.connect(partial(self.deleteItem, item=file_item))
+
+            # 将按钮添加到 QTreeWidget 的同一列
+            button_widget = QWidget()
+            button_widget.setFixedWidth(40)
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.addWidget(restore_button)
+            button_layout.addWidget(delete_button)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            button_layout.setSpacing(5)
+            self.fileListWidget.setItemWidget(file_item, 3, button_widget)
+
+        # 按钮
+        self.buttonLayout = QHBoxLayout()
+        self.layout.addLayout(self.buttonLayout)
+        self.buttonLayout.setAlignment(Qt.AlignCenter)
+        self.buttonLayout.setSpacing(10)
+        self.buttonLayout.setContentsMargins(0,0,0,0)
+        # 恢复按钮
+        self.restoreButton = QPushButton()
+        self.restoreButton.setText(u'恢复')
+        self.restoreButton.setToolTip(u'根据当前工具栏恢复成maya默认工具栏')
+        self.restoreButton.setStatusTip(u'根据当前工具栏恢复成maya默认工具栏')
+        self.restoreButton.clicked.connect(self.restoreShelf)
+        self.buttonLayout.addWidget(self.restoreButton)
+        # 关闭按钮
+        self.closeButton = QPushButton()
+        self.closeButton.setText(u'关闭')
+        self.closeButton.setToolTip(u'关闭窗口')
+        self.closeButton.setStatusTip(u'关闭窗口')
+        self.closeButton.clicked.connect(self.close)
+        self.buttonLayout.addWidget(self.closeButton)
+
+
+    def restoreShelf(self, item, index):
+        print("恢复文件:", item.text(0))
+
+    def deleteItem(self, item):
+        # index = self.fileListWidget.indexOfTopLevelItem(item)
+        # self.fileListWidget.takeTopLevelItem(index)
+        print("删除文件:", item.text(0))
+        # 这里可以添加删除文件的逻辑
+
+    def restore_button_on_enter_event(self, event,button):
+        button.setIcon(imageManager.enhanceIcon(self.iconDir+'green/Restore.png'))
+        button.setIconSize(QSize(20, 20))
+    def restore_button_on_leave_event(self, event,button):
+        button.setIcon(QIcon(self.iconDir+'green/Restore.png'))
+        button.setIconSize(QSize(15, 15))
+    def delete_button_on_enter_event(self, event,button):
+        button.setIcon(imageManager.enhanceIcon(self.iconDir+'red/Recycle.png'))
+        button.setIconSize(QSize(20, 20))
+    def delete_button_on_leave_event(self, event,button):
+        button.setIcon(QIcon(self.iconDir+'red/Recycle.png'))
+        button.setIconSize(QSize(15, 15))
+
+    def mousePressEvent(self, event):
+        """鼠标点击事件"""
+        if event.button() == Qt.LeftButton:
+            self.mPos = event.pos()
+        event.accept()
+
+    def mouseReleaseEvent(self, event):
+        '''鼠标弹起事件'''
+        self.mPos = None
+        event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton and self.mPos:
+            self.move(self.mapToGlobal(event.pos() - self.mPos))
+        event.accept()
+
+    def closeEvent(self, event):
+        # 保存当前的位置和大小
+        self.save_settings()
+        event.accept()
+
+    def save_settings(self):
+        settings = QSettings()
+        settings.setValue("geometry", self.saveGeometry())
+
+    def load_settings(self):
+        settings = QSettings()
+        geometry = settings.value("geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+
+    def paintEvent(self, event):
+        # 设置圆角
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, self.width, self.height, 10, 10) # 设置圆角路径
+        path.translate(0.5, 0.5) # 修复边框模糊
+        region = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
+        # 创建一个 QPainter 对象来绘制边框
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing) # 抗锯齿
+        pen = QPen(Qt.darkGray, 5)  # 设置描边颜色和宽度
+        painter.setPen(pen)
+        painter.drawPath(path)
+        painter.end()
+
+class titleBar(QWidget):
+    def __init__(self, parent=None, **kwargs):
+        super(titleBar, self).__init__(parent)
+        self.text = kwargs.get('text', None)
+        self.icon = kwargs.get('icon', None)
+        self.func = kwargs.get('func', None)
+        self.setStyleSheet('background-color: rgba(0,0,0,0);')
+        self.setFixedHeight(40)
+        self.titleLayout = QHBoxLayout()
+        #self.titleLayout.setAlignment(Qt.AlignCenter|Qt.AlignLeft)
+        self.titleLayout.setContentsMargins(10, 4, 5, 0)
+        self.setLayout(self.titleLayout)
+        self.titleLabel = QLabel(self.text)
+        
+        self.titleLabel.setToolTip(u'标题栏')
+        self.titleLabel.setStatusTip(u'标题栏')
+        self.titleLabel.setStyleSheet('font: bold;font-size:20px;color: DeepSkyBlue;') # #00BFFF
+        self.titleLayout.addWidget(self.titleLabel, 0, Qt.AlignLeft)
+        # 关闭按钮
+        self.closeButton = QPushButton()
+        self.closeButton.setToolTip(u'关闭')
+        self.closeButton.setStatusTip(u'关闭')
+        self.closeButton.setIcon(QIcon(self.icon))
+        self.closeButton.setIconSize(QSize(30, 30))
+        self.closeButton.setFixedSize(30, 30)
+        # 设置按钮样式，无背景无边框
+        self.closeButton.setStyleSheet('background-color: rgba(0,0,0,0);border: none;')
+        self.closeButton.clicked.connect(self.func)
+        self.closeButton.enterEvent = self.closeButtonEnterEvent
+        self.closeButton.leaveEvent = self.closeButtonLeaveEvent
+        self.titleLayout.addWidget(self.closeButton, 0, Qt.AlignRight)
+
+        self.applyColorEffect()
+
+    def applyColorEffect(self):
+        import random
+        self.colored_text = ""
+        for char in self.text:
+            # 生成随机颜色，确保颜色不偏黑
+            while True:
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                if r + g + b > 600:  # 确保颜色不偏黑
+                    break
+            color = QColor(r, g, b)
+            self.colored_text += f'<span style="color: rgb({color.red()}, {color.green()}, {color.blue()});">{char}</span>'
+        self.titleLabel.setText(self.colored_text)
+        self.titleLabel.setTextFormat(Qt.RichText)
+
+    def closeButtonEnterEvent(self,event):
+        self.closeButton.setIcon(imageManager.enhanceIcon(self.icon))
+    def closeButtonLeaveEvent(self,event):
+        self.closeButton.setIcon(QIcon(self.icon))
 
 def main():
     sys.dont_write_bytecode = True
