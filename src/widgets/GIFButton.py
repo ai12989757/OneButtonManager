@@ -16,7 +16,13 @@ except ImportError:
 from functools import partial
 from collections import OrderedDict
 
-from switchLanguage import *
+from ...utils.switchLanguage import *
+from ...utils import imageManager
+try:
+    reload(imageManager)
+except:
+    from importlib import reload
+    reload(imageManager)
 
 iconPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src/widgets', 'icons/')
 
@@ -321,6 +327,8 @@ class GIFButton(QPushButton):
         self.context = globals().copy()
         self.context.update({'self': self})
 
+        self.subIcon = None # 有右键菜单时，显示的图标
+
         self.dragging = False
         self.mouseState = ''         # 鼠标状态: 左击按下 leftPress, 左击释放 leftRelease, 左击拖拽 leftMoving
         self.singleClick = 0         # 单击事件计数
@@ -411,7 +419,7 @@ class GIFButton(QPushButton):
                         elif modifiers & Qt.ShiftModifier:
                             self.iconChanged('shift')
                         else:
-                            self.iconChanged('default')
+                            if self.iconImage != 'default': self.iconChanged('default')
                     elif event.key() == Qt.Key_Control:
                         if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
                             self.iconChanged('altShift')
@@ -420,7 +428,7 @@ class GIFButton(QPushButton):
                         elif modifiers & Qt.ShiftModifier:
                             self.iconChanged('shift')
                         else:
-                            self.iconChanged('default')
+                            if self.iconImage != 'default': self.iconChanged('default')
                     elif event.key() == Qt.Key_Shift:
                         if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
                             self.iconChanged('ctrlAlt')
@@ -429,7 +437,7 @@ class GIFButton(QPushButton):
                         elif modifiers & Qt.AltModifier:
                             self.iconChanged('alt')
                         else:
-                            self.iconChanged('default')
+                            if self.iconImage != 'default': self.iconChanged('default')
         return False
         #return super(GIFButton, self).eventFilter(obj, event)
     
@@ -479,43 +487,12 @@ class GIFButton(QPushButton):
             self.current_frame = self.movie.currentPixmap()
             self.setIcon(QIcon(self.current_frame))
 
-    def enhanceIcon(self, iconPath):
-        image = None
-        if isinstance(iconPath, str):
-            if iconPath.lower().endswith('.gif'):
-                return
-            image = QImage(iconPath)
-        elif isinstance(iconPath, QPixmap):
-            image = iconPath.toImage()
-        else:
-            return
-        pixmap = QPixmap(image)
-        image = image.scaled(float(pixmap.width())/float(pixmap.height())*self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        # 增加对比度
-        for y in range(image.height()):
-            for x in range(image.width()):
-                pixel = image.pixel(x, y)
-                color = image.pixelColor(x, y)
-                alpha = color.alpha()
-                if alpha > 200:
-                #if color.red() > 0 or color.green() > 0 or color.blue() > 0:
-                    # 转换为 HSV
-                    hsv = color.toHsv()
-                    h, s, v= hsv.hue(), hsv.saturation(), hsv.value()
-                    
-                    # 调整 S 和 V 的值
-                    s = min(255, int(s * 1.3))  # 增加饱和度
-                    v = min(255, int(v * 1.2))  # 增加亮度
-                    # 转换回 RGB
-                    enhancedColor = QColor.fromHsv(h, s, v)
-                    image.setPixelColor(x, y, enhancedColor)
-        return QIcon(QPixmap.fromImage(image))
-    
     def iconChanged(self, key = 'ctrl' or 'default' or 'shift' or 'alt' or 'ctrlAlt' or 'ctrlShift' or 'altShift' or 'ctrlAltShift' or 'hi'):
         iconName = self.icon.split('/')[-1].split('.')[0]
         self.iconKey = self.icon if key == 'default' else self.icon.replace(iconName, iconName + '_' +key)
         # 检查iconKey是否存在
         self.iconImage = key
+        
         if self.icon.lower().endswith('.gif'):
             if os.path.exists(self.iconKey):
                 self.setIcon(QIcon(self.iconKey))
@@ -528,20 +505,15 @@ class GIFButton(QPushButton):
             else:
                 self.iconImage = 'default'
         else:
+            icon = self.pixmap
+            if self.subIcon: icon = self.subIcon
             if key != 'default' and key != 'hi':
-                # 混合两张图片
-                ctrlIcon = f"D:/MELcopy/OneTools/tools/CreateCtrl4Line/icons/{key}.png"
-                defaultIcon = self.icon
-                ctrlIcon = QPixmap(ctrlIcon).scaledToHeight(self.size, Qt.SmoothTransformation)
-                defaultIcon = QPixmap(defaultIcon).scaledToHeight(self.size, Qt.SmoothTransformation)
-                # 混合两张图片
-                painter = QPainter(defaultIcon)
-                painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-                painter.drawPixmap(0, 0, ctrlIcon)
-                painter.end()
-                self.setIcon(self.enhanceIcon(defaultIcon))
+                blendImage = blendImage = imageManager.blendTwoImages(icon, f"{iconPath}sub/{key}.png", self.size, 'left')
+                icon = imageManager.enhanceIcon(blendImage)
+                self.setIcon(QIcon(icon))
             else:
-                self.setIcon(self.enhanceIcon(self.icon))
+                icon = imageManager.enhanceIcon(icon)
+                self.setIcon(QIcon(icon))
                 
     def enterEvent(self, event):
         self.iconChanged('hi')
@@ -608,11 +580,13 @@ class GIFButton(QPushButton):
                 self.movie.setPaused(True)  # 暂停播放 GIF
             
         # 如果iconImage 不是 default，说明图标被更改了，需要恢复原图标
-        if not self.icon.lower().endswith('.gif'):
-            self.setIcon(QIcon(self.pixmap))
+        if self.subIcon: self.setIcon(QIcon(self.subIcon))
         else:
-            if self.iconImage != 'default':
-                self.iconChanged('default')
+            if not self.icon.lower().endswith('.gif'):
+                self.setIcon(QIcon(self.pixmap))
+            else:
+                if self.iconImage != 'default':
+                    self.iconChanged('default')
         #QObject.event(self, event)
 
     def mouseMoveEvent(self, event):
@@ -948,6 +922,12 @@ class GIFButton(QPushButton):
     def addMenuItem(self, label=None, sourceType=None, command=None, icon=None, annotation=None, checkable=False):
         menu_item = gifIconMenuAction(parent=self, icon=icon, label=label, annotation=annotation, sourceType=sourceType, command=command, checkable=checkable)
         self.menu.addAction(menu_item)
+        try:
+            if self.subIcon is None:
+                self.subIcon = imageManager.blendTwoImages(self.icon, f"{iconPath}sub/sub.png", self.size, 'right')
+                self.setIcon(QIcon(self.subIcon))
+        except:
+            print(f'subIcon Error: {label}')
         # 菜单出现前命令
         try:
             self.menu.aboutToShow.disconnect(None, None)
@@ -963,7 +943,7 @@ class GIFButton(QPushButton):
         self.menu.exec_(event.globalPos())
 
     def buttonEditor(self):
-        from buttonEditor import editWindow
+        from ..buttonEditor import editWindow
         editButton = self
         if mel.eval('window -exists ButtonEditorWindow'):
             mel.eval('deleteUI ButtonEditorWindow')

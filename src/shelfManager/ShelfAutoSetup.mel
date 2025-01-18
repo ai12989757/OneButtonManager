@@ -1,5 +1,5 @@
 global string $gifButtonPath;
-$gifButtonPath = "D:/git/OneButtonManager/src";int $Language = 0;
+$gifButtonPath = "D:/git/";int $Language = 0;
 
 string $pythonCode = "import sys\n" +
                     "sys.dont_write_bytecode = True\n" +
@@ -7,7 +7,7 @@ string $pythonCode = "import sys\n" +
                     "if PATH not in sys.path:\n" +
                     "    sys.path.append(PATH)\n" +
                     "if 'ShelfButtonManager' not in sys.modules:\n" +
-                    "    from shelfManager import ShelfButtonManager\n" +
+                    "    from OneButtonManager.src.shelfManager import ShelfButtonManager\n" +
                     "try:\n" +
                     "    reload(ShelfButtonManager)\n" +
                     "except:\n" +
@@ -52,7 +52,7 @@ global proc GifButton_AutoLoad()
 global proc GifButton_AutoSave()
 {
     global int $Language;
-    scriptJob -e "quitApplication" ("python(\"from shelfManager import ShelfButtonManager\\nshelf_save = ShelfButtonManager.ShelfButtonManager("+$Language+")\\nshelf_save.autoSaveGifShelf()\")");
+    scriptJob -e "quitApplication" ("python(\"from OneButtonManager.src.shelfManager import ShelfButtonManager\\nshelf_save = ShelfButtonManager.ShelfButtonManager("+$Language+")\\nshelf_save.autoSaveGifShelf()\")");
 }
 
 global proc int deleteShelfTabNoCheck(string $shelfName) 

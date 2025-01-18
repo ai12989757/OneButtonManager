@@ -19,15 +19,15 @@ except ImportError:
 from functools import partial
 from collections import OrderedDict
 
-from widgets import GIFButton
+from ..widgets import GIFButton
 try:
     reload(GIFButton)
 except:
     from importlib import reload
     reload(GIFButton)
 
-from buttonEditor.KeywordHighlighter import *
-from switchLanguage import *
+from ...utils.KeywordHighlighter import *
+from ...utils.switchLanguage import *
 
 iconPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src/buttonEditor', 'icons/')
 
@@ -603,6 +603,11 @@ class ButtonEditorWindow(QDialog):
         self.menuItems = new_menuItems
         
         self.updataMenuAction() # 更新菜单
+        # 如果自定义菜单被完全删除，去除图标的sub下标
+        if len(self.menuItems) == 0:
+            self.gifButton.subIcon = None
+            self.editButton.subIcon = None
+            self.gifButton.setIcon(self.gifButton.pixmap)
         
     def showMenuIconBorder(self, setButton,event):
         effect = QGraphicsDropShadowEffect(self)
@@ -1016,18 +1021,22 @@ class ButtonEditorWindow(QDialog):
 
         # 设置菜单 # 移除所有菜单后重新添加
         self.editButton.menu.clear()
-        for key in self.menuItems.keys():
-            if key == 'Separator':
-                self.editButton.menu.addSeparator()
-            else:
-                menuItem = self.menuItems[key]
-                self.editButton.addMenuItem(
-                    label=menuItem["label"],
-                    sourceType=menuItem["sourceType"],
-                    command=menuItem["command"],
-                    icon=menuItem["icon"],
-                    annotation=menuItem["annotation"]
-            )
+        if self.menuItems:
+            for key in self.menuItems.keys():
+                if key == 'Separator':
+                    self.editButton.menu.addSeparator()
+                else:
+                    menuItem = self.menuItems[key]
+                    self.editButton.addMenuItem(
+                        label=menuItem["label"],
+                        sourceType=menuItem["sourceType"],
+                        command=menuItem["command"],
+                        icon=menuItem["icon"],
+                        annotation=menuItem["annotation"]
+                )
+        else:
+            self.editButton.subIcon = None
+            self.editButton.setIcon(QIcon(self.editButton.pixmap))
         self.editButton.addDefaultMenuItems()
 
         # 移除事件过滤器

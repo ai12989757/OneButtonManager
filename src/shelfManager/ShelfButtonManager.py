@@ -22,8 +22,8 @@ except ImportError:
 from functools import partial
 from collections import OrderedDict
 
-from switchLanguage import *
-from widgets import GIFButton
+from ...utils.switchLanguage import *
+from ..widgets import GIFButton
 try:
     reload(GIFButton)
 except:
@@ -417,7 +417,7 @@ class ShelfButtonManager(QWidget):
                             setupCode = 'GifButton_AutoSave;\n'
                             f.write(setupCode)
                     if not any('autoSaveGifShelf' in job for job in mel.eval('scriptJob -lj')):
-                        jboCode = 'scriptJob -e "quitApplication" "python(\\"from shelfManager import ShelfButtonManager\\\\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\\\\nshelf_save.autoSaveGifShelf()\\")"'
+                        jboCode = 'scriptJob -e "quitApplication" "python(\\"from OneButtonManager.src.shelfManager import ShelfButtonManager\\\\nshelf_save = ShelfButtonManager.ShelfButtonManager('+str(self.language)+')\\\\nshelf_save.autoSaveGifShelf()\\")"'
                         mel.eval(jboCode)
                     i.switch = True
                     if self.language == 0:
@@ -887,6 +887,7 @@ class ShelfButtonManager(QWidget):
                     i.deleteLater()
             except:
                 pass
+            
         self.shelfManagers[shelfName].loadShelfData(jsonData)
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
 

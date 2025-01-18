@@ -27,13 +27,14 @@ fclose $fileId; // 关闭文件
 $fileId=`fopen $file "w"`; // 打开文件为写入
 fprint $fileId $allTXT; // 写入
 fclose $fileId; // 关闭文件
-
+string $path = $asInstallScriptLocation;
 string $command="import sys\n"+
-"PATH = r'"+$asInstallScriptLocation+"src'\n"+
+"PATH = r'"+$asInstallScriptLocation+"'\n"+
+"PATH = PATH.replace('OneButtonManager/','')\n"+
 "if PATH not in sys.path:\n"+
 "    sys.path.append(PATH)\n"+
 "if 'ShelfButtonManager' not in sys.modules:\n"+
-"    from shelfManager import ShelfButtonManager\n"+
+"    from OneButtonManager.src.shelfManager import ShelfButtonManager\n"+
 "try:\n"+
 "    reload(ShelfButtonManager)\n"+
 "except:\n"+
