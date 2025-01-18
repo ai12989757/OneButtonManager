@@ -922,12 +922,16 @@ class GIFButton(QPushButton):
     def addMenuItem(self, label=None, sourceType=None, command=None, icon=None, annotation=None, checkable=False):
         menu_item = gifIconMenuAction(parent=self, icon=icon, label=label, annotation=annotation, sourceType=sourceType, command=command, checkable=checkable)
         self.menu.addAction(menu_item)
-        try:
-            if self.subIcon is None:
+        
+        if self.subIcon is None:
+            try:
                 self.subIcon = imageManager.blendTwoImages(self.icon, f"{iconPath}sub/sub.png", self.size, 'right')
                 self.setIcon(QIcon(self.subIcon))
-        except:
-            print(f'subIcon Error: {label}')
+            except:
+                icon = iconPath + 'white/undetected.png'
+                self.subIcon = imageManager.blendTwoImages(icon, f"{iconPath}sub/sub.png", self.size, 'right')
+                self.setIcon(QIcon(self.subIcon))
+            
         # 菜单出现前命令
         try:
             self.menu.aboutToShow.disconnect(None, None)

@@ -583,7 +583,7 @@ class ShelfButtonManager(QWidget):
             if not os.path.exists(shelf_backup):
                 os.makedirs(shelf_backup)
             
-            mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel+'")' ) # 保存当前 shelf
+            mel.eval('saveShelf("'+self.currentShelf+'", "'+shelfMel.replace('.mel','')+'")' ) # 保存当前 shelf
 
             # 使用robocopy备份文件 robocopy /e path file
             # 获取当前日期和时间
