@@ -21,7 +21,7 @@ class toDefUI(QWidget):
         self.fileList = fileList
         self.language = language
         self.win = 'Shift2Default'
-        self.title = 'Shift to Default'
+        self.title = 'Shift Manager'
         self.mPos = None
         self.width = 400
         self.height = 465
