@@ -7,15 +7,8 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
-try:
-    from shiboken6 import wrapInstance
-except:
-    from shiboken2 import wrapInstance
-import maya.OpenMayaUI as omui
 
-def maya_main_window():
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(int(main_window_ptr), QWidget)
+from ..ui.mayaMQT import maya_main_window
 
 class sliderWidget(QWidget):
     def __init__(self, parent=maya_main_window()):

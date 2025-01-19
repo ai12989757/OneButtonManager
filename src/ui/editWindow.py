@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-from maya import mel
-import maya.OpenMayaUI as omui
-try:
-    from shiboken6 import wrapInstance
-except ImportError:
-    from shiboken2 import wrapInstance
-
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -16,29 +9,20 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
-from functools import partial
 from collections import OrderedDict
 
 from ..widgets import GIFButton
+from ..utils.KeywordHighlighter import *
+from ..utils.switchLanguage import *
 try:
     reload(GIFButton)
 except:
     from importlib import reload
     reload(GIFButton)
 
-from ...utils.KeywordHighlighter import *
-from ...utils.switchLanguage import *
+iconPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src/ui', 'icons/')
 
-iconPath = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src/buttonEditor', 'icons/')
-
-# 创建一个按钮编辑器窗口
-def maya_main_window():
-    """
-    Return the Maya main window widget as a Python object
-    """
-    main_window_ptr = omui.MQtUtil.mainWindow()
-    return wrapInstance(int(main_window_ptr), QWidget)
-
+from ..ui.mayaMQT import maya_main_window
 class ButtonEditorWindow(QDialog):
     def __init__(self, editButton, language, parent=maya_main_window()):
         super(ButtonEditorWindow, self).__init__(parent)

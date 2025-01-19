@@ -16,8 +16,8 @@ except ImportError:
 from functools import partial
 from collections import OrderedDict
 
-from ...utils.switchLanguage import *
-from ...utils import imageManager
+from ..utils.switchLanguage import *
+from ..utils import imageManager
 try:
     reload(imageManager)
 except:
@@ -924,13 +924,14 @@ class GIFButton(QPushButton):
         self.menu.addAction(menu_item)
         
         if self.subIcon is None:
-            try:
-                self.subIcon = imageManager.blendTwoImages(self.icon, f"{iconPath}sub/sub.png", self.size, 'right')
-                self.setIcon(QIcon(self.subIcon))
-            except:
-                icon = iconPath + 'white/undetected.png'
-                self.subIcon = imageManager.blendTwoImages(icon, f"{iconPath}sub/sub.png", self.size, 'right')
-                self.setIcon(QIcon(self.subIcon))
+            if not self.icon.lower().endswith('.gif'):
+                try:
+                    self.subIcon = imageManager.blendTwoImages(self.icon, f"{iconPath}sub/sub.png", self.size, 'right')
+                    self.setIcon(QIcon(self.subIcon))
+                except:
+                    icon = iconPath + 'white/undetected.png'
+                    self.subIcon = imageManager.blendTwoImages(icon, f"{iconPath}sub/sub.png", self.size, 'right')
+                    self.setIcon(QIcon(self.subIcon))
             
         # 菜单出现前命令
         try:
@@ -947,7 +948,7 @@ class GIFButton(QPushButton):
         self.menu.exec_(event.globalPos())
 
     def buttonEditor(self):
-        from ..buttonEditor import editWindow
+        from ..ui import editWindow
         editButton = self
         if mel.eval('window -exists ButtonEditorWindow'):
             mel.eval('deleteUI ButtonEditorWindow')

@@ -9,15 +9,14 @@ except ImportError:
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
 
-from GIFButton import GIFButton
+from ..widgets.GIFButton import GIFButton
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 from pymel.core import *
 
 iconPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../icons/')
-iconPath = iconPath.replace('\\', '/').replace('src', 'icons')
+iconPath = iconPath.replace('\\', '/').replace('src/ui', 'icons')
 
 # 创建一个可以dock的窗口
-
 class OneToolsMainWindow(MayaQWidgetDockableMixin, QWidget):
     def __init__(self, parent=None):
         super(OneToolsMainWindow, self).__init__(parent)
@@ -98,53 +97,10 @@ class OneToolsMainWindow(MayaQWidgetDockableMixin, QWidget):
         return self.layout, self.buttonList
     
     def settingButton(self):
-        addGifButtonCommand = '''import ShelfButtonManager
-adb = ShelfButtonManager.ShelfButtonManager()
-adb.addButton(icon='undetected.png')
-adb.gifButton.addDefaultMenuItems()
-
-# buttonList = []
-# for i in range(self.shelfLayoutInfo.count()):
-#     buttonList.append(self.shelfLayoutInfo.itemAt(i).widget())
-
-# # buttonList 最后两项更换位置
-# buttonList[-1], buttonList[-2] = buttonList[-2], buttonList[-1]
-# # 重新排列按钮
-# for i in buttonList:
-#     i.setParent(None)
-# for i in buttonList:
-#     self.shelfLayoutInfo.addWidget(i)
-#     try:
-#         i.setFixedSize(i.iconSizeValue)
-#     except:
-#         pass
-        '''
-        addGifButtonDoubleCommand = '''import ShelfButtonManager
-adb = ShelfButtonManager.ShelfButtonManager()
-adb.addSeparator()
-
-# buttonList = []
-# for i in range(self.shelfLayoutInfo.count()):
-#     buttonList.append(self.shelfLayoutInfo.itemAt(i).widget())
-
-# # buttonList 最后两项更换位置
-# buttonList[-1], buttonList[-2] = buttonList[-2], buttonList[-1]
-# # 重新排列按钮
-# for i in buttonList:
-#     i.setParent(None)
-# for i in buttonList:
-#     self.shelfLayoutInfo.addWidget(i)
-#     try:
-#         i.setFixedSize(i.iconSizeValue)
-#     except:
-#         pass
-        '''
         self.addButton(icon='siri.gif', 
                         label='Setting',
                         annotation='单击添加按钮, 双击添加分隔符, 右击工具栏设置',
-                        command=addGifButtonCommand, 
                         sourceType='python', 
-                        doubleClickCommand=addGifButtonDoubleCommand, 
                         doubleClickCommandSourceType='python')
         self.gifButton.addMenuItem(
             label=u"保存当前工具栏",
