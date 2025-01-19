@@ -16,6 +16,8 @@ def getBackShelfList(path,fileType='mel'):
 
     fileDict = {}
     for file in os.listdir(shelf_backup):
+        if file == 'shelf_copy.json' or file == 'shelf_recycle.json':
+            continue
         if '.'+fileType in file:
             fileFath = shelf_backup + file
             name = file.split('.')[0].replace('shelf_', '')
