@@ -233,7 +233,6 @@ class GIFButtonWidget(QWidget):
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftPress')
             self.dragging = True
-            
         # if event.button() == Qt.MiddleButton:
         #     if self.dragMove:
         #         startDrag(self, event)
