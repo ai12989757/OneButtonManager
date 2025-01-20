@@ -580,13 +580,12 @@ class GIFButton(QPushButton):
                 self.movie.setPaused(True)  # 暂停播放 GIF
             
         # 如果iconImage 不是 default，说明图标被更改了，需要恢复原图标
-        if self.subIcon: self.setIcon(QIcon(self.subIcon))
+        if not self.icon.lower().endswith('.gif'):
+            if self.subIcon: self.setIcon(QIcon(self.subIcon))
+            else: self.setIcon(QIcon(self.pixmap))
         else:
-            if not self.icon.lower().endswith('.gif'):
-                self.setIcon(QIcon(self.pixmap))
-            else:
-                if self.iconImage != 'default':
-                    self.iconChanged('default')
+            if self.iconImage != 'default':
+                self.iconChanged('default')
         #QObject.event(self, event)
 
     def mouseMoveEvent(self, event):
