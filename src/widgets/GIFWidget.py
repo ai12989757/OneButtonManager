@@ -11,6 +11,12 @@ except ImportError:
     from PySide2.QtWidgets import *
 from functools import partial
 from collections import OrderedDict
+from ..utils import widgetEffect
+try:
+    reload(widgetEffect)
+except:
+    from importlib import reload
+    reload(widgetEffect)
 
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 
@@ -19,6 +25,8 @@ class GIFButtonWidget(QWidget):
         super(GIFButtonWidget, self).__init__(parent)
 
         ################## command ##################
+        self.context = globals().copy()
+        self.context.update({'self': self})
         self.sourceType = kwargs.get('sourceType', "mel" or "python" or "function") 
         self.command = kwargs.get('command', None)
         self.doubleClickCommandSourceType = kwargs.get('doubleClickCommandSourceType', "mel" or "python" or "function")
@@ -37,10 +45,12 @@ class GIFButtonWidget(QWidget):
         self.menuShowCommand = kwargs.get('menuShowCommand', '')
         ################## UI ##################
         self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
-        self.iconPath = kwargs.get('icon', None)
-        self.size = kwargs.get('size', 42)
-
-        self.dragging = False
+        self.iconPath = kwargs.get('icon', None) # 图标路径
+        self.size = kwargs.get('size', 42)  # 图标 长或宽 尺寸
+        
+        
+        QApplication.instance().removeEventFilter(self) # 移除事件过滤器
+        self.dragging = False        # 是否拖动按钮
         self.mouseState = ''         # 鼠标状态: 左击按下 leftPress, 左击释放 leftRelease, 左击拖拽 leftMoving
         self.singleClick = 0         # 单击事件计数
         self.singleClickWait = None  # 单击事件延迟
@@ -55,15 +65,15 @@ class GIFButtonWidget(QWidget):
         self.initUI() # 初始化UI
 
     def initUI(self):
-        self.setFocusPolicy(Qt.StrongFocus)
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
-        self.movie = None
-        self.setIconImage()  # 设置按钮外观
-        self.menuSubLabel(self.pixmap.width()-self.size) # 有菜单项时，按钮右下角显示角标
-        self.label = None
+        self.movie = None       # GIF动画
+        self.iconSub = None     # 图标角标
+        self.setIconImage()     # 设置按钮外观
+        self.label = None       # 用于显示角标
+        self.menu = None        # 菜单
     
     # 有菜单项时，按钮右下角显示角标
     def menuSubLabel(self, width=0):
@@ -74,15 +84,19 @@ class GIFButtonWidget(QWidget):
         label.setGeometry(width, 0, self.size, self.size)
         label.show()
 
+    # 根据不同的按键组合，更新角标
     def updateSubLabel(self, sub):
-        #sub = 'alt'
         if self.label:
             self.label.setPixmap(QPixmap())
-        if not sub:
+        else:
+            self.label = QLabel(self) # 用于显示角标
+        if sub is None:
+            self.iconSub = 'default'
             return
-        self.label = QLabel(self) # 用于显示角标
-        subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
-        subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        else:
+            self.iconSub = sub
+            subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
+            subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.label.setPixmap(subImage)
         self.label.setGeometry(0, 0, self.size, self.size)
         self.label.show()
@@ -92,13 +106,13 @@ class GIFButtonWidget(QWidget):
             self.iconPath = ICONPATH+'white/undetected.png'
 
         self.pixmap = QPixmap(self.iconPath)
-        self.iconLabel = QLabel(self)
-        self.setFixedSize(QSize(self.pixmap.width(), self.pixmap.height()))
+        
         if self.alignment == 'H' or self.alignment == 'h':
             self.pixmap = self.pixmap.scaledToHeight(self.size, Qt.SmoothTransformation)
         elif self.alignment == 'V' or self.alignment == 'v':
             self.pixmap = self.pixmap.scaledToWidth(self.size, Qt.SmoothTransformation)
-
+        self.setFixedSize(QSize(self.pixmap.width(), self.pixmap.height()))
+        self.iconLabel = QLabel(self)
         if self.iconPath.lower().endswith('.gif'):
             self.movie = QMovie(self.iconPath)
             self.movie.setScaledSize(QSize(self.pixmap.width(), self.pixmap.height()))
@@ -111,67 +125,105 @@ class GIFButtonWidget(QWidget):
             self.iconLabel.setPixmap(self.pixmap)
         self.iconLabel.setGeometry(0, 0, self.pixmap.width(), self.pixmap.height())
         self.iconLabel.show()
+    
+    def enterEvent(self, event):
+        if self.dragging:
+            return
+        QApplication.instance().installEventFilter(self) # 安装事件过滤器, 用于监听键盘事件
+        _,self.colorAnimation = widgetEffect.colorCycleEffect(self, 4000, self.alignment) # 彩色循环描边效果
 
-    def keyPressEvent(self, event):
         modifiers = QApplication.keyboardModifiers()
-        if event.key() == Qt.Key_Alt:
-            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('ctrlAltShift')
-            elif modifiers & Qt.ControlModifier:
-                self.updateSubLabel('ctrlAlt')
-            elif modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('altShift')
-            else:
-                self.updateSubLabel('alt')
-        elif event.key() == Qt.Key_Control:
-            if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('ctrlAltShift')
-            elif modifiers & Qt.AltModifier:
-                self.updateSubLabel('ctrlAlt')
-            elif modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('ctrlShift')
-            else:
-                self.updateSubLabel('ctrl')
-        elif event.key() == Qt.Key_Shift:
-            if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                self.updateSubLabel('ctrlAltShift')
-            elif modifiers & Qt.ControlModifier:
-                self.updateSubLabel('ctrlShift')
-            elif modifiers & Qt.AltModifier:
-                self.updateSubLabel('altShift')
-            else:
-                self.updateSubLabel('shift')
-        
-    def keyReleaseEvent(self, event):
-        modifiers = QApplication.keyboardModifiers()
-        if event.key() == Qt.Key_Alt:
-            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('ctrlShift')
-            elif modifiers & Qt.ControlModifier:
-                self.updateSubLabel('ctrl')
-            elif modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('shift')
-            else:
-                self.updateSubLabel('default')
-        elif event.key() == Qt.Key_Control:
-            if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('altShift')
-            elif modifiers & Qt.AltModifier:
-                self.updateSubLabel('alt')
-            elif modifiers & Qt.ShiftModifier:
-                self.updateSubLabel('shift')
-            else:
-                self.updateSubLabel('default')
-        elif event.key() == Qt.Key_Shift:
-            if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                self.updateSubLabel('ctrlAlt')
-            elif modifiers & Qt.ControlModifier:
-                self.updateSubLabel('ctrl')
-            elif modifiers & Qt.AltModifier:
-                self.updateSubLabel('alt')
-            else:
-                self.updateSubLabel('default')
+        if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+            self.updateSubLabel('ctrlAltShift')
+        elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+            self.updateSubLabel('ctrlShift')
+        elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
+            self.updateSubLabel('ctrlAlt')
+        elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+            self.updateSubLabel('altShift')
+        elif modifiers & Qt.ControlModifier:
+            self.updateSubLabel('ctrl')
+        elif modifiers & Qt.ShiftModifier:
+            self.updateSubLabel('shift')
+        elif modifiers & Qt.AltModifier:
+            self.updateSubLabel('alt')
+        else:
+            self.updateSubLabel(None)
+        #QObject.event(self, event)
 
+    def leaveEvent(self, event):
+        if self.dragging:
+            return
+        QApplication.instance().removeEventFilter(self) # 移除事件过滤器
+        self.updateSubLabel(None)
+        self.setGraphicsEffect(None)
+        if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
+
+    def eventFilter(self, obj, event):
+        if not isinstance(event, QEvent):
+            return False
+        if not self.underMouse():
+            return False
+        modifiers = QApplication.keyboardModifiers()
+        if event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Alt:
+                if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('ctrlAltShift')
+                elif modifiers & Qt.ControlModifier:
+                    self.updateSubLabel('ctrlAlt')
+                elif modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('altShift')
+                else:
+                    self.updateSubLabel('alt')
+            elif event.key() == Qt.Key_Control:
+                if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('ctrlAltShift')
+                elif modifiers & Qt.AltModifier:
+                    self.updateSubLabel('ctrlAlt')
+                elif modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('ctrlShift')
+                else:
+                    self.updateSubLabel('ctrl')
+            elif event.key() == Qt.Key_Shift:
+                if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
+                    self.updateSubLabel('ctrlAltShift')
+                elif modifiers & Qt.ControlModifier:
+                    self.updateSubLabel('ctrlShift')
+                elif modifiers & Qt.AltModifier:
+                    self.updateSubLabel('altShift')
+                else:
+                    self.updateSubLabel('shift')
+        elif event.type() == QEvent.KeyRelease:
+            if event.key() == Qt.Key_Alt:
+                if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('ctrlShift')
+                elif modifiers & Qt.ControlModifier:
+                    self.updateSubLabel('ctrl')
+                elif modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('shift')
+                else:
+                    if self.iconSub != 'default': self.updateSubLabel('default')
+            elif event.key() == Qt.Key_Control:
+                if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('altShift')
+                elif modifiers & Qt.AltModifier:
+                    self.updateSubLabel('alt')
+                elif modifiers & Qt.ShiftModifier:
+                    self.updateSubLabel('shift')
+                else:
+                    if self.iconSub != 'default': self.updateSubLabel('default')
+            elif event.key() == Qt.Key_Shift:
+                if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
+                    self.updateSubLabel('ctrlAlt')
+                elif modifiers & Qt.ControlModifier:
+                    self.updateSubLabel('ctrl')
+                elif modifiers & Qt.AltModifier:
+                    self.updateSubLabel('alt')
+                else:
+                    if self.iconSub != 'default': self.updateSubLabel(None)
+        return False
+        #return super(GIFButton, self).eventFilter(obj, event)
+    
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
         self.minValue = 0.00
@@ -189,8 +241,10 @@ class GIFButtonWidget(QWidget):
     def mouseReleaseEvent(self, event):
         self.dragging = False
         self.eventPos = event.pos()
-
-        if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
+        if not self.rect().contains(event.pos()):
+            self.setGraphicsEffect(None)
+            if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
+            self.updateSubLabel(None)
         if event.button() == Qt.LeftButton:
             self.executeDragCommand(event,'leftRelease')
         # if event.button() == Qt.MiddleButton:
@@ -224,47 +278,6 @@ class GIFButtonWidget(QWidget):
                         self.singleClick = 0
                         self.doubleClickCommandText()
 
-    def singleClickEvent(self):
-        self.singleClick = 0
-        self.singleClickWait.stop()
-        if self.rect().contains(self.eventPos):
-            modifiers = QApplication.keyboardModifiers()
-            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: print('ctrlAltShiftCommand')
-            elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: print('ctrlShiftCommand')
-            elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: print('ctrlAltCommand')
-            elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: print('altShiftCommand')
-            elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: print('ctrlCommand')
-            elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: print('shiftCommand')
-            elif modifiers & Qt.AltModifier:
-                if self.altCommand: print('altCommand')
-            else:
-                print('singleClick')
-                if not self.command: return
-                if self.sourceType == 'python': exec(self.command, dict(globals(), **{'self': self}))
-                elif self.sourceType == 'mel':
-                    commendText = repr(self.command)
-                    commendText = "mel.eval(" + commendText + ")"
-                    exec(commendText)
-        return False
-
-    def doubleClickCommandText(self):
-        print('doubleClickCommandText')
-        if not self.doubleClickCommand:
-            return
-        if self.doubleClickCommandSourceType == 'python':
-            commendText = self.doubleClickCommand
-        elif self.doubleClickCommandSourceType == 'mel':
-            commendText = repr(self.doubleClickCommand)
-            commendText = "mel.eval(" + commendText + ")"
-        if commendText and self.doubleClickCommandSourceType == 'python': cmds.evalDeferred(lambda: self.execute_python_command(commendText, self.context))
-        elif commendText and self.doubleClickCommandSourceType == 'mel': cmds.evalDeferred(lambda: self.execute_mel_command(commendText))
-
     def mouseMoveEvent(self, event):
         # 更改光标样式
         # QApplication.setOverrideCursor(Qt.SizeHorCursor)
@@ -297,18 +310,66 @@ class GIFButtonWidget(QWidget):
         #     if self.dragMove:
         #         self.move(self.mapToParent(event.pos() - self.startPos))
         #         performDrag(self, event)
-         
-    def executeDragCommand(self, event,mouseState='leftMoving'):
+        
+    def singleClickEvent(self):
+        self.singleClick = 0
+        self.singleClickWait.stop()
+        if self.rect().contains(self.eventPos):
+            modifiers = QApplication.keyboardModifiers()
+            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
+                if self.ctrlAltShiftCommand: print('ctrlAltShiftCommand')
+            elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+                if self.ctrlShiftCommand: print('ctrlShiftCommand')
+            elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
+                if self.ctrlAltCommand: print('ctrlAltCommand')
+            elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+                if self.altShiftCommand: print('altShiftCommand')
+            elif modifiers & Qt.ControlModifier:
+                if self.ctrlCommand: print('ctrlCommand')
+            elif modifiers & Qt.ShiftModifier:
+                if self.shiftCommand: print('shiftCommand')
+            elif modifiers & Qt.AltModifier:
+                if self.altCommand: print('altCommand')
+            else:
+                print('singleClick')
+                if not self.command: return
+                self.runCommand(self.sourceType, self.command)
+        return False
+
+    def doubleClickCommandText(self):
+        print('doubleClickCommandText')
+        if not self.doubleClickCommand:
+            return
+        if self.doubleClickCommandSourceType == 'python':
+            commendText = self.doubleClickCommand
+        elif self.doubleClickCommandSourceType == 'mel':
+            commendText = repr(self.doubleClickCommand)
+            commendText = "mel.eval(" + commendText + ")"
+        if commendText and self.doubleClickCommandSourceType == 'python': cmds.evalDeferred(lambda: self.execute_python_command(commendText, self.context))
+        elif commendText and self.doubleClickCommandSourceType == 'mel': cmds.evalDeferred(lambda: self.execute_mel_command(commendText))
+
+    def executeDragCommand(self, event, mouseState='leftMoving'):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
             self.mouseState = 'ctrl'+mouseState.capitalize()
-            print('ctrlDragCommand')
+            print(self.mouseState)
         elif modifiers & Qt.ShiftModifier:
             self.mouseState = 'shift'+mouseState.capitalize()
-            print('shiftDragCommand')
+            print(self.mouseState)
         elif modifiers & Qt.AltModifier:
             self.mouseState = 'alt'+mouseState.capitalize()
-            print('altDragCommand')
+            print(self.mouseState)
         else:
             self.mouseState = mouseState
-            print('dragCommand')
+            print(self.mouseState)
+
+    def runCommand(self, sourceType, command):
+        if sourceType == 'python': 
+            from maya.cmds import evalDeferred
+            evalDeferred(lambda: exec(command, self.context))
+        elif sourceType == 'mel':
+            from maya import mel
+            commendText = repr(command)
+            commendText = "mel.eval(" + commendText + ")"
+            exec(commendText)
+        elif sourceType == 'function': command()
