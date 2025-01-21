@@ -12,11 +12,14 @@ except ImportError:
 from functools import partial
 from collections import OrderedDict
 from ..utils import widgetEffect
+from ..utils import imageManager
 try:
     reload(widgetEffect)
+    reload(imageManager)
 except:
     from importlib import reload
     reload(widgetEffect)
+    reload(imageManager)
 
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 
@@ -27,27 +30,17 @@ class GIFButtonWidget(QWidget):
         ################## command ##################
         self.context = globals().copy()
         self.context.update({'self': self})
-        self.sourceType = kwargs.get('sourceType', "mel" or "python" or "function") 
-        self.command = kwargs.get('command', None)
-        self.doubleClickCommandSourceType = kwargs.get('doubleClickCommandSourceType', "mel" or "python" or "function")
-        self.doubleClickCommand = kwargs.get('doubleClickCommand', None)
-        self.ctrlCommand = kwargs.get('ctrlCommand', None)
-        self.altCommand = kwargs.get('altCommand', None)
-        self.shiftCommand = kwargs.get('shiftCommand', None)
-        self.ctrlAltCommand = kwargs.get('ctrlAltCommand', None)
-        self.altShiftCommand = kwargs.get('altShiftCommand', None)
-        self.ctrlShiftCommand = kwargs.get('ctrlShiftCommand', None)
-        self.ctrlAltShiftCommand = kwargs.get('ctrlAltShiftCommand', None)
-        self.dragCommand = kwargs.get('dragCommand', None)
-        self.altDragCommand = kwargs.get('altDragCommand', None)
-        self.shiftDragCommand = kwargs.get('shiftDragCommand', None)
-        self.ctrlDragCommand = kwargs.get('ctrlDragCommand', None)
-        self.menuShowCommand = kwargs.get('menuShowCommand', '')
+        self.command = kwargs.get('command', {"click":["python","print('click')"]}) # 命令
+        '''
+        command = {触发器: [类型, 命令]}
+        tpye 类型: python, mel, function
+        trigger 触发器: click, doubleClick, ctrlClick, shiftClick, altClick, ctrlShiftClick, ctrlAltClick, altShiftClick, ctrlAltShiftClick, drag, ctrlDrag, shiftDrag, altDrag, ctrlShiftDrag, ctrlAltDrag, altShiftDrag, ctrlAltShiftDrag
+        命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
+        '''
         ################## UI ##################
         self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None) # 图标路径
         self.size = kwargs.get('size', 42)  # 图标 长或宽 尺寸
-        
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 是否拖动按钮
@@ -100,7 +93,7 @@ class GIFButtonWidget(QWidget):
         self.label.setPixmap(subImage)
         self.label.setGeometry(0, 0, self.size, self.size)
         self.label.show()
-        
+
     def setIconImage(self):
         if not self.iconPath:
             self.iconPath = ICONPATH+'white/undetected.png'
@@ -125,13 +118,17 @@ class GIFButtonWidget(QWidget):
             self.iconLabel.setPixmap(self.pixmap)
         self.iconLabel.setGeometry(0, 0, self.pixmap.width(), self.pixmap.height())
         self.iconLabel.show()
-    
+
     def enterEvent(self, event):
         if self.dragging:
             return
-        QApplication.instance().installEventFilter(self) # 安装事件过滤器, 用于监听键盘事件
+        if self.iconPath.lower().endswith('.gif'):
+            pass
+        else:
+            self.iconLabel.setPixmap(imageManager.enhanceIcon(self.pixmap, 1.3, 1.2))
         _,self.colorAnimation = widgetEffect.colorCycleEffect(self, 4000, self.alignment) # 彩色循环描边效果
 
+        QApplication.instance().installEventFilter(self) # 安装事件过滤器, 用于监听键盘事件
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
             self.updateSubLabel('ctrlAltShift')
@@ -154,6 +151,11 @@ class GIFButtonWidget(QWidget):
     def leaveEvent(self, event):
         if self.dragging:
             return
+        if self.iconPath.lower().endswith('.gif'):
+            pass
+        else:
+            self.iconLabel.setPixmap(self.pixmap)
+        
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.updateSubLabel(None)
         self.setGraphicsEffect(None)
@@ -275,7 +277,7 @@ class GIFButtonWidget(QWidget):
                             self.singleClickWait.stop()
                         # 双击事件
                         self.singleClick = 0
-                        self.doubleClickCommandText()
+                        self.runCommand(self.command, 'doubleClick')
 
     def mouseMoveEvent(self, event):
         # 更改光标样式
@@ -316,59 +318,51 @@ class GIFButtonWidget(QWidget):
         if self.rect().contains(self.eventPos):
             modifiers = QApplication.keyboardModifiers()
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltShiftCommand: print('ctrlAltShiftCommand')
+                trigger = 'ctrlAltShiftClick'
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
-                if self.ctrlShiftCommand: print('ctrlShiftCommand')
+                trigger = 'ctrlShiftClick'
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
-                if self.ctrlAltCommand: print('ctrlAltCommand')
+                trigger = 'ctrlAltClick'
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
-                if self.altShiftCommand: print('altShiftCommand')
+                trigger = 'altShiftClick'
             elif modifiers & Qt.ControlModifier:
-                if self.ctrlCommand: print('ctrlCommand')
+                trigger = 'ctrlClick'
             elif modifiers & Qt.ShiftModifier:
-                if self.shiftCommand: print('shiftCommand')
+                trigger = 'shiftClick'
             elif modifiers & Qt.AltModifier:
-                if self.altCommand: print('altCommand')
+                trigger = 'altClick'
             else:
-                print('singleClick')
-                if not self.command: return
-                self.runCommand(self.sourceType, self.command)
+                trigger = 'click'
+            self.runCommand(self.command, trigger)
         return False
-
-    def doubleClickCommandText(self):
-        print('doubleClickCommandText')
-        if not self.doubleClickCommand:
-            return
-        if self.doubleClickCommandSourceType == 'python':
-            commendText = self.doubleClickCommand
-        elif self.doubleClickCommandSourceType == 'mel':
-            commendText = repr(self.doubleClickCommand)
-            commendText = "mel.eval(" + commendText + ")"
-        if commendText and self.doubleClickCommandSourceType == 'python': cmds.evalDeferred(lambda: self.execute_python_command(commendText, self.context))
-        elif commendText and self.doubleClickCommandSourceType == 'mel': cmds.evalDeferred(lambda: self.execute_mel_command(commendText))
-
+    
     def executeDragCommand(self, event, mouseState='leftMoving'):
         modifiers = QApplication.keyboardModifiers()
         if modifiers & Qt.ControlModifier:
             self.mouseState = 'ctrl'+mouseState.capitalize()
-            print(self.mouseState)
+            trigger = 'ctrlDrag'
         elif modifiers & Qt.ShiftModifier:
             self.mouseState = 'shift'+mouseState.capitalize()
-            print(self.mouseState)
+            trigger = 'shiftDrag'
         elif modifiers & Qt.AltModifier:
             self.mouseState = 'alt'+mouseState.capitalize()
-            print(self.mouseState)
+            trigger = 'altDrag'
         else:
             self.mouseState = mouseState
-            print(self.mouseState)
+            trigger = 'drag'
+        self.runCommand(self.command, trigger)
 
-    def runCommand(self, sourceType, command):
-        if sourceType == 'python': 
+    def runCommand(self, command, trigger='click'):
+        print(self.mouseState, trigger)
+        if not command: return
+        if trigger not in command: return
+        if trigger not in command.keys(): return
+        if command[trigger][0] == 'python': 
             from maya.cmds import evalDeferred
-            evalDeferred(lambda: exec(command, self.context))
-        elif sourceType == 'mel':
+            evalDeferred(lambda: exec(command[trigger][1], self.context))
+        elif command[trigger][0] == 'mel':
             from maya import mel
-            commendText = repr(command)
+            commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"
             exec(commendText)
-        elif sourceType == 'function': command()
+        elif command[trigger][0] == 'function': command[trigger][1]()

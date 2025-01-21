@@ -54,7 +54,7 @@ def enhanceIcon(image, saturation = 1.3, brightness = 1.2):
         image = image.toImage()
     elif isinstance(image, QPixmap):
         image = image.toImage()
-    if image.isNull():
+    if not image:
         return None
     # 增加对比度
     for y in range(image.height()):

@@ -44,3 +44,10 @@ def colorCycleEffect(widget, interval=4000, alignment='H'):
     colorAnimation.setLoopCount(-1)
     colorAnimation.start()
     return effect,colorAnimation
+
+def colorSaturate(widget,saturate):
+    '''
+    widget : QWidget 需要添加效果的控件
+    saturate : Float 饱和度
+    '''
+    pass
