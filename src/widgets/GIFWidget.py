@@ -13,13 +13,19 @@ from functools import partial
 from collections import OrderedDict
 from ..utils import widgetEffect
 from ..utils import imageManager
+from ..utils import runCommand
+from . import GIFAction
 try:
     reload(widgetEffect)
     reload(imageManager)
+    reload(runCommand)
+    reload(GIFAction)
 except:
     from importlib import reload
     reload(widgetEffect)
     reload(imageManager)
+    reload(runCommand)
+    reload(GIFAction)
 
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 
@@ -31,6 +37,7 @@ class GIFButtonWidget(QWidget):
         self.context = globals().copy()
         self.context.update({'self': self})
         self.command = kwargs.get('command', {}) # 命令
+        self.type = 'QWidget'
         '''
         command = {触发器: [类型, 命令]}
         tpye 类型: python, mel, function
@@ -79,18 +86,21 @@ class GIFButtonWidget(QWidget):
         self.setLayout(self.layout)
         self.movie = None       # GIF动画
         self.iconSub = None     # 图标角标
+        self.subLable = None    # 菜单角标
         self.setIconImage()     # 设置按钮外观
         self.label = None       # 用于显示角标
-        self.menu = None        # 菜单
+        self.menu = QMenu(self) # 菜单
+        self.menu.type = 'QMenu'
     
     # 有菜单项时，按钮右下角显示角标
-    def menuSubLabel(self, width=0):
-        label = QLabel(self)
-        subImage = QPixmap(ICONPATH+'sub/sub.png')
-        subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        label.setPixmap(subImage)
-        label.setGeometry(width, 0, self.size, self.size)
-        label.show()
+    def menuSubLabel(self):
+        if not self.subLable:
+            self.subLable = QLabel(self)
+            subImage = QPixmap(ICONPATH+'sub/sub.png')
+            subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.subLable.setPixmap(subImage)
+            self.subLable.setGeometry(0, 0, self.size, self.size)
+            self.subLable.show()
 
     # 根据不同的按键组合，更新角标
     def updateSubLabel(self, sub):
@@ -252,6 +262,7 @@ class GIFButtonWidget(QWidget):
         self.startPos = event.pos()
         self.raise_() # 置顶
         if event.button() == Qt.LeftButton:
+            self.mouseState = 'leftPress'
             self.executeDragCommand('leftPress')
             self.dragging = True
         # if event.button() == Qt.MiddleButton:
@@ -269,6 +280,7 @@ class GIFButtonWidget(QWidget):
             if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
             self.updateSubLabel(None)
         if event.button() == Qt.LeftButton:
+            self.mouseState = 'leftRelease'
             self.executeDragCommand('leftRelease')
         # if event.button() == Qt.MiddleButton:
         #     if self.dragMove:
@@ -299,7 +311,8 @@ class GIFButtonWidget(QWidget):
                             self.singleClickWait.stop()
                         # 双击事件
                         self.singleClick = 0
-                        self.runCommand(self.command, 'doubleClick')
+                        self.mouseState = 'doubleClick'
+                        runCommand.runCommand(self, self.command, 'doubleClick')
 
     def mouseMoveEvent(self, event):
         # 更改光标样式
@@ -341,21 +354,29 @@ class GIFButtonWidget(QWidget):
             modifiers = QApplication.keyboardModifiers()
             if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
                 trigger = 'ctrlAltShiftClick'
+                self.mouseState = 'ctrlAltShiftClick'
             elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
                 trigger = 'ctrlShiftClick'
+                self.mouseState = 'ctrlShiftClick'
             elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
                 trigger = 'ctrlAltClick'
+                self.mouseState = 'ctrlAltClick'
             elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
                 trigger = 'altShiftClick'
+                self.mouseState = 'altShiftClick'
             elif modifiers & Qt.ControlModifier:
                 trigger = 'ctrlClick'
+                self.mouseState = 'ctrlClick'
             elif modifiers & Qt.ShiftModifier:
                 trigger = 'shiftClick'
+                self.mouseState = 'shiftClick'
             elif modifiers & Qt.AltModifier:
                 trigger = 'altClick'
+                self.mouseState = 'altClick'
             else:
                 trigger = 'click'
-            self.runCommand(self.command, trigger)
+                self.mouseState = 'click'
+            runCommand.runCommand(self, self.command, trigger)
     
     def executeDragCommand(self, mouseState='leftMoving'):
         if mouseState == 'leftMoving':
@@ -384,30 +405,10 @@ class GIFButtonWidget(QWidget):
             else:
                 self.mouseState = mouseState
                 trigger = 'drag'
-            self.runCommand(self.command, trigger)
+            runCommand.runCommand(self, self.command, trigger)
         else:
             self.mouseState = mouseState
-            self.runCommand(self.command, mouseState)
-
-    def runCommand(self, command, trigger='click'):
-        if not command: return
-        if trigger not in command: return
-        if trigger not in command.keys(): return
-        #print(command[trigger][0],trigger)
-        if command[trigger][0] == 'python': 
-            from maya.cmds import evalDeferred
-            evalDeferred(lambda: exec(command[trigger][1], self.context))
-        elif command[trigger][0] == 'mel':
-            from maya import mel
-            commendText = repr(command[trigger][1])
-            commendText = "mel.eval(" + commendText + ")"
-            
-            if trigger in ['drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag']:
-                mel.eval("string $mouseState=\""+str(self.mouseState)+"\";")
-                mel.eval("int $deltaX="+str(self.delta.x())+";")
-                mel.eval("int $deltaY="+str(self.delta.y())+";")
-            exec(commendText)
-        elif command[trigger][0] == 'function': command[trigger][1]()
+            runCommand.runCommand(self, self.command, mouseState)
 
     def melSetIconAttr(self, iconPath, attr, value):
         # 使用mel设置按钮属性, 方便在maya中使用mel控制按钮属性
@@ -449,3 +450,20 @@ class GIFButtonWidget(QWidget):
                 self.animation.setEndValue(end_pos)
                 self.animation.setEasingCurve(QEasingCurve.OutBounce)
                 self.animation.start()
+
+    # 添加右键菜单,没有这个方法，右键菜单不会显示
+    def contextMenuEvent(self, event):
+        self.menu.exec_(event.globalPos())
+
+    def addMenuItem(self, label=None, command=None, icon=None, annotation=None, checkable=False):
+        menu_item = GIFAction.gifIconMenuAction(parent=self, icon=icon, label=label, annotation=annotation, command=command, checkable=checkable)
+        self.menu.addAction(menu_item)
+        
+        self.menuSubLabel()
+            
+        # 菜单出现前命令
+        try:
+            self.menu.aboutToShow.disconnect(None, None)
+        except:
+            pass
+        self.menu.aboutToShow.connect(lambda: runCommand.runCommand(self.menu, self.command, 'menuShow'))
