@@ -30,7 +30,7 @@ class GIFButtonWidget(QWidget):
         ################## command ##################
         self.context = globals().copy()
         self.context.update({'self': self})
-        self.command = kwargs.get('command', {"click":["python","print('click')"]}) # 命令
+        self.command = kwargs.get('command', {}) # 命令
         '''
         command = {触发器: [类型, 命令]}
         tpye 类型: python, mel, function
@@ -44,7 +44,20 @@ class GIFButtonWidget(QWidget):
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 是否拖动按钮
-        self.mouseState = ''         # 鼠标状态: 左击按下 leftPress, 左击释放 leftRelease, 左击拖拽 leftMoving
+        self.mouseState = ''
+        '''
+        鼠标状态: string
+        leftPress: 左击按下
+        leftRelease: 左击释放
+        leftMoving: 左击拖拽
+        ctrlLeftMoving: Ctrl+左击拖拽
+        altLeftMoving: Alt+左击拖拽
+        shiftLeftMoving: Shift+左击拖拽
+        ctrlAltLeftMoving: Ctrl+Alt+左击拖拽
+        ctrlShiftLeftMoving: Ctrl+Shift+左击拖拽
+        altShiftLeftMoving: Alt+Shift+左击拖拽
+        ctrlAltShiftLeftMoving: Ctrl+Alt+Shift+左击拖拽
+        '''
         self.singleClick = 0         # 单击事件计数
         self.singleClickWait = None  # 单击事件延迟
         self.startPos = QPoint()     # 初始化鼠标位置，鼠标按下位置
@@ -120,8 +133,6 @@ class GIFButtonWidget(QWidget):
         self.iconLabel.show()
 
     def enterEvent(self, event):
-        if self.dragging:
-            return
         if self.iconPath.lower().endswith('.gif'):
             pass
         else:
@@ -149,14 +160,11 @@ class GIFButtonWidget(QWidget):
         #QObject.event(self, event)
 
     def leaveEvent(self, event):
-        if self.dragging:
-            return
+        QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         if self.iconPath.lower().endswith('.gif'):
             pass
         else:
             self.iconLabel.setPixmap(self.pixmap)
-        
-        QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.updateSubLabel(None)
         self.setGraphicsEffect(None)
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
@@ -195,6 +203,8 @@ class GIFButtonWidget(QWidget):
                     self.updateSubLabel('altShift')
                 else:
                     self.updateSubLabel('shift')
+            elif event.key() == Qt.Key_Menu:
+                pass
         elif event.type() == QEvent.KeyRelease:
             if event.key() == Qt.Key_Alt:
                 if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
@@ -223,6 +233,9 @@ class GIFButtonWidget(QWidget):
                     self.updateSubLabel('alt')
                 else:
                     if self.iconSub != 'default': self.updateSubLabel(None)
+            elif event.key() == Qt.Key_Menu:
+                # show admin edit menu
+                pass
         return False
         #return super(GIFButton, self).eventFilter(obj, event)
     
@@ -233,7 +246,7 @@ class GIFButtonWidget(QWidget):
         self.singleClick += 1
         self.startPos = event.pos()
         if event.button() == Qt.LeftButton:
-            self.executeDragCommand(event,'leftPress')
+            self.executeDragCommand('leftPress')
             self.dragging = True
         # if event.button() == Qt.MiddleButton:
         #     if self.dragMove:
@@ -247,7 +260,7 @@ class GIFButtonWidget(QWidget):
             if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
             self.updateSubLabel(None)
         if event.button() == Qt.LeftButton:
-            self.executeDragCommand(event,'leftRelease')
+            self.executeDragCommand('leftRelease')
         # if event.button() == Qt.MiddleButton:
         #     if self.dragMove:
         #         self.singleClick = 0
@@ -304,7 +317,7 @@ class GIFButtonWidget(QWidget):
             self.maxValue = self.valueX
         #print(f"Current Value: {self.valueX}, Min Value: {self.minValue}, Max Value: {self.maxValue}")
         if event.buttons() == Qt.LeftButton:
-            self.executeDragCommand(event,'leftMoving')
+            self.executeDragCommand('leftMoving')
         #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
         # elif event.buttons() == Qt.MiddleButton:
@@ -334,26 +347,41 @@ class GIFButtonWidget(QWidget):
             else:
                 trigger = 'click'
             self.runCommand(self.command, trigger)
-        return False
     
-    def executeDragCommand(self, event, mouseState='leftMoving'):
-        modifiers = QApplication.keyboardModifiers()
-        if modifiers & Qt.ControlModifier:
-            self.mouseState = 'ctrl'+mouseState.capitalize()
-            trigger = 'ctrlDrag'
-        elif modifiers & Qt.ShiftModifier:
-            self.mouseState = 'shift'+mouseState.capitalize()
-            trigger = 'shiftDrag'
-        elif modifiers & Qt.AltModifier:
-            self.mouseState = 'alt'+mouseState.capitalize()
-            trigger = 'altDrag'
+    def executeDragCommand(self, mouseState='leftMoving'):
+        if mouseState == 'leftMoving':
+            modifiers = QApplication.keyboardModifiers()
+            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier and modifiers & Qt.AltModifier:
+                self.mouseState = 'ctrlAltShift'+mouseState.capitalize()
+                trigger = 'ctrlAltShiftDrag'
+            elif modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+                self.mouseState = 'ctrlShift'+mouseState.capitalize()
+                trigger = 'ctrlShiftDrag'
+            elif modifiers & Qt.ControlModifier and modifiers & Qt.AltModifier:
+                self.mouseState = 'ctrlAlt'+mouseState.capitalize()
+                trigger = 'ctrlAltDrag'
+            elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
+                self.mouseState = 'altShift'+mouseState.capitalize()
+                trigger = 'altShiftDrag'
+            elif modifiers & Qt.ControlModifier:
+                self.mouseState = 'ctrl'+mouseState.capitalize()
+                trigger = 'ctrlDrag'
+            elif modifiers & Qt.ShiftModifier:
+                self.mouseState = 'shift'+mouseState.capitalize()
+                trigger = 'shiftDrag'
+            elif modifiers & Qt.AltModifier:
+                self.mouseState = 'alt'+mouseState.capitalize()
+                trigger = 'altDrag'
+            else:
+                self.mouseState = mouseState
+                trigger = 'drag'
+            self.runCommand(self.command, trigger)
         else:
             self.mouseState = mouseState
-            trigger = 'drag'
-        self.runCommand(self.command, trigger)
+            self.runCommand(self.command, mouseState)
 
     def runCommand(self, command, trigger='click'):
-        print(self.mouseState, trigger)
+        #print(trigger)
         if not command: return
         if trigger not in command: return
         if trigger not in command.keys(): return
@@ -365,4 +393,17 @@ class GIFButtonWidget(QWidget):
             commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"
             exec(commendText)
+            if trigger in ['drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag']:
+                mel.eval("string $mouseState=\""+str(self.mouseState)+"\";")
+                mel.eval("string $deltaX=\""+int(self.delta.x())+"\";")
+                mel.eval("string $deltaY=\""+int(self.delta.y())+"\";")
+                mel.eval("string $valueX=\""+int(self.valueX)+"\";")
+                mel.eval("string $valueY=\""+int(self.valueY)+"\";")
         elif command[trigger][0] == 'function': command[trigger][1]()
+
+    def melSetIconAttr(self, iconPath, attr, value):
+        # 使用mel设置按钮属性, 方便在maya中使用mel控制按钮属性
+        pass
+    def melSetActionAttr(self, action, attr, value):
+        # 使用mel设置菜单项属性, 方便在maya中使用mel控制菜单项属性
+        pass
