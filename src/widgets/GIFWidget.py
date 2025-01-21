@@ -67,6 +67,8 @@ class GIFButtonWidget(QWidget):
         self.valueY = 0.00           # 初始化数值，往下为 +=1 ，往上为负 -=1
         self.minValue = 0.00         # 初始化鼠标往左移动的最小值，用于判断是否拖动过按钮
         self.maxValue = 0.00         # 初始化鼠标往右移动的最大值，用于判断是否拖动过按钮
+        self.lastMoveValueX = 0
+        self.lastMoveValueY = 0
         self.value = {'self.delta': self.delta, 'self.valueX': self.valueX, 'self.valueY': self.valueY, 'self.minValue': self.minValue, 'self.maxValue': self.maxValue}
         self.initUI() # 初始化UI
 
@@ -240,11 +242,15 @@ class GIFButtonWidget(QWidget):
         #return super(GIFButton, self).eventFilter(obj, event)
     
     def mousePressEvent(self, event):
+        self.lastMoveValueX = 0
+        self.lastMoveValueY = 0
         self.valueX = 0.00  # 重置数值
+        self.valueY = 0.00  # 重置数值
         self.minValue = 0.00
         self.maxValue = 0.00
         self.singleClick += 1
         self.startPos = event.pos()
+        self.raise_() # 置顶
         if event.button() == Qt.LeftButton:
             self.executeDragCommand('leftPress')
             self.dragging = True
@@ -253,6 +259,9 @@ class GIFButtonWidget(QWidget):
         #         startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
+        self.iconDragEffect('back')
+        self.lastMoveValueX = 0
+        self.lastMoveValueY = 0
         self.dragging = False
         self.eventPos = event.pos()
         if not self.rect().contains(event.pos()):
@@ -317,6 +326,7 @@ class GIFButtonWidget(QWidget):
             self.maxValue = self.valueX
         if event.buttons() == Qt.LeftButton:
             self.executeDragCommand('leftMoving')
+            self.iconDragEffect('move')
         #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
         # elif event.buttons() == Qt.MiddleButton:
@@ -405,3 +415,37 @@ class GIFButtonWidget(QWidget):
     def melSetActionAttr(self, action, attr, value):
         # 使用mel设置菜单项属性, 方便在maya中使用mel控制菜单项属性
         pass
+
+    def iconDragEffect(self,mode='move'):
+        if mode=='move':
+            # 根据 self.valueX 和 self.valueY 的值，设置按钮的图标的移动
+            # 制作出拖拽时图标有被拉扯的效果
+            # 鼠标每移动10px，图标移动1px
+            # 计算当前的移动值
+            moveValueX = round(self.valueX * 0.1)
+            moveValueY = round(self.valueY * 0.1)
+            # 限制移动值的范围在 -10 到 10 之间
+            moveValueX = max(min(moveValueX, 10), -10)
+            moveValueY = max(min(moveValueY, 10), -10)
+            # 只有当移动值发生变化时才移动图标
+            if hasattr(self, 'lastMoveValueX') and hasattr(self, 'lastMoveValueY'):
+                if moveValueX != self.lastMoveValueX or moveValueY != self.lastMoveValueY:
+                    self.move(self.x() + (moveValueX - self.lastMoveValueX),
+                                        self.y() + (moveValueY - self.lastMoveValueY))
+            else:
+                self.move(self.x() + moveValueX, self.y() + moveValueY)
+            # 更新最后的移动值
+            self.lastMoveValueX = moveValueX
+            self.lastMoveValueY = moveValueY
+        elif mode == 'back':
+            #self.move(self.x() -self.lastMoveValueX, self.y() - self.lastMoveValueY)
+            # 设置回弹动画
+            if hasattr(self, 'lastMoveValueX') and hasattr(self, 'lastMoveValueY'):
+                start_pos = self.pos()
+                end_pos = QPoint(self.x() - self.lastMoveValueX, self.y() - self.lastMoveValueY)
+                self.animation = QPropertyAnimation(self, b"pos")
+                self.animation.setDuration(500)
+                self.animation.setStartValue(start_pos)
+                self.animation.setEndValue(end_pos)
+                self.animation.setEasingCurve(QEasingCurve.OutBounce)
+                self.animation.start()
