@@ -67,7 +67,7 @@ class GIFButtonWidget(QWidget):
         self.valueY = 0.00           # 初始化数值，往下为 +=1 ，往上为负 -=1
         self.minValue = 0.00         # 初始化鼠标往左移动的最小值，用于判断是否拖动过按钮
         self.maxValue = 0.00         # 初始化鼠标往右移动的最大值，用于判断是否拖动过按钮
-
+        self.value = {'self.delta': self.delta, 'self.valueX': self.valueX, 'self.valueY': self.valueY, 'self.minValue': self.minValue, 'self.maxValue': self.maxValue}
         self.initUI() # 初始化UI
 
     def initUI(self):
@@ -315,7 +315,6 @@ class GIFButtonWidget(QWidget):
             self.minValue = self.valueX
         if self.valueX > self.maxValue:
             self.maxValue = self.valueX
-        #print(f"Current Value: {self.valueX}, Min Value: {self.minValue}, Max Value: {self.maxValue}")
         if event.buttons() == Qt.LeftButton:
             self.executeDragCommand('leftMoving')
         #super(GIFButton, self).mouseMoveEvent(event)
@@ -381,10 +380,10 @@ class GIFButtonWidget(QWidget):
             self.runCommand(self.command, mouseState)
 
     def runCommand(self, command, trigger='click'):
-        #print(trigger)
         if not command: return
         if trigger not in command: return
         if trigger not in command.keys(): return
+        #print(command[trigger][0],trigger)
         if command[trigger][0] == 'python': 
             from maya.cmds import evalDeferred
             evalDeferred(lambda: exec(command[trigger][1], self.context))
@@ -392,13 +391,12 @@ class GIFButtonWidget(QWidget):
             from maya import mel
             commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"
-            exec(commendText)
+            
             if trigger in ['drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag']:
                 mel.eval("string $mouseState=\""+str(self.mouseState)+"\";")
-                mel.eval("string $deltaX=\""+int(self.delta.x())+"\";")
-                mel.eval("string $deltaY=\""+int(self.delta.y())+"\";")
-                mel.eval("string $valueX=\""+int(self.valueX)+"\";")
-                mel.eval("string $valueY=\""+int(self.valueY)+"\";")
+                mel.eval("int $deltaX="+str(self.delta.x())+";")
+                mel.eval("int $deltaY="+str(self.delta.y())+";")
+            exec(commendText)
         elif command[trigger][0] == 'function': command[trigger][1]()
 
     def melSetIconAttr(self, iconPath, attr, value):
