@@ -9,6 +9,7 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+    
 from functools import partial
 from collections import OrderedDict
 from ..utils import widgetEffect
@@ -76,6 +77,7 @@ class GIFButtonWidget(QWidget):
         self.maxValue = 0.00         # 初始化鼠标往右移动的最大值，用于判断是否拖动过按钮
         self.lastMoveValueX = 0
         self.lastMoveValueY = 0
+        self.moveThreshold = 10
         self.value = {'self.delta': self.delta, 'self.valueX': self.valueX, 'self.valueY': self.valueY, 'self.minValue': self.minValue, 'self.maxValue': self.maxValue}
         self.initUI() # 初始化UI
 
@@ -254,6 +256,7 @@ class GIFButtonWidget(QWidget):
     def mousePressEvent(self, event):
         self.lastMoveValueX = 0
         self.lastMoveValueY = 0
+        self.moveThreshold = 10
         self.valueX = 0.00  # 重置数值
         self.valueY = 0.00  # 重置数值
         self.minValue = 0.00
@@ -271,8 +274,6 @@ class GIFButtonWidget(QWidget):
            
     def mouseReleaseEvent(self, event):
         self.iconDragEffect('back')
-        self.lastMoveValueX = 0
-        self.lastMoveValueY = 0
         self.dragging = False
         self.eventPos = event.pos()
         if not self.rect().contains(event.pos()):
@@ -289,6 +290,7 @@ class GIFButtonWidget(QWidget):
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
+            
             self.singleClick = 0
             if self.singleClickWait:
                 self.singleClickWait.stop()
@@ -423,33 +425,31 @@ class GIFButtonWidget(QWidget):
             # 制作出拖拽时图标有被拉扯的效果
             # 鼠标每移动10px，图标移动1px
             # 计算当前的移动值
-            moveValueX = round(self.valueX * 0.1)
-            moveValueY = round(self.valueY * 0.1)
+            #self.moveThreshold = 10
+            moveValueX = round(self.valueX / self.moveThreshold)
+            moveValueY = round(self.valueY / self.moveThreshold)
             # 限制移动值的范围在 -10 到 10 之间
-            moveValueX = max(min(moveValueX, 10), -10)
-            moveValueY = max(min(moveValueY, 10), -10)
+            moveValueX = max(min(moveValueX, 5), -5)
+            moveValueY = max(min(moveValueY, 5), -5)
             # 只有当移动值发生变化时才移动图标
-            if hasattr(self, 'lastMoveValueX') and hasattr(self, 'lastMoveValueY'):
-                if moveValueX != self.lastMoveValueX or moveValueY != self.lastMoveValueY:
-                    self.move(self.x() + (moveValueX - self.lastMoveValueX),
-                                        self.y() + (moveValueY - self.lastMoveValueY))
-            else:
-                self.move(self.x() + moveValueX, self.y() + moveValueY)
+            if moveValueX != self.lastMoveValueX or moveValueY != self.lastMoveValueY:
+                self.move(self.x() + (moveValueX - self.lastMoveValueX),
+                        self.y() + (moveValueY - self.lastMoveValueY))
             # 更新最后的移动值
             self.lastMoveValueX = moveValueX
             self.lastMoveValueY = moveValueY
+            # 增加移动阈值
+            self.moveThreshold += 0.1
         elif mode == 'back':
-            #self.move(self.x() -self.lastMoveValueX, self.y() - self.lastMoveValueY)
             # 设置回弹动画
-            if hasattr(self, 'lastMoveValueX') and hasattr(self, 'lastMoveValueY'):
-                start_pos = self.pos()
-                end_pos = QPoint(self.x() - self.lastMoveValueX, self.y() - self.lastMoveValueY)
-                self.animation = QPropertyAnimation(self, b"pos")
-                self.animation.setDuration(500)
-                self.animation.setStartValue(start_pos)
-                self.animation.setEndValue(end_pos)
-                self.animation.setEasingCurve(QEasingCurve.OutBounce)
-                self.animation.start()
+            start_pos = self.pos()
+            end_pos = QPoint(self.x() - self.lastMoveValueX, self.y() - self.lastMoveValueY)
+            self.animation = QPropertyAnimation(self, b"pos")
+            self.animation.setDuration(500)
+            self.animation.setStartValue(start_pos)
+            self.animation.setEndValue(end_pos)
+            self.animation.setEasingCurve(QEasingCurve.OutBounce)
+            self.animation.start()
 
     # 添加右键菜单,没有这个方法，右键菜单不会显示
     def contextMenuEvent(self, event):
