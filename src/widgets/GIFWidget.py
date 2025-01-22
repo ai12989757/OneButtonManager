@@ -135,6 +135,7 @@ class GIFButtonWidget(QWidget):
         self.iconLabel = QLabel(self)
         if self.iconPath.lower().endswith('.gif'):
             self.movie = QMovie(self.iconPath)
+            self.movie.setCacheMode(QMovie.CacheAll)
             self.movie.setScaledSize(QSize(self.pixmap.width(), self.pixmap.height()))
             self.iconLabel.setMovie(self.movie)
             self.movie.start()

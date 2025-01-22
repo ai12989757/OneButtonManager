@@ -203,6 +203,7 @@ class gifIconMenuAction(QAction):
                 self.iconPath = os.path.join(iconPath, self.iconPath)
             if self.iconPath.lower().endswith('.gif'):
                 self.movie = QMovie(self.iconPath)
+                self.movie.setCacheMode(QMovie.CacheAll)
                 self.movie.frameChanged.connect(self.updateIcon)
                 self.movie.start()
             else:
@@ -448,6 +449,7 @@ class GIFButton(QPushButton):
         self.movie = None
         if self.icon.lower().endswith('.gif'):
             self.movie = QMovie(icon)  # 初始化 QMovie
+            self.movie.setCacheMode(QMovie.CacheAll)
             self.iconImage = 'default'
             self.movie.frameChanged.connect(self.updateIcon)  # 连接帧更新信号到槽函数
             if self.style == "auto":
@@ -497,6 +499,7 @@ class GIFButton(QPushButton):
             if os.path.exists(self.iconKey):
                 self.setIcon(QIcon(self.iconKey))
                 self.movie = QMovie(self.iconKey)  # 初始化 QMovie
+                self.movie.setCacheMode(QMovie.CacheAll)
                 self.movie.frameChanged.connect(self.updateIcon)  # 连接帧更新信号到槽函数
                 if self.style == "auto":
                     self.movie.start()  # 自动播放 GIF
