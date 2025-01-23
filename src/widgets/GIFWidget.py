@@ -53,7 +53,7 @@ class GIFButtonWidget(QWidget):
         self.iconPath = kwargs.get('icon', None)        # 图标路径
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.dragMove = kwargs.get('dragMove', True)    # 是否允许拖动按钮
-        self.spacing = kwargs.get('spacing', 0)         # 按钮之间的间距,layout的间隔，用于排列按钮时的间距计算
+        
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 按钮是否处于拖拽状态
         self.mouseState = ''
