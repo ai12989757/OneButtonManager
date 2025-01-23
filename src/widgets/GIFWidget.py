@@ -52,7 +52,7 @@ class GIFButtonWidget(QWidget):
         self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
-        self.dragMove = kwargs.get('dragMove', True)    # 是否允许拖动按钮
+        self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 按钮是否处于拖拽状态
