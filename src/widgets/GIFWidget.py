@@ -15,18 +15,21 @@ from collections import OrderedDict
 from ..utils import widgetEffect
 from ..utils import imageManager
 from ..utils import runCommand
+from ..utils import dragWidgetOrder
 from . import GIFAction
 try:
     reload(widgetEffect)
     reload(imageManager)
     reload(runCommand)
     reload(GIFAction)
+    reload(dragWidgetOrder)
 except:
     from importlib import reload
     reload(widgetEffect)
     reload(imageManager)
     reload(runCommand)
     reload(GIFAction)
+    reload(dragWidgetOrder)
 
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 
@@ -49,7 +52,7 @@ class GIFButtonWidget(QWidget):
         self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None) # 图标路径
         self.size = kwargs.get('size', 42)  # 图标 长或宽 尺寸
-        
+        self.dragMove = kwargs.get('dragMove', True) # 是否允许拖动按钮
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 是否拖动按钮
         self.mouseState = ''
@@ -269,9 +272,9 @@ class GIFButtonWidget(QWidget):
             self.mouseState = 'leftPress'
             self.executeDragCommand('leftPress')
             self.dragging = True
-        # if event.button() == Qt.MiddleButton:
-        #     if self.dragMove:
-        #         startDrag(self, event)
+        if event.button() == Qt.MiddleButton:
+            if self.dragMove:
+                dragWidgetOrder.startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
         self.iconDragEffect('back')
@@ -284,10 +287,10 @@ class GIFButtonWidget(QWidget):
         if event.button() == Qt.LeftButton:
             self.mouseState = 'leftRelease'
             self.executeDragCommand('leftRelease')
-        # if event.button() == Qt.MiddleButton:
-        #     if self.dragMove:
-        #         self.singleClick = 0
-        #         endDrag(self, event)
+        if event.button() == Qt.MiddleButton:
+            if self.dragMove:
+                self.singleClick = 0
+                dragWidgetOrder.endDrag(self, event)
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
@@ -345,10 +348,10 @@ class GIFButtonWidget(QWidget):
             self.iconDragEffect('move')
         #super(GIFButton, self).mouseMoveEvent(event)
         # 如果是鼠标中键拖动
-        # elif event.buttons() == Qt.MiddleButton:
-        #     if self.dragMove:
-        #         self.move(self.mapToParent(event.pos() - self.startPos))
-        #         performDrag(self, event)
+        elif event.buttons() == Qt.MiddleButton:
+            if self.dragMove:
+                self.move(self.mapToParent(event.pos() - self.startPos))
+                dragWidgetOrder.performDrag(self, event)
         
     def singleClickEvent(self):
         self.singleClick = 0
