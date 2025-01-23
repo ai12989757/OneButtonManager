@@ -50,11 +50,12 @@ class GIFButtonWidget(QWidget):
         '''
         ################## UI ##################
         self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
-        self.iconPath = kwargs.get('icon', None) # 图标路径
-        self.size = kwargs.get('size', 42)  # 图标 长或宽 尺寸
-        self.dragMove = kwargs.get('dragMove', True) # 是否允许拖动按钮
+        self.iconPath = kwargs.get('icon', None)        # 图标路径
+        self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
+        self.dragMove = kwargs.get('dragMove', False)    # 是否允许拖动按钮
+        self.spacing = kwargs.get('spacing', 0)         # 按钮之间的间距,layout的间隔，用于排列按钮时的间距计算
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
-        self.dragging = False        # 是否拖动按钮
+        self.dragging = False        # 按钮是否处于拖拽状态
         self.mouseState = ''
         '''
         鼠标状态: string
@@ -290,7 +291,7 @@ class GIFButtonWidget(QWidget):
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.singleClick = 0
-                dragWidgetOrder.endDrag(self, event)
+                dragWidgetOrder.endDrag(self, event, self.spacing)
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
@@ -351,7 +352,7 @@ class GIFButtonWidget(QWidget):
         elif event.buttons() == Qt.MiddleButton:
             if self.dragMove:
                 self.move(self.mapToParent(event.pos() - self.startPos))
-                dragWidgetOrder.performDrag(self, event)
+                dragWidgetOrder.performDrag(self, event, self.spacing)
         
     def singleClickEvent(self):
         self.singleClick = 0
