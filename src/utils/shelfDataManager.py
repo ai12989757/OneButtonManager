@@ -24,7 +24,7 @@ def returnShelfData(shelfFile):
     if shelfType == 'mel':
         returnMelShelfData(shelfFile, shelfName)
     elif shelfType == 'json':
-        returnJsonShelfData(shelfFile, shelfName)
+        returnJsonShelfData(shelfFile)
 
 def returnMelShelfData(shelfFile, shelfName):
 
@@ -41,5 +41,5 @@ def returnMelShelfData(shelfFile, shelfName):
     except:
         return mel.eval('warning -n "该shelf文件内容有误";')
     
-def returnJsonShelfData(shelfFile, shelfName):
+def returnJsonShelfData(shelfFile):
     pass
