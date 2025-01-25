@@ -24,16 +24,17 @@ from collections import OrderedDict
 
 from ..utils.switchLanguage import *
 from ..utils.getBackShelfList import getBackShelfList
+from ..widgets import GIFWidget
 from ..widgets import GIFButton
 from ..ui import shelfRestoreWindow
 
 
 try:
-    reload(GIFButton)
+    reload(GIFWidget)
     reload(shelfRestoreWindow)
 except:
     from importlib import reload
-    reload(GIFButton)
+    reload(GIFWidget)
     reload(shelfRestoreWindow)
 
 class ShelfButtonManager(QWidget):
@@ -259,7 +260,7 @@ class ShelfButtonManager(QWidget):
                             icon=newButtonData['menuItem'][i]['image'],
                             sourceType=newButtonData['menuItem'][i]['sourceType']
                         )
-                self.gifButton.addDefaultMenuItems()
+                #self.gifButton.addDefaultMenuItems()
 
     def recycleDeleteAllButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
@@ -480,8 +481,9 @@ class ShelfButtonManager(QWidget):
                     i.switch = False
 
     def addNewButton(self):
-        self.addButton(icon='white/undetected.png')
-        self.gifButton.addDefaultMenuItems()
+        pass
+        # self.addButton(icon='white/undetected.png')
+        # self.gifButton.addDefaultMenuItems()
             
     def addButton(self, **kwargs):
         # 检查 icon 是否为绝对路径，如果不是则添加 iconPath
@@ -489,27 +491,14 @@ class ShelfButtonManager(QWidget):
         if icon and not os.path.isabs(icon) and ':\\' not in icon:
             icon = os.path.join(self.iconPath, icon)
 
-        self.gifButton = GIFButton.GIFButton(
+        self.gifButton = GIFWidget.GIFButtonWidget(
             parent=self.shelfParent,
+            alignment = 'h',
+            dragMove = True,
             icon=icon,
-            label=kwargs.get('label', ""),
+            labelText=kwargs.get('label', ""),
             annotation=kwargs.get('annotation', None),
-            style=kwargs.get('style', "auto"),
-            sourceType=kwargs.get('sourceType', "mel"),
             command=kwargs.get('command', None),
-            doubleClickCommandSourceType=kwargs.get('doubleClickCommandSourceType', "mel"),
-            doubleClickCommand=kwargs.get('doubleClickCommand', None),
-            ctrlCommand=kwargs.get('ctrlCommand', None),
-            altCommand=kwargs.get('altCommand', None),
-            shiftCommand=kwargs.get('shiftCommand', None),
-            ctrlAltCommand=kwargs.get('ctrlAltCommand', None),
-            altShiftCommand=kwargs.get('altShiftCommand', None),
-            ctrlShiftCommand=kwargs.get('ctrlShiftCommand', None),
-            ctrlAltShiftCommand=kwargs.get('ctrlAltShiftCommand', None),
-            dragCommand=kwargs.get('dragCommand', None),
-            altDragCommand=kwargs.get('altDragCommand', None),
-            shiftDragCommand=kwargs.get('shiftDragCommand', None),
-            ctrlDragCommand=kwargs.get('ctrlDragCommand', None),
             menuShowCommand=kwargs.get('menuShowCommand', None),
             size=self.iconH,
             language=self.language
@@ -804,26 +793,27 @@ class ShelfButtonManager(QWidget):
                     if 'image' in shelfButtonData.keys():
                         imagePath = shelfButtonData['image']
                         imagePath = self.findIconImage(imagePath, InternalIconDict)
+                    
+                    buttonCommandDict = {}
+                    buttonCommandDict['click'] = [shelfButtonData['sourceType'], shelfButtonData['command']]
+                    buttonCommandDict['doubleClick'] = [shelfButtonData['doubleClickCommandSourceType'], shelfButtonData['doubleClickCommand']]
+                    buttonCommandDict['ctrlClick'] = ['python', shelfButtonData['ctrlCommand']]
+                    buttonCommandDict['altClick'] = ['python', shelfButtonData['altCommand']]
+                    buttonCommandDict['shiftClick'] = ['python', shelfButtonData['shiftCommand']]
+                    buttonCommandDict['ctrlAltClick'] = ['python', shelfButtonData['ctrlAltCommand']]
+                    buttonCommandDict['altShiftClick'] = ['python', shelfButtonData['altShiftCommand']]
+                    buttonCommandDict['ctrlShiftClick'] = ['python', shelfButtonData['ctrlShiftCommand']]
+                    buttonCommandDict['ctrlAltShiftClick'] = ['python', shelfButtonData['ctrlAltShiftCommand']]
+                    buttonCommandDict['drag'] = ['python', shelfButtonData['dragCommand']]
+                    buttonCommandDict['altDrag'] = ['python', shelfButtonData['altDragCommand']]
+                    buttonCommandDict['shiftDrag'] = ['python', shelfButtonData['shiftDragCommand']]
+                    buttonCommandDict['ctrlDrag'] = ['python', shelfButtonData['ctrlDragCommand']]
+                    buttonCommandDict['menuShow'] = ['python', shelfButtonData['menuShowCommand']]
                     self.addButton(
                         label=shelfButtonData['label'],
                         annotation=shelfButtonData['annotation'],
                         icon=imagePath,
-                        sourceType=shelfButtonData['sourceType'],
-                        command=shelfButtonData['command'],
-                        doubleClickCommand=shelfButtonData['doubleClickCommand'],
-                        doubleClickCommandSourceType=shelfButtonData['doubleClickCommandSourceType'],
-                        menuShowCommand=shelfButtonData['menuShowCommand'] if 'menuShowCommand' in shelfButtonData.keys() else '',
-                        ctrlCommand=shelfButtonData['ctrlCommand'] if 'ctrlCommand' in shelfButtonData.keys() else '',
-                        altCommand=shelfButtonData['altCommand'] if 'altCommand' in shelfButtonData.keys() else '',
-                        shiftCommand=shelfButtonData['shiftCommand'] if 'shiftCommand' in shelfButtonData.keys() else '',
-                        ctrlAltCommand=shelfButtonData['ctrlAltCommand'] if 'ctrlAltCommand' in shelfButtonData.keys() else '',
-                        altShiftCommand=shelfButtonData['altShiftCommand'] if 'altShiftCommand' in shelfButtonData.keys() else '',
-                        ctrlShiftCommand=shelfButtonData['ctrlShiftCommand'] if 'ctrlShiftCommand' in shelfButtonData.keys() else '',
-                        ctrlAltShiftCommand=shelfButtonData['ctrlAltShiftCommand'] if 'ctrlAltShiftCommand' in shelfButtonData.keys() else '',
-                        dragCommand=shelfButtonData['dragCommand'] if 'dragCommand' in shelfButtonData.keys() else '',
-                        altDragCommand=shelfButtonData['altDragCommand'] if 'altDragCommand' in shelfButtonData.keys() else '',
-                        shiftDragCommand=shelfButtonData['shiftDragCommand'] if 'shiftDragCommand' in shelfButtonData.keys() else '',
-                        ctrlDragCommand=shelfButtonData['ctrlDragCommand'] if 'ctrlDragCommand' in shelfButtonData.keys() else ''
+                        command=buttonCommandDict
                     )
                     if 'menuItem' in shelfButtonData.keys():
                         if shelfButtonData['menuItem'] is not None:
@@ -833,14 +823,14 @@ class ShelfButtonManager(QWidget):
                                     if menuItemData == 'separator':
                                         self.gifButton.menu.addSeparator()
                                     else:
+                                        command = {'click':[menuItemData['sourceType'], menuItemData['command']]}
                                         self.gifButton.addMenuItem(
                                             label=menuItemData['label'],
-                                            command=menuItemData['command'],
+                                            command=command,
                                             annotation=menuItemData['annotation'],
-                                            icon=menuItemData['image'],
-                                            sourceType=menuItemData['sourceType']
+                                            icon=menuItemData['image']
                                         )
-                    self.gifButton.addDefaultMenuItems()
+                    #self.gifButton.addDefaultMenuItems()
 
     def loadGifShelf(self):
         # 打开文件对话框

@@ -26,16 +26,13 @@ def runCommand(widget, command, trigger='click'):
                     exec(commendText)
                 elif command[trigger][0] == 'function': 
                     command[trigger][1]()
-    elif widget.type == 'QAction' or widget.type == 'QMenu':
+    elif widget.type == 'QAction':
         if not command: return
         if trigger not in command: return
         if trigger not in command.keys(): return
         if command[trigger][0] == 'python': 
             cmds.undoInfo(openChunk=True)
-            if widget.type == 'QAction':
-                cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
-            elif widget.type == 'QMenu':
-                cmds.evalDeferred(lambda: exec(command[trigger][1]))
+            cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
             cmds.undoInfo(closeChunk=True)
         elif command[trigger][0] == 'mel':
             commendText = repr(command[trigger][1])

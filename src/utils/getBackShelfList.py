@@ -29,12 +29,12 @@ def getBackShelfList(path,fileType='mel'):
             data = data[0:4] + '.' + data[4:6] + '.' + data[6:8] + ' ' + data[9:11] + ':' + data[11:13]
             if name not in fileDict.keys():
                 fileDict[name] = []
-            fileDict[name].append([name, data, fileSize,False,fileFath])
+            fileDict[name].append([name, data, fileSize,0,fileFath])
 
     fileList = []
     for i in fileDict.keys():
         if len(fileDict[i]) == 1:
-            fileDict[i][0][3] = True
+            fileDict[i][0][3] = 1
             fileDict[i][0][2] = str(fileDict[i][0][2]) + 'KB'
             fileList.append(fileDict[i][0])
         else:
@@ -48,9 +48,19 @@ def getBackShelfList(path,fileType='mel'):
                 # 文件大小不一样，比较 tempSizeList 里的值文件大小最大的
                 max_index = tempSizeList.index(max(tempSizeList))
 
-            fileDict[i][max_index][3] = True
+            fileDict[i][max_index][3] = 1
 
             for j in fileDict[i]:
                 j[2] = str(j[2]) + 'KB'
                 fileList.append(j)
+    if fileType == 'json':
+        return fileList
+    for i in fileList:
+        # 读取文件
+        with open(i[4], 'r') as f:
+            lines = f.readlines()
+        fileData = ''.join(lines)
+        if 'global proc' not in fileData or 'shelfButton' not in fileData:
+            i[3] = 2
+
     return fileList

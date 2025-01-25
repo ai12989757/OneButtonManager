@@ -40,6 +40,13 @@ class GIFButtonWidget(QWidget):
         ################## command ##################
         self.context = globals().copy()
         self.context.update({'self': self})
+        self.labelText=kwargs.get('label', "")
+        self.annotation=kwargs.get('annotation', None)
+        if self.annotation:
+            self.setToolTip(self.annotation)
+            self.setStatusTip(self.annotation)
+        if self.labelText:
+            self.setObejctName(self.labelText)
         self.command = kwargs.get('command', {}) # 命令
         self.type = 'QWidget'
         '''
@@ -49,7 +56,7 @@ class GIFButtonWidget(QWidget):
         命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
         '''
         ################## UI ##################
-        self.alignment = kwargs.get('alignment', 'V' or 'H' or 'v' or 'h') # V: 垂直排列, H: 水平排列
+        self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
@@ -135,12 +142,13 @@ class GIFButtonWidget(QWidget):
             self.pixmap = self.pixmap.scaledToHeight(self.size, Qt.SmoothTransformation)
         elif self.alignment == 'V' or self.alignment == 'v':
             self.pixmap = self.pixmap.scaledToWidth(self.size, Qt.SmoothTransformation)
-        self.setFixedSize(QSize(self.pixmap.width(), self.pixmap.height()))
+        self.iconSizeValue = QSize(self.pixmap.width(), self.pixmap.height())
+        self.setFixedSize(self.iconSizeValue)
         self.iconLabel = QLabel(self)
         if self.iconPath.lower().endswith('.gif'):
             self.movie = QMovie(self.iconPath)
             self.movie.setCacheMode(QMovie.CacheAll)
-            self.movie.setScaledSize(QSize(self.pixmap.width(), self.pixmap.height()))
+            self.movie.setScaledSize(self.iconSizeValue)
             self.iconLabel.setMovie(self.movie)
             self.movie.start()
         else:
@@ -464,11 +472,11 @@ class GIFButtonWidget(QWidget):
         menu_item = GIFAction.gifIconMenuAction(parent=self, icon=icon, label=label, annotation=annotation, command=command, checkable=checkable)
         self.menu.addAction(menu_item)
         
-        self.menuSubLabel()
+        self.menuSubLabel() # 菜单项角标
             
         # 菜单出现前命令
         try:
             self.menu.aboutToShow.disconnect(None, None)
         except:
             pass
-        self.menu.aboutToShow.connect(lambda: runCommand.runCommand(self.menu, self.command, 'menuShow'))
+        self.menu.aboutToShow.connect(lambda: runCommand.runCommand(self, self.command, 'menuShow'))
