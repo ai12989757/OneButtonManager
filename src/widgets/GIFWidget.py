@@ -16,13 +16,17 @@ from ..utils import widgetEffect
 from ..utils import imageManager
 from ..utils import runCommand
 from ..utils import dragWidgetOrder
+from ..utils import buttonManager
+from ..utils.switchLanguage import *
 from . import GIFAction
+from ..utils import buttonManager
 try:
     reload(widgetEffect)
     reload(imageManager)
     reload(runCommand)
     reload(GIFAction)
     reload(dragWidgetOrder)
+    reload(buttonManager)
 except:
     from importlib import reload
     reload(widgetEffect)
@@ -30,8 +34,11 @@ except:
     reload(runCommand)
     reload(GIFAction)
     reload(dragWidgetOrder)
+    reload(buttonManager)
 
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
+SHELF_BACKUP_PATH = os.path.expanduser('~') + '/OneTools/data/shelf_backup/'
+
 
 class GIFButtonWidget(QWidget):
     def __init__(self, parent=None, *args, **kwargs):
@@ -46,7 +53,7 @@ class GIFButtonWidget(QWidget):
             self.setToolTip(self.annotation)
             self.setStatusTip(self.annotation)
         if self.labelText:
-            self.setObejctName(self.labelText)
+            self.setObjectName(self.labelText)
         self.command = kwargs.get('command', {}) # 命令
         self.type = 'QWidget'
         '''
@@ -56,8 +63,10 @@ class GIFButtonWidget(QWidget):
         命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
         '''
         ################## UI ##################
+        self.language = kwargs.get('language', 0)
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
+        self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
         
@@ -99,28 +108,28 @@ class GIFButtonWidget(QWidget):
         self.setLayout(self.layout)
         self.movie = None       # GIF动画
         self.iconSub = None     # 图标角标
-        self.subLable = None    # 菜单角标
+        self.menuSubLable = None    # 菜单角标
         self.setIconImage()     # 设置按钮外观
-        self.label = None       # 用于显示角标
+        self.keySubLabel = None       # 用于显示角标
         self.menu = QMenu(self) # 菜单
-        self.menu.type = 'QMenu'
+        self.menu.setTearOffEnabled(True)
     
     # 有菜单项时，按钮右下角显示角标
     def menuSubLabel(self):
-        if not self.subLable:
-            self.subLable = QLabel(self)
+        if not self.menuSubLable:
+            self.menuSubLable = QLabel(self)
             subImage = QPixmap(ICONPATH+'sub/sub.png')
             subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.subLable.setPixmap(subImage)
-            self.subLable.setGeometry(0, 0, self.size, self.size)
-            self.subLable.show()
+            self.menuSubLable.setPixmap(subImage)
+            self.menuSubLable.setGeometry(0, 0, self.size, self.size)
+            self.menuSubLable.show()
 
     # 根据不同的按键组合，更新角标
     def updateSubLabel(self, sub):
-        if self.label:
-            self.label.setPixmap(QPixmap())
+        if self.keySubLabel:
+            self.keySubLabel.setPixmap(QPixmap())
         else:
-            self.label = QLabel(self) # 用于显示角标
+            self.keySubLabel = QLabel(self) # 用于显示角标
         if sub is None:
             self.iconSub = 'default'
             return
@@ -128,9 +137,9 @@ class GIFButtonWidget(QWidget):
             self.iconSub = sub
             subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
             subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        self.label.setPixmap(subImage)
-        self.label.setGeometry(0, 0, self.size, self.size)
-        self.label.show()
+        self.keySubLabel.setPixmap(subImage)
+        self.keySubLabel.setGeometry(0, 0, self.size, self.size)
+        self.keySubLabel.show()
 
     def setIconImage(self):
         if not self.iconPath:
@@ -480,3 +489,45 @@ class GIFButtonWidget(QWidget):
         except:
             pass
         self.menu.aboutToShow.connect(lambda: runCommand.runCommand(self, self.command, 'menuShow'))
+
+    def addDefaultMenuItems(self):
+        self.menu.addSeparator()
+
+        editAction = QAction(QIcon(os.path.join(ICONPATH, "white/Edit_popupMenu.png")), sl(u"编辑",self.language), self)
+        self.menu.addAction(editAction)
+
+        editMenu = QMenu(sl(u"编辑",self.language), self)
+        editAction.setMenu(editMenu)
+        editMenu.addAction(QIcon(os.path.join(ICONPATH, "white/Edit.png")), sl(u"编辑",self.language), self.buttonEditor).setStatusTip(sl(u"点击打开编辑窗口",self.language))
+        editMenu.addSeparator()
+        editMenu.addAction(QIcon(os.path.join(ICONPATH, "white/Copy.png")), sl(u"复制",self.language), self.copyButton).setStatusTip(sl(u"复制按钮",self.language))
+        editMenu.addAction(QIcon(os.path.join(ICONPATH, "white/Cut.png")), sl(u"剪切",self.language), self.cutButton).setStatusTip(sl(u"剪切按钮",self.language))
+        editMenu.addAction(QIcon(os.path.join(ICONPATH, "white/Paste.png")), sl(u"粘贴",self.language), self.pasteButton).setStatusTip(sl(u"粘贴按钮",self.language))
+
+        self.menu.addAction(QIcon(os.path.join(ICONPATH, "red/Delete.png")), sl(u"删除",self.language), self.deleteButton).setStatusTip(sl(u"删除按钮",self.language))
+
+    def buttonEditor(self):
+        from ..ui import editorWindow
+        try:
+            reload(editorWindow)
+        except:
+            from importlib import reload
+            reload(editorWindow)
+        from maya import mel
+        editButton = self
+        if mel.eval('window -exists ButtonEditorWindow'):
+            mel.eval('deleteUI ButtonEditorWindow')
+        btw = editorWindow.ButtonEditorWindow(editButton=editButton,language=self.language)
+        btw.show()
+
+    def copyButton(self):
+        pass
+
+    def cutButton(self):
+        pass
+
+    def pasteButton(self):
+        pass
+
+    def deleteButton(self):
+        buttonManager.deleteButton(button=self,path=SHELF_BACKUP_PATH)

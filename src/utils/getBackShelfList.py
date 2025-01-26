@@ -1,4 +1,5 @@
 import os
+from maya import mel
 from datetime import datetime
 
 def get_file_date(file_path):
@@ -62,5 +63,6 @@ def getBackShelfList(path,fileType='mel'):
         fileData = ''.join(lines)
         if 'global proc' not in fileData or 'shelfButton' not in fileData:
             i[3] = 2
+        
 
     return fileList

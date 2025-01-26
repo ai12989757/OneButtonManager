@@ -1,5 +1,5 @@
 global string $gifButtonPath;
-$gifButtonPath = "E:/";int $Language = 0;
+$gifButtonPath = "D:/";int $Language = 0;
 
 string $pythonCode = "import sys\n" +
                     "sys.dont_write_bytecode = True\n" +
