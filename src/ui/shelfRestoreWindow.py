@@ -11,7 +11,15 @@ except ImportError:
 from maya import mel
 from functools import partial
 from ..utils import imageManager
+from ..utils import shelfDataManager
 from ..utils.getBackShelfList import getBackShelfList
+from ..ui import previewShelfWindow
+
+try:
+    reload(previewShelfWindow)
+except:
+    import importlib
+    importlib.reload(previewShelfWindow)
 
 from .mayaMQT  import maya_main_window
 class toDefUI(QWidget):
@@ -24,7 +32,7 @@ class toDefUI(QWidget):
         self.title = 'Shift Manager'
         self.mPos = None
         self.width = 400
-        self.height = 465
+        self.height = 475
         self.setAttribute(Qt.WA_DeleteOnClose) # 设置窗口关闭事件
         self.createUI() # 创建UI
         self.load_settings() # 恢复上次的位置和大小
@@ -265,10 +273,14 @@ class toDefUI(QWidget):
                 file_item.setStatusTip(2, i[4])
 
                 # 检查是否存在同名文件
-                if i[3]:
+                if i[3] == 1:
                     file_item.setForeground(0, QBrush(QColor('#00CED1')))
                     file_item.setForeground(1, QBrush(QColor('#00CED1')))
                     file_item.setForeground(2, QBrush(QColor('#00CED1')))
+                elif i[3] == 2:
+                    file_item.setForeground(0, QBrush(QColor('#FF6347')))
+                    file_item.setForeground(1, QBrush(QColor('#FF6347')))
+                    file_item.setForeground(2, QBrush(QColor('#FF6347')))
 
                 # 恢复按钮
                 restore_button = QPushButton()
@@ -303,7 +315,8 @@ class toDefUI(QWidget):
                 self.fileListWidget.setItemWidget(file_item, 3, button_widget)
 
     def restoreShelf(self, item, index):
-        print("恢复文件:", item.text(0))
+        index = self.fileListWidget.indexOfTopLevelItem(item)
+        shelfDataManager.returnShelfData(shelfFile=self.fileList[index][4])
 
     def deleteItem(self, item):
         index = self.fileListWidget.indexOfTopLevelItem(item)
@@ -320,6 +333,7 @@ class toDefUI(QWidget):
         index = self.fileListWidget.indexOfTopLevelItem(item)
         mel.eval('print "// 结果: 文件地址: %s\\n"' % self.fileList[index][4])
         #print('文件地址:', self.fileList[column][4])
+        previewShelfWindow.PreviewShelfWindow(shelfFile=self.fileList[index][4]).show()
 
     def restore_button_on_enter_event(self, event,button):
         button.setIcon(imageManager.enhanceIcon(self.iconDir+'green/Restore.png'))
