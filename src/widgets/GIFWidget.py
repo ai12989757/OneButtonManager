@@ -45,7 +45,7 @@ class GIFButtonWidget(QWidget):
         '''
         command = {触发器: [类型, 命令]}
         tpye 类型: python, mel, function
-        trigger 触发器: click, doubleClick, ctrlClick, shiftClick, altClick, ctrlShiftClick, ctrlAltClick, altShiftClick, ctrlAltShiftClick, drag, ctrlDrag, shiftDrag, altDrag, ctrlShiftDrag, ctrlAltDrag, altShiftDrag, ctrlAltShiftDrag
+        trigger 触发器: menuShow, click, doubleClick, ctrlClick, shiftClick, altClick, ctrlShiftClick, ctrlAltClick, altShiftClick, ctrlAltShiftClick, drag, ctrlDrag, shiftDrag, altDrag, ctrlShiftDrag, ctrlAltDrag, altShiftDrag, ctrlAltShiftDrag
         命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
         '''
         ################## UI ##################

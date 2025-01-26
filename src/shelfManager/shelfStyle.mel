@@ -1,0 +1,122 @@
+// ===========================================================================
+// Copyright 2021 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk license
+// agreement provided at the time of installation or download, or which
+// otherwise accompanies this software in either electronic or hard copy form.
+// ===========================================================================
+//
+//
+//  Creation Date:  Sept 1997
+//
+//  Description:
+//      Set the shelf style for one shelf tab
+//
+
+global proc shelfStyle(string $style, string $size, string $shelfLayout)
+{
+	int $width;
+	int $height;
+	int $h;
+	int $curSize;
+	int $boxWidth;
+	int $temp;
+	string $curStyle;
+
+	if ($style == "nochange")
+		$style = `optionVar -q shelfItemStyle`;
+
+	if ($size == "nochange") 
+		$size = `optionVar -q shelfItemSize`;
+
+	if ($size == "small")
+		$size = "Small";
+	else if ($size == "medium")
+		$size = "Medium";
+	else if ($size == "large")
+		$size = "Large";
+	else if ($size == "Large" || $size == "Medium" || $size == "Small") {
+		//  okay
+	} else {
+		//  received bad data
+		$size = "Small";
+	}
+	
+	if ($style == "textOnly") {
+		$width = 120;
+		$height = 20;
+		$h = 26;
+		$boxWidth = 500;
+	} else if ($style == "iconAndTextHorizontal") {
+		if ($size == "Small") {
+			$width = 150;
+			$height = 34;
+			$h = 40;
+			$boxWidth = 504;
+		} else if ($size == "Medium") {
+			$width = 128;
+			$height = 48;
+			$h = 54;
+			$boxWidth = 505;
+		} else if ($size == "Large") {
+			$width = 144;
+			$height = 64;
+			$h = 70;
+			$boxWidth = 506;
+		}
+	} else if ($style == "iconAndTextVertical") {
+		if ($size == "Small") {
+			$width = 122;
+			$height = 54;
+			$h = 60;
+			$boxWidth = 507;
+		} else if ($size == "Medium") {
+			$width = 80;
+			$height = 68;
+			$h = 74;
+			$boxWidth = 508;
+		} else if ($size == "Large") {
+			$width = 80;
+			$height = 84;
+			$h = 90;
+			$boxWidth = 509;
+		}
+	} else if ($style == "iconOnly") {	
+		if ($size == "Small") {
+			$width = 34;
+			$height = 34;
+			$h = 40;
+			$boxWidth = 501;
+		} else if ($size == "Medium") {
+			$width = 48;
+			$height = 48;
+			$h = 54;
+			$boxWidth = 502;
+		} else if ($size == "Large") {
+			$width = 64;
+			$height = 64;
+			$h = 70;
+			$boxWidth = 503;
+		}
+	} else {
+		// bad data
+		$style = "iconOnly";
+		if ($size == "Small") {
+			$width = 34;
+			$height = 34;
+			$h = 40;
+			$boxWidth = 501;
+		} else if ($size == "Medium") {
+			$width = 48;
+			$height = 48;
+			$h = 54;
+			$boxWidth = 502;
+		} else if ($size == "Large") {
+			$width = 64;
+			$height = 64;
+			$h = 70;
+			$boxWidth = 503;
+		}
+	}
+    if(`shelfLayout -q -ex $shelfLayout`) shelfLayout -e -st $style -cwh $width $height -h $h $shelfLayout;
+}
