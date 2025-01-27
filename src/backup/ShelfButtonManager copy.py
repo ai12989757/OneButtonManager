@@ -24,19 +24,18 @@ from collections import OrderedDict
 
 from ..utils.switchLanguage import *
 from ..utils.getBackShelfList import getBackShelfList
-from ..widgets import GIFWidget, GIFAction, Separator
+from ..widgets import GIFButton
 from ..ui import shelfRestoreWindow
 
+
 try:
-    reload(GIFWidget)
+    reload(GIFButton)
     reload(shelfRestoreWindow)
 except:
     from importlib import reload
-    reload(GIFWidget)
+    reload(GIFButton)
     reload(shelfRestoreWindow)
 
-ICONPATH = __file__.replace('\\','/').replace('src/shelfManager/ShelfButtonManager.py', 'icons/')
-print(ICONPATH)
 class ShelfButtonManager(QWidget):
     def __init__(self,language=0):
         super(ShelfButtonManager, self).__init__()
@@ -50,7 +49,7 @@ class ShelfButtonManager(QWidget):
 
         self.PATH = os.path.dirname(os.path.abspath(__file__)) 
         self.PATH = self.PATH.replace('\\', '/')
-        
+        self.iconPath = self.PATH.replace('src/shelfManager', 'icons/')
 
         self.OneToolsDir = mel.eval('internalVar -uad').replace('maya/','OneTools') # Documents/OneTools/
         if not os.path.exists(self.OneToolsDir): 
@@ -158,10 +157,10 @@ class ShelfButtonManager(QWidget):
         self.shelfParent.customContextMenuRequested.connect(self.showMenu)
         self.contextMenu.setTearOffEnabled(True)
         # 按钮
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/undetected.png'), sl(u"添加按钮",self.language), self.addNewButton).setStatusTip(sl(u"点击添加一个新按钮",self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Separator.png'), sl(u"添加分隔符",self.language), self.addSeparator).setStatusTip(sl(u"点击添加一个新分隔符",self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Paste.png'), sl(u"粘贴按钮",self.language), self.pasteButton).setStatusTip(sl(u"点击粘贴按钮",self.language))
-        self.recycleAction = GIFAction.gifIconMenuAction(icon = ICONPATH + 'white/Recycle.png', label = sl(u"回收站",self.language), annotation = sl(u"删除的按钮保存在此处, 最多存放 20 个删除的按钮",self.language), parent = self.contextMenu)
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/undetected.png'), sl(u"添加按钮",self.language), self.addNewButton).setStatusTip(sl(u"点击添加一个新按钮",self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/Separator.png'), sl(u"添加分隔符",self.language), self.addSeparator).setStatusTip(sl(u"点击添加一个新分隔符",self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/Paste.png'), sl(u"粘贴按钮",self.language), self.pasteButton).setStatusTip(sl(u"点击粘贴按钮",self.language))
+        self.recycleAction = GIFButton.gifIconMenuAction(icon = self.iconPath + 'white/Recycle.png', label = sl(u"回收站",self.language), annotation = sl(u"删除的按钮保存在此处, 最多存放 20 个删除的按钮",self.language), parent = self.contextMenu)
         #self.recycleAction.setStatusTip(sl(u"删除的按钮保存在此处, 最多存放 20 个删除的按钮",self.language)) # 神奇的，用QAction添加子菜单后，StatusTip 不会显示出来，用 gifIconMenuAction 却可以
         self.contextMenu.addAction(self.recycleAction)
         self.recycleMenu = QMenu(sl(u"回收站",self.language))
@@ -170,10 +169,10 @@ class ShelfButtonManager(QWidget):
         self.recycleMenu.aboutToShow.connect(self.recycleMenuList)
         # 工具栏设置
         self.contextMenu.addSeparator()
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Switch.png'), sl(u"转换工具栏", self.language), self.toGIF).setStatusTip(sl(u"点击转换当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'green/Restore.png'), sl(u"还原工具栏", self.language), self.toDef).setStatusTip(sl(u"点击还原当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Save.png'), sl(u"保存工具栏", self.language), self.saveGifShelf).setStatusTip(sl(u"点击保存当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Import.png'), sl(u"导入工具栏", self.language), self.loadGifShelf).setStatusTip(sl(u"点击导入工具栏", self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/Switch.png'), sl(u"转换工具栏", self.language), self.toGIF).setStatusTip(sl(u"点击转换当前工具栏", self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'green/Restore.png'), sl(u"还原工具栏", self.language), self.toDef).setStatusTip(sl(u"点击还原当前工具栏", self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/Save.png'), sl(u"保存工具栏", self.language), self.saveGifShelf).setStatusTip(sl(u"点击保存当前工具栏", self.language))
+        self.contextMenu.addAction(QIcon(self.iconPath + 'white/Import.png'), sl(u"导入工具栏", self.language), self.loadGifShelf).setStatusTip(sl(u"点击导入工具栏", self.language))
         self.contextMenu.addSeparator()
         # 自动加载工具栏
         self.autoLoadAction = self.contextMenu.addAction(QIcon(':\\switchOff.png'), sl(u"自动加载工具栏", self.language), self.setAutoLoadJob)
@@ -186,7 +185,7 @@ class ShelfButtonManager(QWidget):
         self.contextMenu.aboutToShow.connect(self.menuShowCheck) # 每次打开菜单时检查是否开启了自动加载工具栏、自动保存工具栏
         self.contextMenu.addSeparator()
         # 语言切换
-        self.languageAction = self.contextMenu.addAction(QIcon(ICONPATH + 'white/Language.png'),sl(u"语言", abs(1 - self.language)))
+        self.languageAction = self.contextMenu.addAction(QIcon(self.iconPath + 'white/Language.png'),sl(u"语言", abs(1 - self.language)))
         # 添加子菜单
         self.languageMenu = QMenu()
         self.languageAction.setMenu(self.languageMenu)
@@ -207,14 +206,14 @@ class ShelfButtonManager(QWidget):
         jsonData = data['shelfData']
         # 创建一个新的菜单
         self.recycleMenu.clear()
-        self.recycleMenu.addAction(QIcon(ICONPATH + 'red/Recycle.png'), sl(u"清空回收站",self.language), self.recycleDeleteAllButton)
+        self.recycleMenu.addAction(QIcon(self.iconPath + 'red/Recycle.png'), sl(u"清空回收站",self.language), self.recycleDeleteAllButton)
         self.recycleMenu.addSeparator()
         for i in jsonData.keys():
-            action = GIFAction.gifIconMenuAction(icon = jsonData[i]['image'], label = jsonData[i]['label'], annotation = jsonData[i]['annotation'], parent = self.recycleMenu)
+            action = GIFButton.gifIconMenuAction(icon = jsonData[i]['image'], label = jsonData[i]['label'], annotation = jsonData[i]['annotation'], parent = self.recycleMenu)
             buttonRecycleEdit = QMenu()
             action.setMenu(buttonRecycleEdit)
-            buttonRecycleEdit.addAction(QIcon(ICONPATH + 'green/Restore.png'), sl(u"还原",self.language), self.recycleRestoreButton).setStatusTip(sl(u"将此按钮重新添加到当前工具栏",self.language))
-            buttonRecycleEdit.addAction(QIcon(ICONPATH + 'red/Delete.png'), sl(u"删除",self.language), self.recycleDeleteButton).setStatusTip(sl(u"从回收站彻底删除此按钮, 注意: 不可恢复",self.language))
+            buttonRecycleEdit.addAction(QIcon(self.iconPath + 'green/Restore.png'), sl(u"还原",self.language), self.recycleRestoreButton).setStatusTip(sl(u"将此按钮重新添加到当前工具栏",self.language))
+            buttonRecycleEdit.addAction(QIcon(self.iconPath + 'red/Delete.png'), sl(u"删除",self.language), self.recycleDeleteButton).setStatusTip(sl(u"从回收站彻底删除此按钮, 注意: 不可恢复",self.language))
             self.recycleMenu.addAction(action)
    
     def pasteButton(self):
@@ -224,27 +223,43 @@ class ShelfButtonManager(QWidget):
         with codecs.open(shelf_copy, 'r', encoding='utf-8') as f:
             jsonData = json.load(f)
         newButtonData = jsonData['shelfData']
-        if newButtonData is None: return
-        self.addButton(
-            icon=newButtonData['image'],
-            label=newButtonData['label'],
-            annotation=newButtonData['annotation'],
-            command=newButtonData['command']
-        )
-        
-        if newButtonData['menuItem'] is not None and newButtonData['menuItem'] != {}:
-            print(newButtonData['menuItem'])
-            for i in newButtonData['menuItem'].keys():
-                if newButtonData['menuItem'][i] == 'separator':
-                    self.gifButton.menu.addSeparator()
-                else:
-                    self.gifButton.addMenuItem(
-                        label=newButtonData['menuItem'][i]['label'],
-                        command=newButtonData['menuItem'][i]['command'],
-                        annotation=newButtonData['menuItem'][i]['annotation'],
-                        icon=newButtonData['menuItem'][i]['image']
-                    )
-        self.gifButton.addDefaultMenuItems()
+        if newButtonData is None:
+            return
+        else:
+            self.addButton(
+                icon=newButtonData['image'],
+                label=newButtonData['label'],
+                annotation=newButtonData['annotation'],
+                sourceType=newButtonData['sourceType'],
+                command=newButtonData['command'],
+                doubleClickCommandSourceType=newButtonData['doubleClickCommandSourceType'],
+                doubleClickCommand=newButtonData['doubleClickCommand'],
+                ctrlCommand=newButtonData['ctrlCommand'],
+                altCommand=newButtonData['altCommand'],
+                shiftCommand=newButtonData['shiftCommand'],
+                ctrlAltCommand=newButtonData['ctrlAltCommand'],
+                altShiftCommand=newButtonData['altShiftCommand'],
+                ctrlShiftCommand=newButtonData['ctrlShiftCommand'],
+                ctrlAltShiftCommand=newButtonData['ctrlAltShiftCommand'],
+                dragCommand=newButtonData['dragCommand'],
+                altDragCommand=newButtonData['altDragCommand'],
+                shiftDragCommand=newButtonData['shiftDragCommand'],
+                ctrlDragCommand=newButtonData['ctrlDragCommand'],
+                menuShowCommand=newButtonData['menuShowCommand']
+            )
+            if newButtonData['menuItem'] is not None:
+                for i in newButtonData['menuItem'].keys():
+                    if newButtonData['menuItem'][i] == 'separator':
+                        self.gifButton.menu.addSeparator()
+                    else:
+                        self.gifButton.addMenuItem(
+                            label=newButtonData['menuItem'][i]['label'],
+                            command=newButtonData['menuItem'][i]['command'],
+                            annotation=newButtonData['menuItem'][i]['annotation'],
+                            icon=newButtonData['menuItem'][i]['image'],
+                            sourceType=newButtonData['menuItem'][i]['sourceType']
+                        )
+                self.gifButton.addDefaultMenuItems()
 
     def recycleDeleteAllButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
@@ -273,14 +288,27 @@ class ShelfButtonManager(QWidget):
     def addButton4ButtonData(self,buttonData):
         if buttonData is None:
             return
-        buttonData = self.GIFButtonJsonDataSwitch(buttonData)
         buttonData['image'] = self.findIconImage(buttonData['image'], self.InternalIconDict)
-        self.addButton(
-            icon = buttonData['image'] if 'image' in buttonData.keys() else '',
-            label = buttonData['label'] if 'label' in buttonData.keys() else '',
-            annotation = buttonData['annotation'] if 'annotation' in buttonData.keys() else '',
-            command = buttonData['command'] if 'command' in buttonData.keys() else ''
-        )
+        self.addButton(icon = buttonData['image'] if 'image' in buttonData.keys() else '',
+                        label = buttonData['label'] if 'label' in buttonData.keys() else '',
+                        annotation = buttonData['annotation'] if 'annotation' in buttonData.keys() else '',
+                        sourceType=buttonData['sourceType'] if 'sourceType' in buttonData.keys() else 'mel',
+                        command = buttonData['command'] if 'command' in buttonData.keys() else '',
+                        doubleClickCommandSourceType = buttonData['doubleClickCommandSourceType'] if 'doubleClickCommandSourceType' in buttonData.keys() else 'mel',
+                        doubleClickCommand = buttonData['doubleClickCommand'] if 'doubleClickCommand' in buttonData.keys() else '',
+                        ctrlCommand = buttonData['ctrlCommand'] if 'ctrlCommand' in buttonData.keys() else '',
+                        altCommand = buttonData['altCommand'] if 'altCommand' in buttonData.keys() else '',
+                        shiftCommand = buttonData['shiftCommand'] if 'shiftCommand' in buttonData.keys() else '',
+                        ctrlAltCommand = buttonData['ctrlAltCommand'] if 'ctrlAltCommand' in buttonData.keys() else '',
+                        altShiftCommand = buttonData['altShiftCommand'] if 'altShiftCommand' in buttonData.keys() else '',
+                        ctrlShiftCommand = buttonData['ctrlShiftCommand'] if 'ctrlShiftCommand' in buttonData.keys() else '',
+                        ctrlAltShiftCommand = buttonData['ctrlAltShiftCommand'] if 'ctrlAltShiftCommand' in buttonData.keys() else '',
+                        dragCommand = buttonData['dragCommand'] if 'dragCommand' in buttonData.keys() else '',
+                        altDragCommand = buttonData['altDragCommand'] if 'altDragCommand' in buttonData.keys() else '',
+                        shiftDragCommand = buttonData['shiftDragCommand'] if 'shiftDragCommand' in buttonData.keys() else '',
+                        ctrlDragCommand = buttonData['ctrlDragCommand'] if 'ctrlDragCommand' in buttonData.keys() else '',
+                        menuShowCommand = buttonData['menuShowCommand'] if 'menuShowCommand' in buttonData.keys() else ''
+                        )
         if 'menuItem' in buttonData.keys():
             if buttonData['menuItem'] is not None:
                 for i in buttonData['menuItem'].keys():
@@ -291,7 +319,8 @@ class ShelfButtonManager(QWidget):
                             label = buttonData['menuItem'][i]['label'] if 'label' in buttonData['menuItem'][i].keys() else '',
                             command = buttonData['menuItem'][i]['command'] if 'command' in buttonData['menuItem'][i].keys() else '',
                             annotation = buttonData['menuItem'][i]['annotation'] if 'annotation' in buttonData['menuItem'][i].keys() else '',
-                            icon = buttonData['menuItem'][i]['image'] if 'image' in buttonData['menuItem'][i].keys() else ''
+                            icon = buttonData['menuItem'][i]['image'] if 'image' in buttonData['menuItem'][i].keys() else '',
+                            sourceType = buttonData['menuItem'][i]['sourceType'] if 'sourceType' in buttonData['menuItem'][i].keys() else ''
                         )
             self.gifButton.addDefaultMenuItems()
 
@@ -318,36 +347,32 @@ class ShelfButtonManager(QWidget):
         self.menu.exec_(self.shelfParent.mapToGlobal(pos))
 
     def autoSetShelf(self):
-        for shelf in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
-            evalCode = 'shelfTabLayout -e -st '+shelf+' $gShelfTopLevel;'
-            mel.eval(evalCode)
-            self.shelfManagers[shelf] = ShelfButtonManager(self.language)
-            self.shelfManagers[shelf].menu = self.shelfManagers[shelf].createContextMenu()
-            userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
-            setupCode = 'source "'+self.PATH+'/ShelfAutoSetup.mel";\n'
-            if not os.path.exists(userSetupFile):
-                with open(userSetupFile, 'w') as f:
-                    f.write(setupCode)
-                return
-            
-            # 按行读取 userSetup 文件
-            with codecs.open(userSetupFile, 'r', 'utf-8') as f:
-                userSetup = f.readlines()
-            # 删除 'ShelfAutoSetup' 行
-            userSetup = [line for line in userSetup if 'ShelfAutoSetup' not in line]
-            # 检查并添加 'GifButton_AutoLoad;' 行 如果有则删除
-            if 'GifButton_AutoLoad' in ''.join(userSetup):
-                userSetup = [line for line in userSetup if 'GifButton_AutoLoad' not in line]
-                setupCode += 'GifButton_AutoLoad;\n'
-            # 检查并添加 'GifButton_AutoSave;' 行
-            if 'GifButton_AutoSave;' in ''.join(userSetup):
-                userSetup = [line for line in userSetup if 'GifButton_AutoSave' not in line]
-                setupCode += 'GifButton_AutoSave;\n'
-            # 添加 setupCode 到 userSetup
-            userSetup.append(setupCode)
-            # 写入 userSetup 文件
-            with codecs.open(userSetupFile, 'w', 'utf-8') as f:
-                f.writelines(userSetup)
+        self.menu = self.createContextMenu()
+        userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
+        setupCode = 'source "'+self.PATH+'/ShelfAutoSetup.mel";\n'
+        if not os.path.exists(userSetupFile):
+            with open(userSetupFile, 'w') as f:
+                f.write(setupCode)
+            return
+        
+        # 按行读取 userSetup 文件
+        with codecs.open(userSetupFile, 'r', 'utf-8') as f:
+            userSetup = f.readlines()
+        # 删除 'ShelfAutoSetup' 行
+        userSetup = [line for line in userSetup if 'ShelfAutoSetup' not in line]
+        # 检查并添加 'GifButton_AutoLoad;' 行 如果有则删除
+        if 'GifButton_AutoLoad' in ''.join(userSetup):
+            userSetup = [line for line in userSetup if 'GifButton_AutoLoad' not in line]
+            setupCode += 'GifButton_AutoLoad;\n'
+        # 检查并添加 'GifButton_AutoSave;' 行
+        if 'GifButton_AutoSave;' in ''.join(userSetup):
+            userSetup = [line for line in userSetup if 'GifButton_AutoSave' not in line]
+            setupCode += 'GifButton_AutoSave;\n'
+        # 添加 setupCode 到 userSetup
+        userSetup.append(setupCode)
+        # 写入 userSetup 文件
+        with codecs.open(userSetupFile, 'w', 'utf-8') as f:
+            f.writelines(userSetup)
 
     def setAutoLoadJob(self):
         userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
@@ -462,17 +487,31 @@ class ShelfButtonManager(QWidget):
         # 检查 icon 是否为绝对路径，如果不是则添加 iconPath
         icon = kwargs.get('icon', None)
         if icon and not os.path.isabs(icon) and ':\\' not in icon:
-            icon = os.path.join(ICONPATH, icon)
+            icon = os.path.join(self.iconPath, icon)
 
-        self.gifButton = GIFWidget.GIFButtonWidget(
+        self.gifButton = GIFButton.GIFButton(
             parent=self.shelfParent,
-            icon=kwargs.get('icon', None),
+            icon=icon,
             label=kwargs.get('label', ""),
             annotation=kwargs.get('annotation', None),
             style=kwargs.get('style', "auto"),
+            sourceType=kwargs.get('sourceType', "mel"),
             command=kwargs.get('command', None),
+            doubleClickCommandSourceType=kwargs.get('doubleClickCommandSourceType', "mel"),
+            doubleClickCommand=kwargs.get('doubleClickCommand', None),
+            ctrlCommand=kwargs.get('ctrlCommand', None),
+            altCommand=kwargs.get('altCommand', None),
+            shiftCommand=kwargs.get('shiftCommand', None),
+            ctrlAltCommand=kwargs.get('ctrlAltCommand', None),
+            altShiftCommand=kwargs.get('altShiftCommand', None),
+            ctrlShiftCommand=kwargs.get('ctrlShiftCommand', None),
+            ctrlAltShiftCommand=kwargs.get('ctrlAltShiftCommand', None),
+            dragCommand=kwargs.get('dragCommand', None),
+            altDragCommand=kwargs.get('altDragCommand', None),
+            shiftDragCommand=kwargs.get('shiftDragCommand', None),
+            ctrlDragCommand=kwargs.get('ctrlDragCommand', None),
+            menuShowCommand=kwargs.get('menuShowCommand', None),
             size=self.iconH,
-            dragMove=True,
             language=self.language
         )
         if self.mayaVersion < 2022:
@@ -492,7 +531,7 @@ class ShelfButtonManager(QWidget):
         # self.gifButton.setGeometry(0, 5, 0, 0) # not work
 
     def addSeparator(self):
-        self.separator = Separator.Separator(parent=self.shelfParent,language=self.language,size=self.iconH)
+        self.separator = GIFButton.Separator(parent=self.shelfParent,language=self.language)
         if self.mayaVersion < 2022:
             self.shelfLayoutInfo.addWidget(self.separator)
         elif self.mayaVersion >= 2022:
@@ -502,8 +541,8 @@ class ShelfButtonManager(QWidget):
             self.separatorButtonPrt = omui.MQtUtil.findControl(self.separator.objectName())
             omui.MQtUtil.addWidgetToMayaLayout(int(self.separatorButtonPrt), int(self.shelfParentPtr)) 
         self.separator.shelfLayoutInfo = self.shelfLayoutInfo
-        # self.separator.iconSizeValue = QSize((self.iconH), self.iconH)
-        # self.separator.setFixedSize(self.separator.iconSizeValue)
+        self.separator.iconSizeValue = QSize((self.iconH), self.iconH)
+        self.separator.setFixedSize(self.separator.iconSizeValue)
 
     def getButtonList(self):
         self.buttonList = []
@@ -568,7 +607,7 @@ class ShelfButtonManager(QWidget):
         # 新建字典保存按钮数据
         data = OrderedDict()
         for index,i in enumerate(self.buttonList):
-            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'GIFButtonWidget':
+            if i.__class__.__name__ == 'GIFButton':
                 data[index] = self.getGIFButtonData(i)
             elif i.__class__.__name__ == 'Separator':
                 data[index] = 'separator'
@@ -600,7 +639,7 @@ class ShelfButtonManager(QWidget):
         os.rename(jsonPath,jsonPath+'.'+formatted_datetime)
         # 删除当前shelf的所有按钮
         for index,i in enumerate(self.buttonList):
-            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'Separator' or i.__class__.__name__ == 'GIFButtonWidget':
+            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'Separator':
                 i.deleteLater()
             elif i.__class__.__name__ == 'QFrame':
                 data[index] = 'separator'
@@ -611,6 +650,7 @@ class ShelfButtonManager(QWidget):
                 except:
                     i.deleteLater()
         #oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
+        #print(data)
         # 重新添加GIFButton
         for i in data.keys():
             if data[i] == 'separator':
@@ -658,10 +698,26 @@ class ShelfButtonManager(QWidget):
     def getGIFButtonData(self, button):
         # 获取按钮数据
         data = OrderedDict()
-        data['label'] = button.labelText
+        data['label'] = button.label
         data['annotation'] = button.annotation
-        data['image'] = button.iconPath
+        data['image'] = button.icon
+        data['sourceType'] = button.sourceType
         data['command'] = button.command
+        data['doubleClickCommandSourceType'] = button.doubleClickCommandSourceType
+        data['doubleClickCommand'] = button.doubleClickCommand
+        data['ctrlCommand'] = button.ctrlCommand
+        data['altCommand'] = button.altCommand
+        data['shiftCommand'] = button.shiftCommand
+        data['ctrlAltCommand'] = button.ctrlAltCommand
+        data['altShiftCommand'] = button.altShiftCommand
+        data['ctrlShiftCommand'] = button.ctrlShiftCommand
+        data['ctrlAltShiftCommand'] = button.ctrlAltShiftCommand
+        data['dragCommand'] = button.dragCommand
+        data['altDragCommand'] = button.altDragCommand
+        data['shiftDragCommand'] = button.shiftDragCommand
+        data['ctrlDragCommand'] = button.ctrlDragCommand
+        data['size'] = button.size
+        data['menuShowCommand'] = button.menuShowCommand
         data['menuItem'] = OrderedDict()
     
         for index, i in enumerate(button.menu.actions()):
@@ -673,6 +729,7 @@ class ShelfButtonManager(QWidget):
                 menuData['command'] = i.command
                 menuData['annotation'] = i.annotation
                 menuData['image'] = i.iconPath
+                menuData['sourceType'] = i.sourceType
                 data['menuItem'][index] = menuData
         return data
 
@@ -728,61 +785,7 @@ class ShelfButtonManager(QWidget):
                     pass
 
         return imagePath
-    
-    def GIFButtonJsonDataSwitch(self, data):
-        if 'sourceType' not in data.keys():
-            return data
-        newDict = {}
-        if 'size' in data.keys(): newDict['size'] = data['size']
-        if 'label' in data.keys(): newDict['label'] = data['label']
-        if 'annotation' in data.keys(): newDict['annotation'] = data['annotation']
-        if 'image' in data.keys(): newDict['image'] = data['image']
-        newDict['command'] = {}
-        sourceType = data['sourceType'] if 'sourceType' in data.keys() else 'mel'
-        command = data['command'] if 'command' in data.keys() else ''
-        doubleClick = data['doubleClickCommand'] if 'doubleClickCommand' in data.keys() else ''
-        doubleClickSourceType = data['doubleClickCommandSourceType'] if 'doubleClickCommandSourceType' in data.keys() else 'mel'
-        ctrlClick = data['ctrlCommand'] if 'ctrlCommand' in data.keys() else ''
-        shiftClick = data['altCommand'] if 'altCommand' in data.keys() else ''
-        altClick = data['shiftCommand'] if 'shiftCommand' in data.keys() else ''
-        ctrlShiftClick = data['ctrlAltCommand'] if 'ctrlAltCommand' in data.keys() else ''
-        ctrlAltClick = data['altShiftCommand'] if 'altShiftCommand' in data.keys() else ''
-        shiftAltClick = data['ctrlShiftCommand'] if 'ctrlShiftCommand' in data.keys() else ''
-        ctrlShiftAltClick = data['ctrlAltShiftCommand'] if 'ctrlAltShiftCommand' in data.keys() else ''
-        drag = data['dragCommand'] if 'dragCommand' in data.keys() else ''
-        ctrlDrag = data['ctrlDragCommand'] if 'ctrlDragCommand' in data.keys() else ''
-        shiftDrag = data['altDragCommand'] if 'altDragCommand' in data.keys() else ''
-        altDrag = data['shiftDragCommand'] if 'shiftDragCommand' in data.keys() else ''
-        menuShowCommand = data['menuShowCommand'] if 'menuShowCommand' in data.keys() else ''
-        newDict['command'] = {
-            'click': [sourceType, command],
-            'doubleClick': [doubleClickSourceType, doubleClick],
-            'ctrlClick': ['python', ctrlClick],
-            'shiftClick': ['python', shiftClick],
-            'altClick': ['python', altClick],
-            'ctrlShiftClick': ['python', ctrlShiftClick],
-            'ctrlAltClick': ['python', ctrlAltClick],
-            'shiftAltClick': ['python', shiftAltClick],
-            'ctrlShiftAltClick': ['python', ctrlShiftAltClick],
-            'drag': ['python', drag],
-            'ctrlDrag': ['python', ctrlDrag],
-            'shiftDrag': ['python', shiftDrag],
-            'altDrag': ['python', altDrag],
-            'menuShow': ['python', menuShowCommand]
-        }
-        newDict['menuItem'] = {}
-        if 'menuItem'  in data.keys():
-            if data['menuItem'] is not None:
-                for item, value  in data['menuItem'].items():
-                    newDict['menuItem'][item] = {}
-                    newDict['menuItem'][item]['label'] = value['label']
-                    newDict['menuItem'][item]['annotation'] = value['annotation']
-                    newDict['menuItem'][item]['image'] = value['image']
-                    newDict['menuItem'][item]['command'] = {
-                        'click': [value['sourceType'],value['command']]
-                    }
-        return newDict
-    
+
     def loadShelfData(self, shelfData):
         '''
         shelfData: dict
@@ -797,7 +800,6 @@ class ShelfButtonManager(QWidget):
                 self.addSeparator()
             else:
                 shelfButtonData = data[shelfButtonName]
-                shelfButtonData = self.GIFButtonJsonDataSwitch(shelfButtonData)
                 if isinstance(shelfButtonData, dict):
                     if 'image' in shelfButtonData.keys():
                         imagePath = shelfButtonData['image']
@@ -806,7 +808,22 @@ class ShelfButtonManager(QWidget):
                         label=shelfButtonData['label'],
                         annotation=shelfButtonData['annotation'],
                         icon=imagePath,
-                        command=shelfButtonData['command']
+                        sourceType=shelfButtonData['sourceType'],
+                        command=shelfButtonData['command'],
+                        doubleClickCommand=shelfButtonData['doubleClickCommand'],
+                        doubleClickCommandSourceType=shelfButtonData['doubleClickCommandSourceType'],
+                        menuShowCommand=shelfButtonData['menuShowCommand'] if 'menuShowCommand' in shelfButtonData.keys() else '',
+                        ctrlCommand=shelfButtonData['ctrlCommand'] if 'ctrlCommand' in shelfButtonData.keys() else '',
+                        altCommand=shelfButtonData['altCommand'] if 'altCommand' in shelfButtonData.keys() else '',
+                        shiftCommand=shelfButtonData['shiftCommand'] if 'shiftCommand' in shelfButtonData.keys() else '',
+                        ctrlAltCommand=shelfButtonData['ctrlAltCommand'] if 'ctrlAltCommand' in shelfButtonData.keys() else '',
+                        altShiftCommand=shelfButtonData['altShiftCommand'] if 'altShiftCommand' in shelfButtonData.keys() else '',
+                        ctrlShiftCommand=shelfButtonData['ctrlShiftCommand'] if 'ctrlShiftCommand' in shelfButtonData.keys() else '',
+                        ctrlAltShiftCommand=shelfButtonData['ctrlAltShiftCommand'] if 'ctrlAltShiftCommand' in shelfButtonData.keys() else '',
+                        dragCommand=shelfButtonData['dragCommand'] if 'dragCommand' in shelfButtonData.keys() else '',
+                        altDragCommand=shelfButtonData['altDragCommand'] if 'altDragCommand' in shelfButtonData.keys() else '',
+                        shiftDragCommand=shelfButtonData['shiftDragCommand'] if 'shiftDragCommand' in shelfButtonData.keys() else '',
+                        ctrlDragCommand=shelfButtonData['ctrlDragCommand'] if 'ctrlDragCommand' in shelfButtonData.keys() else ''
                     )
                     if 'menuItem' in shelfButtonData.keys():
                         if shelfButtonData['menuItem'] is not None:
@@ -820,7 +837,8 @@ class ShelfButtonManager(QWidget):
                                             label=menuItemData['label'],
                                             command=menuItemData['command'],
                                             annotation=menuItemData['annotation'],
-                                            icon=menuItemData['image']
+                                            icon=menuItemData['image'],
+                                            sourceType=menuItemData['sourceType']
                                         )
                     self.gifButton.addDefaultMenuItems()
 
@@ -904,7 +922,7 @@ class ShelfButtonManager(QWidget):
         self.buttonList = self.getButtonList()[1]
         data = OrderedDict()
         for index, i in enumerate(self.buttonList):
-            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'GIFButtonWidget':
+            if i.__class__.__name__ == 'GIFButton':
                 data[index] = self.getGIFButtonData(i)
             elif i.__class__.__name__ == 'Separator':
                 data[index] = 'separator'
@@ -942,7 +960,7 @@ class ShelfButtonManager(QWidget):
                     buttonList = ShelfButtonManager(self.language).getButtonList()[1]
                     data = OrderedDict()
                     for index, i in enumerate(buttonList):
-                        if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'GIFButtonWidget':
+                        if i.__class__.__name__ == 'GIFButton':
                             data[index] = self.getGIFButtonData(i)
                         elif i.__class__.__name__ == 'Separator':
                             data[index] = 'separator'

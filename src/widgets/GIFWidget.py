@@ -68,6 +68,7 @@ class GIFButtonWidget(QWidget):
         self.iconPath = kwargs.get('icon', None)        # 图标路径
         self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
+        self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
@@ -99,6 +100,7 @@ class GIFButtonWidget(QWidget):
         self.lastMoveValueY = 0
         self.moveThreshold = 10
         self.value = {'self.delta': self.delta, 'self.valueX': self.valueX, 'self.valueY': self.valueY, 'self.minValue': self.minValue, 'self.maxValue': self.maxValue}
+        self.iconSizeValue = QSize()    # 图标尺寸
         self.initUI() # 初始化UI
 
     def initUI(self):
@@ -106,12 +108,14 @@ class GIFButtonWidget(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
-        self.movie = None       # GIF动画
-        self.iconSub = None     # 图标角标
-        self.menuSubLable = None    # 菜单角标
-        self.setIconImage()     # 设置按钮外观
-        self.keySubLabel = None       # 用于显示角标
-        self.menu = QMenu(self) # 菜单
+        self.movie = None               # GIF动画
+        self.iconSub = 'default'        # 图标角标
+        self.menuSubLable = None        # 菜单角标
+        self.iconLabel = QLabel(self)   # 图标
+        
+        self.setIconImage()             # 设置按钮
+        self.keySubLabel = None         # 用于显示角标
+        self.menu = QMenu(self)         # 菜单
         self.menu.setTearOffEnabled(True)
     
     # 有菜单项时，按钮右下角显示角标
@@ -131,12 +135,22 @@ class GIFButtonWidget(QWidget):
         else:
             self.keySubLabel = QLabel(self) # 用于显示角标
         if sub is None:
-            self.iconSub = 'default'
+            sub = 'default'
+        self.iconSub = sub
+        iconName = self.iconPath.split('/')[-1].split('.')[0]
+        if self.iconSub == 'default':
+            self.setIconImage()
             return
-        else:
-            self.iconSub = sub
-            subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
-            subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        subFile = self.iconPath.replace(iconName, iconName+'_'+sub)
+        if os.path.exists(subFile):
+            defaultIconPath = self.iconPath
+            self.iconPath = subFile         # 更新角标图标路径
+            self.setIconImage()
+            self.iconPath = defaultIconPath # 恢复原图标路径
+            return
+        subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
+        subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.keySubLabel.setPixmap(subImage)
         self.keySubLabel.setGeometry(0, 0, self.size, self.size)
         self.keySubLabel.show()
@@ -153,7 +167,7 @@ class GIFButtonWidget(QWidget):
             self.pixmap = self.pixmap.scaledToWidth(self.size, Qt.SmoothTransformation)
         self.iconSizeValue = QSize(self.pixmap.width(), self.pixmap.height())
         self.setFixedSize(self.iconSizeValue)
-        self.iconLabel = QLabel(self)
+        
         if self.iconPath.lower().endswith('.gif'):
             self.movie = QMovie(self.iconPath)
             self.movie.setCacheMode(QMovie.CacheAll)
@@ -191,8 +205,8 @@ class GIFButtonWidget(QWidget):
             self.updateSubLabel('shift')
         elif modifiers & Qt.AltModifier:
             self.updateSubLabel('alt')
-        else:
-            self.updateSubLabel(None)
+        # else:
+        #     self.updateSubLabel(None)
         #QObject.event(self, event)
 
     def leaveEvent(self, event):
@@ -201,7 +215,7 @@ class GIFButtonWidget(QWidget):
             pass
         else:
             self.iconLabel.setPixmap(self.pixmap)
-        self.updateSubLabel(None)
+        if self.iconSub != 'default': self.updateSubLabel(None)
         self.setGraphicsEffect(None)
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
 
@@ -267,8 +281,8 @@ class GIFButtonWidget(QWidget):
                     self.updateSubLabel('ctrl')
                 elif modifiers & Qt.AltModifier:
                     self.updateSubLabel('alt')
-                else:
-                    if self.iconSub != 'default': self.updateSubLabel(None)
+                # else:
+                #     self.updateSubLabel(None)
             elif event.key() == Qt.Key_Menu:
                 # show admin edit menu
                 pass
@@ -521,13 +535,13 @@ class GIFButtonWidget(QWidget):
         btw.show()
 
     def copyButton(self):
-        pass
+        buttonManager.copyButton(button=self,path=SHELF_BACKUP_PATH)
 
     def cutButton(self):
-        pass
+        buttonManager.cutButton(button=self,path=SHELF_BACKUP_PATH)
 
     def pasteButton(self):
-        pass
+        buttonManager.pasteButton(button=self,path=SHELF_BACKUP_PATH)
 
     def deleteButton(self):
         buttonManager.deleteButton(button=self,path=SHELF_BACKUP_PATH)

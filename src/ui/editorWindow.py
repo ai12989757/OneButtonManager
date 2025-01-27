@@ -39,7 +39,7 @@ class ButtonEditorWindow(QDialog):
 
         # 初始化图标
         self.buttonDict = {
-            'iconPath': self.editButton.iconPath,
+            'icon': self.editButton.iconPath,
             'label': self.editButton.labelText,
             'annotation': self.editButton.annotation,
             'style': self.editButton.style,
@@ -55,7 +55,7 @@ class ButtonEditorWindow(QDialog):
         self.menuItems = {
             self.menuItemIndex + i: {
                 "label": acticon.text() if hasattr(acticon, 'text') else None,
-                "command": acticon.command if hasattr(acticon, 'command') else None,
+                "command": acticon.command if hasattr(acticon, 'command') else {'click': ['python', '']},
                 "icon": acticon.iconPath if hasattr(acticon, 'iconPath') else None,
                 "annotation": acticon.annotation if hasattr(acticon, 'annotation') else None
             }
@@ -109,6 +109,8 @@ class ButtonEditorWindow(QDialog):
         self.iconPathLabel = QLabel(sl(u"路径:", self.language))
         self.iconPathLineEdit = QLineEdit()
         self.iconPathLineEdit.setText(self.gifButton.iconPath.replace(iconPath, '')) 
+        # 回车事件
+        self.iconPathLineEdit.returnPressed.connect(self.iconPathChanged)
         self.iconPathButton = self.createIconButton( 20,20, iconPath + "white/OpenFile.png", self.browseIconPath)
         self.MayaIconBrowerButton = self.createIconButton( 20,20, ":\\mayaIcon.png", self.browseMayaIconPath)
         self.iconPathLayout.addWidget(self.iconPathLabel)
@@ -363,9 +365,9 @@ class ButtonEditorWindow(QDialog):
             return
         menuItem = self.menuItems[row]
         if self.menuPythonRadioButton.isChecked():
-            menuItem['sourceType'] = "python"
+            menuItem['command']['click'][0] = "python"
         elif self.menuMelRadioButton.isChecked():
-            menuItem['sourceType'] = "mel"
+            menuItem['command']['click'][0] = "mel"
         # 更新字典
         self.menuItems[row] = menuItem
         self.buttonDict["menuItems"] = self.menuItems
@@ -378,20 +380,20 @@ class ButtonEditorWindow(QDialog):
             return
         
         command = self.menuCommandEdit.toPlainText()
-        if row == self.menuListWidget.count() - 1:
-            self.buttonDict['menuShowCommand'] = command
-            self.gifButton.menuShowCommand = command
-            
-        try:
+        if row == self.menuListWidget.count() - 1: # 最后一个菜单项,menuShow
+            if 'menuShow' not in self.buttonDict['command'].keys():
+                self.buttonDict['command']['menuShow'] = ['python', '']
+            self.buttonDict['command']['menuShow'][1] = command
+            self.gifButton.commend = self.buttonDict['command']
+        else:
             menuItem = self.menuItems[row]
-        except:
-            return
-        # 更新字典
-        menuItem['command'] = command
-        self.menuItems[row] = menuItem
-        self.buttonDict["menuItems"] = self.menuItems
+            menuItem['command']['click'][1] = command
 
-        self.updataMenuAction()
+            # 更新字典
+            self.menuItems[row]['command'][1] = command
+            self.buttonDict["menuItems"] = self.menuItems
+
+            self.updataMenuAction()
     
     def editMenuAnnotation(self):
         # 应用菜单的注释
@@ -413,9 +415,9 @@ class ButtonEditorWindow(QDialog):
         if row == self.menuListWidget.count() - 1:
             self.setMenuIcon('white/Menu.png')
             self.menuPythonRadioButton.setChecked(True)
-            self.menuPythonRadioButton.setEnabled(False)
+            self.menuPythonRadioButton.setEnabled(True)
             self.menuMelRadioButton.setChecked(False)
-            self.menuMelRadioButton.setEnabled(False)
+            self.menuMelRadioButton.setEnabled(True)
             self.menuAnnotationLineEdit.setText(sl(u'当菜单弹出前执行命令，一般用于更新菜单项', self.language))
             self.menuAnnotationLineEdit.setEnabled(False)
             if 'menuShow' in self.buttonDict['command'].keys():
@@ -429,6 +431,7 @@ class ButtonEditorWindow(QDialog):
         except:
             return
         # 设置菜单图标
+        
         menuIcon = menuItem["icon"]
         if menuIcon:
             self.setMenuIcon(menuIcon)
@@ -449,14 +452,14 @@ class ButtonEditorWindow(QDialog):
         # 设置菜单命令
         self.menuPythonRadioButton.setEnabled(True)
         self.menuMelRadioButton.setEnabled(True)
-        commandType = menuItem["sourceType"]
+        commandType = menuItem["command"]['click'][0]
         if commandType == "python" or commandType == "mel":
             self.menuMelRadioButton.setChecked(commandType == "mel")
             self.menuPythonRadioButton.setChecked(commandType == "python")
         
         # 获取python版本
         pythonVersion = int(sys.version[0:1])
-        commandText = menuItem['command']
+        commandText = menuItem["command"]['click'][1]
         if commandText != 'None' and commandText != '' and commandText is not None:
             if pythonVersion < 3:
                 try:
@@ -483,7 +486,6 @@ class ButtonEditorWindow(QDialog):
                 menuItem = self.menuItems[key]
                 self.gifButton.addMenuItem(
                     label=menuItem["label"],
-                    sourceType=menuItem["sourceType"],
                     command=menuItem["command"],
                     icon=menuItem["icon"],
                     annotation=menuItem["annotation"]
@@ -544,8 +546,7 @@ class ButtonEditorWindow(QDialog):
             "label": sl(u"双击更改名称", self.language),
             "icon": '',
             "annotation": None,
-            "sourceType": "python",
-            "command": None
+            "command": {'click': ['python', '']}
         }
 
         # 重新排序
@@ -575,7 +576,8 @@ class ButtonEditorWindow(QDialog):
         if len(self.menuItems) == 0:
             self.gifButton.subIcon = None
             self.editButton.subIcon = None
-            self.gifButton.setIcon(self.gifButton.pixmap)
+            self.gifButton.menuSubLable.setPixmap(QPixmap())
+            self.gifButton.menuSubLable = None
         
     def showMenuIconBorder(self, setButton,event):
         effect = QGraphicsDropShadowEffect(self)
@@ -880,24 +882,32 @@ class ButtonEditorWindow(QDialog):
             # 更新图标
             # 如果是 GIF 图片
             if self.iconPath.lower().endswith('.gif'):
-                self.gifButton.pixmap = None
-                self.gifButton.movie = QMovie(self.iconPath)
-                self.gifButton.movie.setScaledSize(QSize(128, 128))
-                self.gifButton.iconPath = self.iconPath
-                self.gifButton.iconLabel.setMovie(self.gifButton.movie)
-                self.gifButton.movie.start()
-                self.iconStyleAuto.setEnabled(True)
                 self.iconStyleAuto.setChecked(True)
+                self.iconStyleAuto.setEnabled(True)
                 self.iconStyleHover.setEnabled(True)
                 self.iconStylePause.setEnabled(True)
             else:
-                self.gifButton.movie = None
-                self.gifButton.iconPath = self.iconPath
-                self.gifButton.pixmap = QPixmap(self.iconPath)
-                self.gifButton.pixmap = self.gifButton.pixmap.scaledToHeight(128, Qt.SmoothTransformation)
-                self.gifButton.iconLabel.setPixmap(QIcon(self.gifButton.pixmap))
-
+                self.iconStyleAuto.setEnabled(False)
+                self.iconStyleHover.setEnabled(False)
+                self.iconStylePause.setEnabled(False)
+            self.gifButton.iconPath = self.iconPath
+            self.gifButton.setIconImage()
         #return self.iconPath
+
+    def iconPathChanged(self):
+        self.iconPath = self.iconPathLineEdit.text()
+        if self.iconPath:
+            if self.iconPath.lower().endswith('.gif'):
+                self.iconStyleAuto.setChecked(True)
+                self.iconStyleAuto.setEnabled(True)
+                self.iconStyleHover.setEnabled(True)
+                self.iconStylePause.setEnabled(True)
+            else:
+                self.iconStyleAuto.setEnabled(False)
+                self.iconStyleHover.setEnabled(False)
+                self.iconStylePause.setEnabled(False)
+            self.gifButton.iconPath = self.iconPath
+            self.gifButton.setIconImage()
 
     def iconStyleChanged(self, key):
         # 应用按钮的图标风格
@@ -929,6 +939,7 @@ class ButtonEditorWindow(QDialog):
         # 设置图标图片
         self.editButton.iconPath = self.gifButton.iconPath
         self.editButton.setIconImage()
+
         # # 设置图标风格
         # self.editButton.style = self.gifButton.style
         # if self.editButton.iconPath.lower().endswith('.gif'):

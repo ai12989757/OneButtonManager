@@ -28,6 +28,7 @@ def getGIFButtonData(button):
     return data
 
 def copyButton(button, path=None):
+    path = path + 'shelf_copy.json'
     # 在 Python 2.7 中，open 函数不支持 encoding 参数。你需要使用 codecs 模块来处理文件的编码。
     if not os.path.exists(path):
         with codecs.open(path, 'w', 'utf-8') as f:
@@ -47,6 +48,7 @@ def cutButton(button):
 
 def pasteButton(button, path=None):
     oldButtonData = getGIFButtonData(button)
+    path = path + 'shelf_copy.json'
     # 在 Python 2.7 中，open 函数不支持 encoding 参数。你需要使用 codecs 模块来处理文件的编码。
     with codecs.open(path, 'r', 'utf-8') as f:
         jsonData = json.load(f)

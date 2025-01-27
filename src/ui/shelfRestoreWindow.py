@@ -11,7 +11,6 @@ except ImportError:
 from maya import mel
 from functools import partial
 from ..utils import imageManager
-from ..utils import shelfDataManager
 from ..utils.getBackShelfList import getBackShelfList
 from ..ui import previewShelfWindow
 
@@ -316,7 +315,7 @@ class toDefUI(QWidget):
 
     def restoreShelf(self, item, index):
         index = self.fileListWidget.indexOfTopLevelItem(item)
-        shelfDataManager.returnShelfData(shelfFile=self.fileList[index][4])
+        previewShelfWindow.returnShelfData(shelfFile=self.fileList[index][4])
 
     def deleteItem(self, item):
         index = self.fileListWidget.indexOfTopLevelItem(item)
@@ -333,6 +332,9 @@ class toDefUI(QWidget):
         index = self.fileListWidget.indexOfTopLevelItem(item)
         mel.eval('print "// 结果: 文件地址: %s\\n"' % self.fileList[index][4])
         #print('文件地址:', self.fileList[column][4])
+        #print(self.fileList[index][0])
+        if self.fileList[index][0] in mel.eval('shelfTabLayout -q -ca  $gShelfTopLevel'):
+            mel.eval('shelfTabLayout -e -st "'+self.fileList[index][0]+'" $gShelfTopLevel')
         previewShelfWindow.PreviewShelfWindow(shelfFile=self.fileList[index][4]).show()
 
     def restore_button_on_enter_event(self, event,button):

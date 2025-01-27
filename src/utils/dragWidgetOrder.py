@@ -13,6 +13,7 @@ class DragWidgetOrder:
     buttonList = []
     buttonIndex = 0
     spacing = 0
+    loopIndex = 0
 
     @staticmethod
     def find_widget_layout(widget):
@@ -48,10 +49,16 @@ class DragWidgetOrder:
             DragWidgetOrder.buttonList = [widget]
             DragWidgetOrder.buttonIndex = 0
             return
-        for i in range(widgetParentLayout.count()):
-            DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
-        # 获取按钮的索引
-        DragWidgetOrder.buttonIndex = DragWidgetOrder.buttonList.index(widget)
+        try:
+            if DragWidgetOrder.loopIndex > 10:
+                return
+            DragWidgetOrder.loopIndex += 1
+            for i in range(widgetParentLayout.count()):
+                DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
+            # 获取按钮的索引
+            DragWidgetOrder.buttonIndex = DragWidgetOrder.buttonList.index(widget)
+        except:
+            DragWidgetOrder.startDrag(widget, event)
 
     def performDrag(widget, event):
         

@@ -14,6 +14,8 @@ def runCommand(widget, command, trigger='click'):
             if trigger not in command: return
             if trigger not in command.keys(): return
             if widget.type == 'QWidget':
+                #print(command[trigger][1])
+                if command[trigger][1] == '' or command[trigger][1] is None: return
                 if command[trigger][0] == 'python': 
                     cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
                 elif command[trigger][0] == 'mel':
@@ -30,6 +32,7 @@ def runCommand(widget, command, trigger='click'):
         if not command: return
         if trigger not in command: return
         if trigger not in command.keys(): return
+        if command[trigger][1] == '' or command[trigger][1] is None: return
         if command[trigger][0] == 'python': 
             cmds.undoInfo(openChunk=True)
             cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
