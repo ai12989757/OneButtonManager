@@ -15,10 +15,12 @@ try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
     from PySide6.QtWidgets import *
+    from PySide6.QtMultimedia import QMediaPlayer, QMediaContent
 except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+    from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
 from functools import partial
 from collections import OrderedDict
 
@@ -168,14 +170,32 @@ class ShelfButtonManager(QWidget):
         self.recycleAction.setMenu(self.recycleMenu)
         self.recycleMenu.setTearOffEnabled(True)
         self.recycleMenu.aboutToShow.connect(self.recycleMenuList)
+        # 组件
+        self.contextMenu.addSeparator()
+        self.shelfComponentsAction = self.contextMenu.addAction(QIcon(ICONPATH + 'components/components.png'),sl(u"组件", abs(1 - self.language)))
+        self.shelfComponentsMenu = QMenu()
+        self.shelfComponentsAction.setMenu(self.shelfComponentsMenu)
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/clock.png'), sl(u"时钟", self.language), self.addClockComponent).setStatusTip(sl(u"时钟", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/timing.png'), sl(u"倒计时", self.language), self.addTimingComponent).setStatusTip(sl(u"倒计时", self.language))
+        #self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'siri.gif'), sl(u"Bad Apple", self.language), self.toGIF).setStatusTip(sl(u"敢试吗", self.language))
+        badAppleAction = GIFAction.gifIconMenuAction(
+            icon = ICONPATH + 'components/bad_apple.gif', 
+            label = sl(u"Bad Apple",self.language), annotation = sl(u"敢试吗",self.language), 
+            parent = self.shelfComponentsMenu,
+            command = {'click':['function', self.addBadAppleComponent]}
+            )
+        self.shelfComponentsMenu.addAction(badAppleAction)
         # 工具栏设置
         self.contextMenu.addSeparator()
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Switch.png'), sl(u"转换工具栏", self.language), self.toGIF).setStatusTip(sl(u"点击转换当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'green/Restore.png'), sl(u"还原工具栏", self.language), self.toDef).setStatusTip(sl(u"点击还原当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Save.png'), sl(u"保存工具栏", self.language), self.saveGifShelf).setStatusTip(sl(u"点击保存当前工具栏", self.language))
-        self.contextMenu.addAction(QIcon(ICONPATH + 'white/Import.png'), sl(u"导入工具栏", self.language), self.loadGifShelf).setStatusTip(sl(u"点击导入工具栏", self.language))
-        self.contextMenu.addSeparator()
+        self.shelfManagerAction = self.contextMenu.addAction(QIcon(ICONPATH + 'white/Setting.png'),sl(u"工具栏管理", abs(1 - self.language)))
+        self.shelfManagerMenu = QMenu()
+        self.shelfManagerAction.setMenu(self.shelfManagerMenu)
+        self.shelfManagerMenu.addAction(QIcon(ICONPATH + 'white/Switch.png'), sl(u"转换工具栏", self.language), self.toGIF).setStatusTip(sl(u"点击转换当前工具栏", self.language))
+        self.shelfManagerMenu.addAction(QIcon(ICONPATH + 'green/Restore.png'), sl(u"还原工具栏", self.language), self.toDef).setStatusTip(sl(u"点击还原当前工具栏", self.language))
+        self.shelfManagerMenu.addAction(QIcon(ICONPATH + 'white/Save.png'), sl(u"保存工具栏", self.language), self.saveGifShelf).setStatusTip(sl(u"点击保存当前工具栏", self.language))
+        self.shelfManagerMenu.addAction(QIcon(ICONPATH + 'white/Import.png'), sl(u"导入工具栏", self.language), self.loadGifShelf).setStatusTip(sl(u"点击导入工具栏", self.language))
         # 自动加载工具栏
+        self.contextMenu.addSeparator()
         self.autoLoadAction = self.contextMenu.addAction(QIcon(':\\switchOff.png'), sl(u"自动加载工具栏", self.language), self.setAutoLoadJob)
         self.autoLoadAction.setStatusTip(sl(u"maya启动时自动加载data文件下的工具栏", self.language))
         self.autoLoadAction.switch = bool(False)
@@ -184,8 +204,8 @@ class ShelfButtonManager(QWidget):
         self.autoSaveAction.setStatusTip(sl(u"maya关闭时自动保存当前工具栏", self.language))
         self.autoSaveAction.switch = bool(False)
         self.contextMenu.aboutToShow.connect(self.menuShowCheck) # 每次打开菜单时检查是否开启了自动加载工具栏、自动保存工具栏
-        self.contextMenu.addSeparator()
         # 语言切换
+        self.contextMenu.addSeparator()
         self.languageAction = self.contextMenu.addAction(QIcon(ICONPATH + 'white/Language.png'),sl(u"语言", abs(1 - self.language)))
         # 添加子菜单
         self.languageMenu = QMenu()
@@ -957,6 +977,47 @@ class ShelfButtonManager(QWidget):
                     mel.eval(u'print("// 结果: '+jsonPath+'")')
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
+
+    def addBadAppleComponent(self):
+        mel.eval('int $sjkhs = `shelfTabLayout -q -h $gShelfTopLevel`;')
+        mel.eval('workspaceControl -e -heightProperty "free" "Shelf"')
+        mel.eval('workspaceControl -e -ih ($sjkhs+225) "Shelf"')
+
+        from ..components import badAppleWidget
+        gif_path = ICONPATH + 'components/bad_apple.gif'
+        audio_path = ICONPATH + 'components/bad_apple.wav'
+
+        self.badAppleComponent = badAppleWidget.GifPlayer(gif_path, audio_path)
+        def closeBadAppleComponent():
+            mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
+            mel.eval('workspaceControl -e -heightProperty "fixed" "Shelf"')
+            self.badAppleComponent.movie.stop()
+            self.badAppleComponent.media_player.stop()
+            self.badAppleComponent.deleteLater()
+        self.badAppleComponent.menu.addAction(u'关闭', closeBadAppleComponent)
+
+        self.badAppleComponent.setObjectName('Component_BadApple_'+str(self.badAppleComponent.winId()))
+        self.badAppleComponentPrt = omui.MQtUtil.findControl(self.badAppleComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.badAppleComponentPrt), int(self.shelfParentPtr))
+        self.badAppleComponent.setFixedSize(QSize(400, 300))
+
+    def addClockComponent(self):
+        from ..components import clockWidget
+        self.clockComponent = clockWidget.ClockWidget()
+        self.clockComponent.setObjectName('Component_Clock_'+str(self.clockComponent.winId()))
+        self.clockComponentPrt = omui.MQtUtil.findControl(self.clockComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.clockComponentPrt), int(self.shelfParentPtr))
+        self.clockComponent.setFixedSize(QSize(150, 42))
+        #self.clockComponent.setGeometry(0, 0, 150, 42)
+    
+    def addTimingComponent(self):
+        from ..components import timingWidget
+        self.timingComponent = timingWidget.TimerWidget()
+        self.timingComponent.setObjectName('Component_Timing_'+str(self.timingComponent.winId()))
+        self.timingComponentPrt = omui.MQtUtil.findControl(self.timingComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.timingComponentPrt), int(self.shelfParentPtr))
+        self.timingComponent.setFixedSize(QSize(235, 42))
+        #self.timingComponent.setGeometry(0, 0, 150, 42)
 
 def main():
     sys.dont_write_bytecode = True
