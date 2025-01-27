@@ -964,6 +964,9 @@ class ButtonEditorWindow(QDialog):
 
         # 设置菜单 # 移除所有菜单后重新添加
         self.editButton.menu.clear()
+        self.editButton.subIcon = None
+        self.editButton.menuSubLable.setPixmap(QPixmap())
+        self.editButton.menuSubLable = None
         if self.menuItems:
             for key in self.menuItems.keys():
                 if key == 'Separator':

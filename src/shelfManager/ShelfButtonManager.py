@@ -36,7 +36,7 @@ except:
     reload(shelfRestoreWindow)
 
 ICONPATH = __file__.replace('\\','/').replace('src/shelfManager/ShelfButtonManager.py', 'icons/')
-print(ICONPATH)
+
 class ShelfButtonManager(QWidget):
     def __init__(self,language=0):
         super(ShelfButtonManager, self).__init__()
@@ -92,7 +92,7 @@ class ShelfButtonManager(QWidget):
         if self.language == language:
             return
         self.language = language
-        self.menu = self.createContextMenu()
+        self.autoSetShelf()
         # 修改 ShelfAutoSetup.mel 文件，第二行的语言设置
         with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'r', encoding='utf-8') as f:
             data = f.readlines()
@@ -318,6 +318,7 @@ class ShelfButtonManager(QWidget):
         self.menu.exec_(self.shelfParent.mapToGlobal(pos))
 
     def autoSetShelf(self):
+        currShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
         for shelf in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
             evalCode = 'shelfTabLayout -e -st '+shelf+' $gShelfTopLevel;'
             mel.eval(evalCode)
@@ -348,6 +349,7 @@ class ShelfButtonManager(QWidget):
             # 写入 userSetup 文件
             with codecs.open(userSetupFile, 'w', 'utf-8') as f:
                 f.writelines(userSetup)
+        mel.eval('shelfTabLayout -e -st '+currShelf+' $gShelfTopLevel')
 
     def setAutoLoadJob(self):
         userSetupFile = mel.eval('internalVar -usd')+'/userSetup.mel'
@@ -462,16 +464,16 @@ class ShelfButtonManager(QWidget):
         # 检查 icon 是否为绝对路径，如果不是则添加 iconPath
         icon = kwargs.get('icon', None)
         if icon and not os.path.isabs(icon) and ':\\' not in icon:
-            icon = os.path.join(ICONPATH, icon)
-
+            icon = ICONPATH+icon
+        size = kwargs.get('size', self.iconH)
         self.gifButton = GIFWidget.GIFButtonWidget(
             parent=self.shelfParent,
-            icon=kwargs.get('icon', None),
+            icon=icon,
             label=kwargs.get('label', ""),
             annotation=kwargs.get('annotation', None),
             style=kwargs.get('style', "auto"),
             command=kwargs.get('command', None),
-            size=self.iconH,
+            size=size,
             dragMove=True,
             language=self.language
         )
