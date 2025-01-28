@@ -5,6 +5,7 @@ from ..utils import dragWidgetOrder
 class ClockWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setStyleSheet("QFrame { border: none; }")
         # 创建 QLCDNumber 显示时间
         self.lcd = QLCDNumber(self)
         self.lcd.setDigitCount(8)

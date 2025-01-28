@@ -9,9 +9,8 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
-    
-from functools import partial
-from collections import OrderedDict
+
+from maya import mel
 from ..utils import widgetEffect
 from ..utils import imageManager
 from ..utils import runCommand
@@ -66,6 +65,7 @@ class GIFButtonWidget(QWidget):
         self.language = kwargs.get('language', 0)
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
+        self.hiIconPath = None                          # 高亮图标路径
         self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.style = kwargs.get('style', 'auto')        # 按钮样式
@@ -113,7 +113,7 @@ class GIFButtonWidget(QWidget):
         self.menuSubLable = None        # 菜单角标
         self.iconLabel = QLabel(self)   # 图标
         
-        self.setIconImage()             # 设置按钮
+        self.setIconImage(self.iconPath)             # 设置按钮
         self.keySubLabel = None         # 用于显示角标
         self.menu = QMenu(self)         # 菜单
         self.menu.setTearOffEnabled(True)
@@ -139,14 +139,14 @@ class GIFButtonWidget(QWidget):
         self.iconSub = sub
         iconName = self.iconPath.split('/')[-1].split('.')[0]
         if self.iconSub == 'default':
-            self.setIconImage()
+            self.setIconImage(self.iconPath)
             return
 
         subFile = self.iconPath.replace(iconName, iconName+'_'+sub)
         if os.path.exists(subFile):
             defaultIconPath = self.iconPath
             self.iconPath = subFile         # 更新角标图标路径
-            self.setIconImage()
+            self.setIconImage(self.iconPath)
             self.iconPath = defaultIconPath # 恢复原图标路径
             return
         subImage = QPixmap(ICONPATH+'sub/'+sub+'.png')
@@ -155,11 +155,10 @@ class GIFButtonWidget(QWidget):
         self.keySubLabel.setGeometry(0, 0, self.size, self.size)
         self.keySubLabel.show()
 
-    def setIconImage(self):
-        if not self.iconPath:
-            self.iconPath = ICONPATH+'white/undetected.png'
-
-        self.pixmap = QPixmap(self.iconPath)
+    def setIconImage(self, iconPath=None):
+        if not iconPath:
+            iconPath = ICONPATH+'white/undetected.png'
+        self.pixmap = QPixmap(iconPath)
         
         if self.alignment == 'H' or self.alignment == 'h':
             self.pixmap = self.pixmap.scaledToHeight(self.size, Qt.SmoothTransformation)
@@ -168,8 +167,8 @@ class GIFButtonWidget(QWidget):
         self.iconSizeValue = QSize(self.pixmap.width(), self.pixmap.height())
         self.setFixedSize(self.iconSizeValue)
         
-        if self.iconPath.lower().endswith('.gif'):
-            self.movie = QMovie(self.iconPath)
+        if iconPath.lower().endswith('.gif'):
+            self.movie = QMovie(iconPath)
             self.movie.setCacheMode(QMovie.CacheAll)
             self.movie.setScaledSize(self.iconSizeValue)
             self.iconLabel.setMovie(self.movie)
@@ -290,6 +289,12 @@ class GIFButtonWidget(QWidget):
         #return super(GIFButton, self).eventFilter(obj, event)
     
     def mousePressEvent(self, event):
+        imageName = self.iconPath.split('/')[-1].split('.')[0]
+        self.hiIconPath = self.iconPath.replace(imageName, imageName+'_hi') if self.iconPath else None
+        # 如果 self.hiIconPath 存在
+        if self.hiIconPath and not os.path.exists(self.hiIconPath): self.hiIconPath = None
+        if self.hiIconPath:
+            self.setIconImage(self.hiIconPath)
         self.lastMoveValueX = 0
         self.lastMoveValueY = 0
         self.moveThreshold = 10
@@ -309,6 +314,8 @@ class GIFButtonWidget(QWidget):
                 dragWidgetOrder.DragWidgetOrder.startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
+        if self.hiIconPath:
+            self.setIconImage(self.iconPath)
         self.iconDragEffect('back')
         self.dragging = False
         self.eventPos = event.pos()
@@ -446,6 +453,10 @@ class GIFButtonWidget(QWidget):
             runCommand.runCommand(self, self.command, trigger)
         else:
             self.mouseState = mouseState
+            if mouseState == 'leftPress':
+                mel.eval('undoInfo -openChunk;')
+            if mouseState == 'leftRelease':
+                mel.eval('undoInfo -closeChunk;')
             runCommand.runCommand(self, self.command, mouseState)
 
     def melSetIconAttr(self, iconPath, attr, value):
@@ -522,12 +533,6 @@ class GIFButtonWidget(QWidget):
 
     def buttonEditor(self):
         from ..ui import editorWindow
-        try:
-            reload(editorWindow)
-        except:
-            from importlib import reload
-            reload(editorWindow)
-        from maya import mel
         editButton = self
         if mel.eval('window -exists ButtonEditorWindow'):
             mel.eval('deleteUI ButtonEditorWindow')

@@ -36,7 +36,27 @@ class ButtonEditorWindow(QDialog):
         self.setObjectName("ButtonEditorWindow")
         self.resize(800, 900)
         self.iconPathDrt = iconPath.replace('\\', '/').replace('src/../', '')
-
+        self.commandRriggerList = [
+            "click",
+            "doubleClick",
+            "ctrlClick",
+            "altClick",
+            "shiftClick",
+            "ctrlAltClick",
+            "ctrlShiftClick",
+            "altShiftClick",
+            "ctrlAltShiftClick",
+            "drag",
+            "ctrlDrag",
+            "altDrag",
+            "shiftDrag",
+            "ctrlShiftDrag",
+            "ctrlAltDrag",
+            "altShiftDrag",
+            "ctrlAltShiftDrag",
+            "leftPress",
+            "leftRelease"
+        ]
         # 初始化图标
         self.buttonDict = {
             'icon': self.editButton.iconPath,
@@ -172,7 +192,8 @@ class ButtonEditorWindow(QDialog):
         commandItems = [
             u"点击命令", u"双击命令", u"Ctrl单击", u"Alt单击", u"Shift单击",
             u"Ctrl+Alt单击", u"Ctrl+Shift单击", u"Alt+Shift单击", u"Ctrl+Alt+Shift单击",
-            u"左击拖动", u"Ctrl左击拖动", u"Alt左击拖动", u"Shift左击拖动",u"Ctrl+Alt左击拖动",u"Ctrl+Shift左击拖动",u"Alt+Shift左击拖动",u"Ctrl+Alt+Shift左击拖动"
+            u"左击拖动", u"Ctrl左击拖动", u"Alt左击拖动", u"Shift左击拖动",u"Ctrl+Alt左击拖动",u"Ctrl+Shift左击拖动",u"Alt+Shift左击拖动",u"Ctrl+Alt+Shift左击拖动",
+            u"左键按下",u"左键释放"
         ]
         for item in commandItems:
             self.commandListWidget.addItem(sl(item, self.language))
@@ -733,61 +754,23 @@ class ButtonEditorWindow(QDialog):
         row = self.commandListWidget.currentRow()
         if row == -1:
             return
-        commandList = [
-            "click",
-            "doubleClick",
-            "ctrlClick",
-            "altClick",
-            "shiftClick",
-            "ctrlAltClick",
-            "ctrlShiftClick",
-            "altShiftClick",
-            "ctrlAltShiftClick",
-            "drag",
-            "ctrlDrag",
-            "altDrag",
-            "shiftDrag",
-            "ctrlShiftDrag",
-            "ctrlAltDrag",
-            "altShiftDrag",
-            "ctrlAltShiftDrag"
-        ]
 
         if self.commandPythonRadioButton.isChecked():
-            self.buttonDict['command'][commandList[row]][0] = "python"
+            self.buttonDict['command'][self.commandRriggerList[row]][0] = "python"
         elif self.commandMelRadioButton.isChecked():
-            self.buttonDict['command'][commandList[row]][0] = "mel"
+            self.buttonDict['command'][self.commandRriggerList[row]][0] = "mel"
 
     def editCommand(self):
         row = self.commandListWidget.currentRow()
         if row == -1:
             return
-        commandList = [
-            "click",
-            "doubleClick",
-            "ctrlClick",
-            "altClick",
-            "shiftClick",
-            "ctrlAltClick",
-            "ctrlShiftClick",
-            "altShiftClick",
-            "ctrlAltShiftClick",
-            "drag",
-            "ctrlDrag",
-            "altDrag",
-            "shiftDrag",
-            "ctrlShiftDrag",
-            "ctrlAltDrag",
-            "altShiftDrag",
-            "ctrlAltShiftDrag"
-        ]
 
         commandText = self.commandEdit.toPlainText()
 
         # 更新字典
-        if commandList[row] not in self.buttonDict['command']:
-            self.buttonDict['command'][commandList[row]] = ['python', commandText]
-        self.buttonDict['command'][commandList[row]][1] = commandText
+        if self.commandRriggerList[row] not in self.buttonDict['command']:
+            self.buttonDict['command'][self.commandRriggerList[row]] = ['python', commandText]
+        self.buttonDict['command'][self.commandRriggerList[row]][1] = commandText
         # 更新按钮
         setattr(self.gifButton, 'command', self.buttonDict['command'])
 
@@ -800,26 +783,8 @@ class ButtonEditorWindow(QDialog):
             self.commandPythonRadioButton.setDisabled(True)
             self.commandMelRadioButton.setDisabled(True)
             return
-        commandList = [
-            "click",
-            "doubleClick",
-            "ctrlClick",
-            "altClick",
-            "shiftClick",
-            "ctrlAltClick",
-            "ctrlShiftClick",
-            "altShiftClick",
-            "ctrlAltShiftClick",
-            "drag",
-            "ctrlDrag",
-            "altDrag",
-            "shiftDrag",
-            "ctrlShiftDrag",
-            "ctrlAltDrag",
-            "altShiftDrag",
-            "ctrlAltShiftDrag"
-        ]
-        if commandList[row] not in self.buttonDict['command']:
+        
+        if self.commandRriggerList[row] not in self.buttonDict['command']:
             self.commandMelRadioButton.setDisabled(False)
             self.commandPythonRadioButton.setDisabled(False)
             self.commandEdit.setText('')
@@ -827,14 +792,14 @@ class ButtonEditorWindow(QDialog):
         commandType = ''
         self.commandMelRadioButton.setDisabled(False)
         self.commandPythonRadioButton.setDisabled(False)
-        commandType = self.buttonDict['command'][commandList[row]][0]
+        commandType = self.buttonDict['command'][self.commandRriggerList[row]][0]
         if commandType == 'python' or commandType == 'mel':
             self.commandPythonRadioButton.setChecked(commandType == 'python')
             self.commandMelRadioButton.setChecked(commandType == 'mel')
 
         # 获取python版本
         pythonVersion = int(sys.version[0:1])
-        commandText = self.buttonDict['command'][commandList[row]][1]
+        commandText = self.buttonDict['command'][self.commandRriggerList[row]][1]
         if commandText != 'None' and commandText != '' and commandText is not None:
             if pythonVersion < 3:
                 try:
@@ -851,7 +816,7 @@ class ButtonEditorWindow(QDialog):
         else:
             self.commandEdit.setText('')
             self.commandEdit.setPlaceholderText(sl(u"请输入命令",self.language)) # 设置占位文本
-            if ('Drag' in commandList[row] or 'drag' in commandList[row]):
+            if ('Drag' in self.commandRriggerList[row] or 'drag' in self.commandRriggerList[row]):
                 self.commandEdit.setPlaceholderText(sl(u"请输入命令\n使用 print(self.value) 获取可调用的值\n例子: \n# 沿x轴移动当前选中对象，移动距离为拖动值*0.1\nmove(self.valueX*0.1,0,0)",self.language))
 
     def browseMayaIconPath(self):
@@ -891,7 +856,7 @@ class ButtonEditorWindow(QDialog):
                 self.iconStyleHover.setEnabled(False)
                 self.iconStylePause.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
-            self.gifButton.setIconImage()
+            self.gifButton.setIconImage(self.iconPath)
         #return self.iconPath
 
     def iconPathChanged(self):
@@ -907,7 +872,7 @@ class ButtonEditorWindow(QDialog):
                 self.iconStyleHover.setEnabled(False)
                 self.iconStylePause.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
-            self.gifButton.setIconImage()
+            self.gifButton.setIconImage(self.iconPath)
 
     def iconStyleChanged(self, key):
         # 应用按钮的图标风格
@@ -938,7 +903,7 @@ class ButtonEditorWindow(QDialog):
         self.editButton.setStatusTip(self.editButton.annotation)
         # 设置图标图片
         self.editButton.iconPath = self.gifButton.iconPath
-        self.editButton.setIconImage()
+        self.editButton.setIconImage(self.editButton.iconPath)
 
         # # 设置图标风格
         # self.editButton.style = self.gifButton.style
@@ -965,8 +930,10 @@ class ButtonEditorWindow(QDialog):
         # 设置菜单 # 移除所有菜单后重新添加
         self.editButton.menu.clear()
         self.editButton.subIcon = None
-        self.editButton.menuSubLable.setPixmap(QPixmap())
-        self.editButton.menuSubLable = None
+        if hasattr(self.editButton, 'menuSubLable'):
+            if self.editButton.menuSubLable:
+                self.editButton.menuSubLable.setPixmap(QPixmap())
+                self.editButton.menuSubLable = None
         if self.menuItems:
             for key in self.menuItems.keys():
                 if key == 'Separator':

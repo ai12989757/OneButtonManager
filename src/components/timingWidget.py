@@ -13,7 +13,7 @@ def random_rainbow_color():
 class TimerWidget(QWidget):
     def __init__(self):
         super().__init__()
-
+        self.setStyleSheet("QFrame { border: none; }")
         # self.setWindowTitle("计时器组件")
         # self.setGeometry(0, 0, 245, 42)
 

@@ -176,7 +176,10 @@ class ShelfButtonManager(QWidget):
         self.shelfComponentsMenu = QMenu()
         self.shelfComponentsAction.setMenu(self.shelfComponentsMenu)
         self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/clock.png'), sl(u"时钟", self.language), self.addClockComponent).setStatusTip(sl(u"时钟", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/timing.png'), sl(u"倒计时", self.language), self.addTimingComponent).setStatusTip(sl(u"倒计时", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/timing.png'), sl(u"秒表", self.language), self.addTimingComponent).setStatusTip(sl(u"秒表", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/stopwatch.png'), sl(u"倒计时", self.language), self.addCountdownComponent).setStatusTip(sl(u"倒计时", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/woodenFish.png'), sl(u"功德", self.language), self.addMeritsVirtuesComponent).setStatusTip(sl(u"功德", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/DinoJump.png'), sl(u"小恐龙", self.language), self.addDinoGameComponent).setStatusTip(sl(u"小恐龙", self.language))
         #self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'siri.gif'), sl(u"Bad Apple", self.language), self.toGIF).setStatusTip(sl(u"敢试吗", self.language))
         badAppleAction = GIFAction.gifIconMenuAction(
             icon = ICONPATH + 'components/bad_apple.gif', 
@@ -477,7 +480,12 @@ class ShelfButtonManager(QWidget):
                     i.switch = False
 
     def addNewButton(self):
-        self.addButton(icon='white/undetected.png')
+        self.addButton(
+            icon='white/undetected.png',
+            label='',
+            annotation='',
+            command={'click': ['python', '']}
+            )
         self.gifButton.addDefaultMenuItems()
             
     def addButton(self, **kwargs):
@@ -985,16 +993,15 @@ class ShelfButtonManager(QWidget):
 
         from ..components import badAppleWidget
         gif_path = ICONPATH + 'components/bad_apple.gif'
-        audio_path = ICONPATH + 'components/bad_apple.wav'
+        audio_path = ICONPATH + 'components/bad_apple.mp3'
 
         self.badAppleComponent = badAppleWidget.GifPlayer(gif_path, audio_path)
         def closeBadAppleComponent():
             mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
-            mel.eval('workspaceControl -e -heightProperty "fixed" "Shelf"')
             self.badAppleComponent.movie.stop()
             self.badAppleComponent.media_player.stop()
             self.badAppleComponent.deleteLater()
-        self.badAppleComponent.menu.addAction(u'关闭', closeBadAppleComponent)
+        self.badAppleComponent.menu.addAction(QIcon(ICONPATH + 'red/Delete.png'), u'关闭', closeBadAppleComponent)
 
         self.badAppleComponent.setObjectName('Component_BadApple_'+str(self.badAppleComponent.winId()))
         self.badAppleComponentPrt = omui.MQtUtil.findControl(self.badAppleComponent.objectName())
@@ -1018,6 +1025,31 @@ class ShelfButtonManager(QWidget):
         omui.MQtUtil.addWidgetToMayaLayout(int(self.timingComponentPrt), int(self.shelfParentPtr))
         self.timingComponent.setFixedSize(QSize(235, 42))
         #self.timingComponent.setGeometry(0, 0, 150, 42)
+
+    def addCountdownComponent(self):
+        from ..components import countdownWidget
+        self.countdownComponent = countdownWidget.CountdownWidget()
+        self.countdownComponent.setObjectName('Component_Countdown_'+str(self.countdownComponent.winId()))
+        self.countdownComponentPrt = omui.MQtUtil.findControl(self.countdownComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.countdownComponentPrt), int(self.shelfParentPtr))
+        self.countdownComponent.setFixedSize(QSize(235, 42))
+        #self.countdownComponent.setGeometry(0, 0, 150, 42)
+
+    def addMeritsVirtuesComponent(self):
+        mel.eval('int $gongDe = 0;')
+        self.addButton(
+            icon=ICONPATH + 'components/woodenFish.png', 
+            command={'leftPress': ['mel', '$gongDe += 1; print("\\n// 结果: 功德 +"+$gongDe);']}
+            )
+        self.gifButton.addDefaultMenuItems()
+
+    def addDinoGameComponent(self):
+        from ..components.dinoGame import pysideMain
+        self.dinoGameComponent = pysideMain.MainWindow()
+        self.dinoGameComponent.setObjectName('Component_DinoGame_'+str(self.dinoGameComponent.winId()))
+        self.dinoGameComponentPrt = omui.MQtUtil.findControl(self.dinoGameComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.dinoGameComponentPrt), int(self.shelfParentPtr))
+        self.dinoGameComponent.setFixedSize(QSize(1100, 600))
 
 def main():
     sys.dont_write_bytecode = True
