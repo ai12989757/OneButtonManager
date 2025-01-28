@@ -8,33 +8,33 @@ import random
 # Global Constants
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
-
-FONT = "D:/git/chromeDinosaur/Assets/Font/Minecraft.ttf"
+ASSETS_PATH = __file__.replace("pysideMain.py", "Assets/")
+FONT = ASSETS_PATH+"Font/Minecraft.ttf"
 FONT_FAMILY = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(FONT))[0]
 
-GAME_OVER = QPixmap("d:/git/chromeDinosaur/Assets/Other/GameOver.png")
-RESET = QPixmap("d:/git/chromeDinosaur/Assets/Other/Reset.png")
+GAME_OVER = QPixmap(ASSETS_PATH+"Other/GameOver.png")
+RESET = QPixmap(ASSETS_PATH+"Other/Reset.png")
 
-RUNNING = [QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoRun1.png"),
-           QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoRun2.png")]
-JUMPING = QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoJump.png")
-DUCKING = [QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoDuck1.png"),
-           QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoDuck2.png")]
-DEAD = QPixmap("d:/git/chromeDinosaur/Assets/Dino/DinoDead.png")
+RUNNING = [QPixmap(ASSETS_PATH+"Dino/DinoRun1.png"),
+           QPixmap(ASSETS_PATH+"Dino/DinoRun2.png")]
+JUMPING = QPixmap(ASSETS_PATH+"Dino/DinoJump.png")
+DUCKING = [QPixmap(ASSETS_PATH+"Dino/DinoDuck1.png"),
+           QPixmap(ASSETS_PATH+"Dino/DinoDuck2.png")]
+DEAD = QPixmap(ASSETS_PATH+"Dino/DinoDead.png")
 
-SMALL_CACTUS = [QPixmap("d:/git/chromeDinosaur/Assets/Cactus/SmallCactus1.png"),
-                QPixmap("d:/git/chromeDinosaur/Assets/Cactus/SmallCactus2.png"),
-                QPixmap("d:/git/chromeDinosaur/Assets/Cactus/SmallCactus3.png")]
-LARGE_CACTUS = [QPixmap("d:/git/chromeDinosaur/Assets/Cactus/LargeCactus1.png"),
-                QPixmap("d:/git/chromeDinosaur/Assets/Cactus/LargeCactus2.png"),
-                QPixmap("d:/git/chromeDinosaur/Assets/Cactus/LargeCactus3.png")]
+SMALL_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/SmallCactus1.png"),
+                QPixmap(ASSETS_PATH+"Cactus/SmallCactus2.png"),
+                QPixmap(ASSETS_PATH+"Cactus/SmallCactus3.png")]
+LARGE_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/LargeCactus1.png"),
+                QPixmap(ASSETS_PATH+"Cactus/LargeCactus2.png"),
+                QPixmap(ASSETS_PATH+"Cactus/LargeCactus3.png")]
 
-BIRD = [QPixmap("d:/git/chromeDinosaur/Assets/Bird/Bird1.png"),
-        QPixmap("d:/git/chromeDinosaur/Assets/Bird/Bird2.png")]
+BIRD = [QPixmap(ASSETS_PATH+"Bird/Bird1.png"),
+        QPixmap(ASSETS_PATH+"Bird/Bird2.png")]
 
-CLOUD = QPixmap("d:/git/chromeDinosaur/Assets/Other/Cloud.png")
+CLOUD = QPixmap(ASSETS_PATH+"Other/Cloud.png")
 
-BG = QPixmap("d:/git/chromeDinosaur/Assets/Other/Track.png")
+BG = QPixmap(ASSETS_PATH+"Other/Track.png")
 
 class Dinosaur(QLabel):
     X_POS = 80
