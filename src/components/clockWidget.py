@@ -1,6 +1,9 @@
-from PySide2.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
-from PySide2.QtCore import QTimer, QTime, Qt
-from ..utils import dragWidgetOrder
+try:
+    from PySide2.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
+    from PySide2.QtCore import QTimer, QTime
+except ImportError:
+    from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
+    from PySide6.QtCore import QTimer, QTime
 
 class ClockWidget(QWidget):
     def __init__(self):

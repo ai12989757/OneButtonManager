@@ -104,10 +104,10 @@ class GIFButtonWidget(QWidget):
         self.initUI() # 初始化UI
 
     def initUI(self):
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
-        self.setLayout(self.layout)
+        self.golablLayout  = QVBoxLayout()
+        self.golablLayout .setContentsMargins(0, 0, 0, 0)
+        self.golablLayout .setSpacing(0)
+        self.setLayout(self.golablLayout )
         self.movie = None               # GIF动画
         self.iconSub = 'default'        # 图标角标
         self.menuSubLable = None        # 菜单角标
@@ -126,7 +126,8 @@ class GIFButtonWidget(QWidget):
             subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.menuSubLable.setPixmap(subImage)
             self.menuSubLable.setGeometry(0, 0, self.size, self.size)
-            self.menuSubLable.show()
+            self.golablLayout.addWidget(self.menuSubLable, 0, Qt.AlignRight)
+            #self.menuSubLable.show()
 
     # 根据不同的按键组合，更新角标
     def updateSubLabel(self, sub):

@@ -40,6 +40,8 @@ except:
 ICONPATH = __file__.replace('\\','/').replace('src/shelfManager/ShelfButtonManager.py', 'icons/')
 
 class ShelfButtonManager(QWidget):
+    mel.eval('int $sjkhs = `shelfTabLayout -q -h $gShelfTopLevel`;')
+    mel.eval('workspaceControl -e -heightProperty "free" "Shelf"')
     def __init__(self,language=0):
         super(ShelfButtonManager, self).__init__()
         self.language = language # 0 简体中文, 1 English
@@ -180,6 +182,7 @@ class ShelfButtonManager(QWidget):
         self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/stopwatch.png'), sl(u"倒计时", self.language), self.addCountdownComponent).setStatusTip(sl(u"倒计时", self.language))
         self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/woodenFish.png'), sl(u"功德", self.language), self.addMeritsVirtuesComponent).setStatusTip(sl(u"功德", self.language))
         self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/DinoJump.png'), sl(u"小恐龙", self.language), self.addDinoGameComponent).setStatusTip(sl(u"小恐龙", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/bilibili.png'), sl(u"bilibili粉丝", self.language), self.addBilibiliFansComponent).setStatusTip(sl(u"bilibili粉丝", self.language))
         #self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'siri.gif'), sl(u"Bad Apple", self.language), self.toGIF).setStatusTip(sl(u"敢试吗", self.language))
         badAppleAction = GIFAction.gifIconMenuAction(
             icon = ICONPATH + 'components/bad_apple.gif', 
@@ -986,6 +989,7 @@ class ShelfButtonManager(QWidget):
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
 
+    # bad apple
     def addBadAppleComponent(self):
         mel.eval('int $sjkhs = `shelfTabLayout -q -h $gShelfTopLevel`;')
         mel.eval('workspaceControl -e -heightProperty "free" "Shelf"')
@@ -1008,6 +1012,7 @@ class ShelfButtonManager(QWidget):
         omui.MQtUtil.addWidgetToMayaLayout(int(self.badAppleComponentPrt), int(self.shelfParentPtr))
         self.badAppleComponent.setFixedSize(QSize(400, 300))
 
+    # 时钟
     def addClockComponent(self):
         from ..components import clockWidget
         self.clockComponent = clockWidget.ClockWidget()
@@ -1017,6 +1022,7 @@ class ShelfButtonManager(QWidget):
         self.clockComponent.setFixedSize(QSize(150, 42))
         #self.clockComponent.setGeometry(0, 0, 150, 42)
     
+    # 计时器
     def addTimingComponent(self):
         from ..components import timingWidget
         self.timingComponent = timingWidget.TimerWidget()
@@ -1026,6 +1032,7 @@ class ShelfButtonManager(QWidget):
         self.timingComponent.setFixedSize(QSize(235, 42))
         #self.timingComponent.setGeometry(0, 0, 150, 42)
 
+    # 倒计时
     def addCountdownComponent(self):
         from ..components import countdownWidget
         self.countdownComponent = countdownWidget.CountdownWidget()
@@ -1035,6 +1042,7 @@ class ShelfButtonManager(QWidget):
         self.countdownComponent.setFixedSize(QSize(235, 42))
         #self.countdownComponent.setGeometry(0, 0, 150, 42)
 
+    # 功德
     def addMeritsVirtuesComponent(self):
         mel.eval('int $gongDe = 0;')
         self.addButton(
@@ -1043,13 +1051,36 @@ class ShelfButtonManager(QWidget):
             )
         self.gifButton.addDefaultMenuItems()
 
-    def addDinoGameComponent(self):
+    # 谷歌恐龙游戏
+    def addDinoGameComponent(self, size=42):
+        def setWidgetSize(size):
+            self.addDinoGameComponent(size=size)
+            if size < 47:
+                mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
+            else:
+                mel.eval('workspaceControl -e -ih ($sjkhs+{}) "Shelf"'.format(size-25))
+        def closeDinoGameComponent():
+            mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
+            self.dinoGameComponent.close()
         from ..components.dinoGame import pysideMain
-        self.dinoGameComponent = pysideMain.MainWindow()
+        self.dinoGameComponent = pysideMain.MainWindow(size=size)
+        self.dinoGameComponent.menu.addAction(QIcon(), u'原始尺寸', lambda: setWidgetSize(size=300))
+        self.dinoGameComponent.menu.addAction(QIcon(), u'小窗口', lambda: setWidgetSize(size=42))
+        self.dinoGameComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', closeDinoGameComponent)
         self.dinoGameComponent.setObjectName('Component_DinoGame_'+str(self.dinoGameComponent.winId()))
         self.dinoGameComponentPrt = omui.MQtUtil.findControl(self.dinoGameComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.dinoGameComponentPrt), int(self.shelfParentPtr))
-        self.dinoGameComponent.setFixedSize(QSize(1100, 600))
+        self.dinoGameComponent.setFixedSize(QSize(pysideMain.SCREEN_WIDTH, pysideMain.SCREEN_HEIGHT))
+
+    # bilibili 粉丝
+    def addBilibiliFansComponent(self):
+        from ..components import bilibiliFansWidget
+        self.bilibiliFansComponent = bilibiliFansWidget.BilibiliFanWidget(size=42)
+        self.bilibiliFansComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', self.bilibiliFansComponent.close)
+        self.bilibiliFansComponent.setObjectName('Component_BilibiliFans_'+str(self.bilibiliFansComponent.winId()))
+        self.bilibiliFansComponentPrt = omui.MQtUtil.findControl(self.bilibiliFansComponent.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(int(self.bilibiliFansComponentPrt), int(self.shelfParentPtr))
+        self.bilibiliFansComponent.setFixedSize(QSize(self.bilibiliFansComponent.WIDTH, self.bilibiliFansComponent.SIZE))
 
 def main():
     sys.dont_write_bytecode = True

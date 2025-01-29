@@ -1,6 +1,11 @@
-from PySide2.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QWidget, QLCDNumber, QMenu, QAction, QLabel
-from PySide2.QtCore import QTimer, QTime, Qt, QPoint, QElapsedTimer
-from PySide2.QtGui import QColor
+try:
+    from PySide2.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QWidget, QLCDNumber, QMenu, QAction, QLabel
+    from PySide2.QtCore import QTimer, QTime, Qt, QElapsedTimer
+    from PySide2.QtGui import QColor
+except ImportError:
+    from PySide6.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QWidget, QLCDNumber, QMenu, QAction, QLabel
+    from PySide6.QtCore import QTimer, QTime, Qt, QElapsedTimer
+    from PySide6.QtGui import QColor
 
 class CountdownWidget(QWidget):
     def __init__(self, countdown_time="00:00:00.000"):

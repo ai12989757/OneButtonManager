@@ -1,49 +1,67 @@
-from PySide2.QtWidgets import QApplication, QWidget, QLabel
-from PySide2.QtGui import QPixmap, QPainter, QFont, QFontDatabase, QPalette, QColor
-from PySide2.QtCore import QTimer, Qt, QRect, QEvent
-import sys
-import os
-import random
+import os, json, random
+try:
+    from PySide2.QtWidgets import QApplication, QWidget, QLabel, QMenu
+    from PySide2.QtGui import QPixmap, QPainter, QFont, QFontDatabase, QPalette, QColor, QPainterPath, QRegion, QPen
+    from PySide2.QtCore import QTimer, Qt
+except ImportError:
+    from PySide6.QtWidgets import QApplication, QWidget, QLabel, QMenu
+    from PySide6.QtGui import QPixmap, QPainter, QFont, QPalette, QColor, QPainterPath, QRegion, QPen
+    from PySide6.QtCore import QTimer, Qt
 
-# Global Constants
-SCREEN_HEIGHT = 600
-SCREEN_WIDTH = 1100
 ASSETS_PATH = __file__.replace("pysideMain.py", "Assets/")
 FONT = ASSETS_PATH+"Font/Minecraft.ttf"
 FONT_FAMILY = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(FONT))[0]
 
-GAME_OVER = QPixmap(ASSETS_PATH+"Other/GameOver.png")
-RESET = QPixmap(ASSETS_PATH+"Other/Reset.png")
+def update_globals(size):
+    # Global Constants
+    global GOLBAL_SIZE, SCALE_FACTOR, SCREEN_HEIGHT, SCREEN_WIDTH, RUNNING, JUMPING, DUCKING, DEAD, SMALL_CACTUS, LARGE_CACTUS, BIRD, CLOUD, BG
+    GOLBAL_SIZE = size # default 300
+    SCALE_FACTOR = GOLBAL_SIZE/300
 
-RUNNING = [QPixmap(ASSETS_PATH+"Dino/DinoRun1.png"),
-           QPixmap(ASSETS_PATH+"Dino/DinoRun2.png")]
-JUMPING = QPixmap(ASSETS_PATH+"Dino/DinoJump.png")
-DUCKING = [QPixmap(ASSETS_PATH+"Dino/DinoDuck1.png"),
-           QPixmap(ASSETS_PATH+"Dino/DinoDuck2.png")]
-DEAD = QPixmap(ASSETS_PATH+"Dino/DinoDead.png")
+    SCREEN_HEIGHT = GOLBAL_SIZE # default 300
+    SCREEN_WIDTH = int(GOLBAL_SIZE*3.3) # default 1100
 
-SMALL_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/SmallCactus1.png"),
-                QPixmap(ASSETS_PATH+"Cactus/SmallCactus2.png"),
-                QPixmap(ASSETS_PATH+"Cactus/SmallCactus3.png")]
-LARGE_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/LargeCactus1.png"),
-                QPixmap(ASSETS_PATH+"Cactus/LargeCactus2.png"),
-                QPixmap(ASSETS_PATH+"Cactus/LargeCactus3.png")]
+    # GAME_OVER = QPixmap(ASSETS_PATH+"Other/GameOver.png")
+    # RESET = QPixmap(ASSETS_PATH+"Other/Reset.png")
 
-BIRD = [QPixmap(ASSETS_PATH+"Bird/Bird1.png"),
-        QPixmap(ASSETS_PATH+"Bird/Bird2.png")]
+    RUNNING = [QPixmap(ASSETS_PATH+"Dino/DinoRun1.png"),
+            QPixmap(ASSETS_PATH+"Dino/DinoRun2.png")]
+    JUMPING = QPixmap(ASSETS_PATH+"Dino/DinoJump.png")
+    DUCKING = [QPixmap(ASSETS_PATH+"Dino/DinoDuck1.png"),
+            QPixmap(ASSETS_PATH+"Dino/DinoDuck2.png")]
+    DEAD = QPixmap(ASSETS_PATH+"Dino/DinoDead.png")
+    RUNNING = [dino.scaledToHeight(int(dino.height()*SCALE_FACTOR)) for dino in RUNNING]
+    JUMPING = JUMPING.scaledToHeight(int(JUMPING.height()*SCALE_FACTOR))
+    DUCKING = [dino.scaledToHeight(int(dino.height()*SCALE_FACTOR)) for dino in DUCKING]
+    DEAD = DEAD.scaledToHeight(int(DEAD.height()*SCALE_FACTOR))
 
-CLOUD = QPixmap(ASSETS_PATH+"Other/Cloud.png")
+    SMALL_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/SmallCactus1.png"),
+                    QPixmap(ASSETS_PATH+"Cactus/SmallCactus2.png"),
+                    QPixmap(ASSETS_PATH+"Cactus/SmallCactus3.png")]
+    LARGE_CACTUS = [QPixmap(ASSETS_PATH+"Cactus/LargeCactus1.png"),
+                    QPixmap(ASSETS_PATH+"Cactus/LargeCactus2.png"),
+                    QPixmap(ASSETS_PATH+"Cactus/LargeCactus3.png")]
+    SMALL_CACTUS = [cactus.scaledToHeight(int(cactus.height()*SCALE_FACTOR)) for cactus in SMALL_CACTUS]
+    LARGE_CACTUS = [cactus.scaledToHeight(int(cactus.height()*SCALE_FACTOR)) for cactus in LARGE_CACTUS]
 
-BG = QPixmap(ASSETS_PATH+"Other/Track.png")
+    BIRD = [QPixmap(ASSETS_PATH+"Bird/Bird1.png"),
+            QPixmap(ASSETS_PATH+"Bird/Bird2.png")]
+    BIRD = [bird.scaledToHeight(int(bird.height()*SCALE_FACTOR)) for bird in BIRD]
+
+
+    CLOUD = QPixmap(ASSETS_PATH+"Other/Cloud.png")
+    CLOUD = CLOUD.scaledToHeight(CLOUD.height()*SCALE_FACTOR)
+
+    BG = QPixmap(ASSETS_PATH+"Other/Track.png")
+    BG = BG.scaledToHeight(BG.height()*SCALE_FACTOR)
 
 class Dinosaur(QLabel):
-    X_POS = 80
-    Y_POS = 310
-    Y_POS_DUCK = 340
-    JUMP_VEL = 8.5
-
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.X_POS = int(SCREEN_WIDTH/13.75) # default 80
+        self.Y_POS = int(SCREEN_HEIGHT*2.6/4) # default 310
+        self.Y_POS_DUCK = int(SCREEN_HEIGHT*3/4) # default 340
+        self.JUMP_VEL = SCREEN_HEIGHT/49.4117 # default 8.5
         self.run_images = RUNNING
         self.jump_image = JUMPING
         self.duck_images = DUCKING
@@ -92,7 +110,7 @@ class Dinosaur(QLabel):
         self.setPixmap(self.image)
         if self.is_jumping:
             self.setGeometry(self.X_POS, self.y() - self.jump_vel * 4, self.image.width(), self.image.height())
-            self.jump_vel -= 0.8
+            self.jump_vel -= self.JUMP_VEL / 12
         if self.jump_vel < -self.JUMP_VEL:
             self.is_jumping = False
             self.jump_vel = self.JUMP_VEL
@@ -107,7 +125,7 @@ class SmallCactus(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.x = SCREEN_WIDTH
-        self.y = 325
+        self.y = 215*SCALE_FACTOR
         self.images = SMALL_CACTUS
         self.index = random.randint(0, 2)
         self.image = self.images[self.index]
@@ -126,7 +144,7 @@ class LargeCactus(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.x = SCREEN_WIDTH
-        self.y = 300
+        self.y = 190*SCALE_FACTOR
         self.images = LARGE_CACTUS
         self.index = random.randint(0, 2)
         self.image = self.images[self.index]
@@ -145,7 +163,7 @@ class Bird(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.x = SCREEN_WIDTH
-        self.y = 250
+        self.y = int(150*SCALE_FACTOR)
         self.images = BIRD
         self.index = 0
         self.image = self.images[self.index]
@@ -165,8 +183,8 @@ class Bird(QLabel):
 class Cloud(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.x = SCREEN_WIDTH + random.randint(0, 3000)
-        self.y = random.randint(50, 100)
+        self.x = SCREEN_WIDTH + random.randint(0, int(3000*SCALE_FACTOR))
+        self.y = random.randint(int(50*SCALE_FACTOR), int(100*SCALE_FACTOR))
         self.image = CLOUD
         self.setPixmap(self.image)
         self.setGeometry(self.x, self.y, self.image.width(), self.image.height())
@@ -174,22 +192,24 @@ class Cloud(QLabel):
     def update(self, game_speed):
         self.x -= game_speed
         if self.x < -self.image.width():
-            self.x = SCREEN_WIDTH + random.randint(0, 3000)
-            self.y = random.randint(50, 150)
+            self.x = SCREEN_WIDTH + random.randint(0, int(3000*SCALE_FACTOR))
+            self.y = random.randint(int(50*SCALE_FACTOR), int(150*SCALE_FACTOR))
         self.move(self.x, self.y)
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self,size=300):
         super().__init__()
-        self.setWindowTitle("Chrome Dino Game")
+        update_globals(size)
+        # 设置背景颜色
+        self.setAutoFillBackground(True)
         self.setFixedSize(SCREEN_WIDTH, SCREEN_HEIGHT)
         # 使用 QPalette 设置背景颜色
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor("#ffffff"))
         self.setPalette(palette)
         self.x_pos_bg = 0
-        self.y_pos_bg = 380
-        self.game_speed = 20
+        self.y_pos_bg = int(270*SCALE_FACTOR) # default 380
+        self.game_speed = int(20*SCALE_FACTOR) # default 20
         self.clouds = [Cloud(self) for _ in range(2)]
         self.birds = Bird(self)
         self.smallCactus = SmallCactus(self)
@@ -205,14 +225,26 @@ class MainWindow(QWidget):
         self.keys_pressed = set()
         self.game_over = False
         self.show_game_over = True
-        self.game_over_timer = QTimer(self)
-        self.game_over_timer.timeout.connect(self.toggle_game_over)
-        self.game_over_blink_count = 0
         self.obstacles = []  # 初始化障碍物列表
         self.score = 0  # 初始化计分器
         self.setFocusPolicy(Qt.StrongFocus) # 设置焦点策略为 StrongFocus
-        self.show()
         self.show_start_screen()
+        self.menu = QMenu(self)
+        self.topScore = 0
+        self.docPath = os.path.expanduser('~') + '/OneTools/data/componentsData.json'
+        self.componentsData = {}
+        if os.path.exists(self.docPath):
+            with open(self.docPath, 'r') as f:
+                self.componentsData = json.load(f)
+        else:
+            self.componentsData['Dino'] = 0
+            with open(self.docPath, 'w') as f:
+                json.dump(self.componentsData, f)
+        if 'Dino' in self.componentsData.keys():
+            self.topScore = self.componentsData['Dino']
+
+    def contextMenuEvent(self, event):
+        self.menu.exec_(self.mapToGlobal(event.pos()))
 
     def show_start_screen(self):
         self.timer.stop()
@@ -241,7 +273,9 @@ class MainWindow(QWidget):
 
     def update_game(self):
         if not self.game_over:
+            self.game_speed += 0.01*SCALE_FACTOR
             self.x_pos_bg -= self.game_speed
+            
             if self.x_pos_bg <= -BG.width():
                 self.x_pos_bg = 0
             for cloud in self.clouds:
@@ -255,16 +289,20 @@ class MainWindow(QWidget):
             
             # 更新恐龙
             self.dinosaur.update(self.keys_pressed)
-            
+            # 更新分数
+            self.score += 1
             # 碰撞检测
             if self.check_collision():
                 self.dinosaur.die()
                 self.timer.stop()
                 self.obstacle_timer.stop()
                 self.game_over = True
-                self.game_over_timer.start(500)  # 每500毫秒切换一次显示状态
-            # 更新分数
-            self.score += 1
+                if self.score > self.topScore:
+                    self.topScore = self.score
+                    self.componentsData['Dino'] = self.topScore
+                    with open(self.docPath, 'w') as f:
+                        json.dump(self.componentsData, f)
+            
         self.update()
 
     def check_collision(self):
@@ -289,12 +327,11 @@ class MainWindow(QWidget):
         self.keys_pressed = set()
         self.game_over = False
         self.show_game_over = True
-        self.game_speed = 20  # 重置游戏速度
+        self.game_speed = int(20*SCALE_FACTOR) # default 20
         # 去除所有障碍物
         
         self.timer.start(30)
         self.obstacle_timer.start(random.randint(0, 1000))
-        self.game_over_timer.stop()
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor("#ffffff"))
         self.setPalette(palette)
@@ -306,26 +343,35 @@ class MainWindow(QWidget):
             self.spawn_obstacle()
         self.update()
 
-    def toggle_game_over(self):
-        self.show_game_over = not self.show_game_over
-        self.game_over_blink_count += 1
-        if self.game_over_blink_count >= 6:  # 闪烁三次后停止
-            self.game_over_timer.stop()
-            self.show_game_over = True
-        self.update()
-
     def paintEvent(self, event):
+        # 设置圆角
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 10, 10) # 设置圆角路径
+        path.translate(0.5, 0.5) # 修复边框模糊
+        region = QRegion(path.toFillPolygon().toPolygon())
+        self.setMask(region)
+        # 创建一个 QPainter 对象来绘制边框
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing) # 抗锯齿
+        pen = QPen(Qt.darkGray, 5)  # 设置描边颜色和宽度
+        painter.setPen(pen)
+        painter.drawPath(path)
+        painter.end()
+        
         painter = QPainter(self)
         painter.drawPixmap(self.x_pos_bg, self.y_pos_bg, BG)
         painter.drawPixmap(self.x_pos_bg + BG.width(), self.y_pos_bg, BG)
-        
+
         if self.start_screen:
             # 绘制开始画面
+            palette = self.palette()
+            palette.setColor(QPalette.Window, QColor("#ffffff"))
+            self.setPalette(palette)
             painter.drawPixmap(self.x_pos_bg, self.y_pos_bg, BG)
             painter.drawPixmap(self.x_pos_bg + BG.width(), self.y_pos_bg, BG)
 
             # 设置像素风字体
-            font = QFont(FONT_FAMILY, 24)  # 设置字体大小为24
+            font = QFont(FONT_FAMILY, int(24 * SCALE_FACTOR))  # 设置字体大小为24
             painter.setFont(font)
             painter.drawText(self.rect(), Qt.AlignCenter, "Press Space to Start")
 
@@ -334,30 +380,45 @@ class MainWindow(QWidget):
             palette.setColor(QPalette.Window, QColor("#bdbdbd"))
             self.setPalette(palette)
             # 设置 "GAME OVER" 字体和颜色
-            game_over_font = QFont(FONT_FAMILY, 48)  # 设置字体大小为48
+            game_over_font = QFont(FONT_FAMILY, int(48 * SCALE_FACTOR))  # 设置字体大小为48
             painter.setFont(game_over_font)
-            painter.setPen(Qt.white)  # 设置字体颜色为红色
-            painter.drawText(self.rect().adjusted(0, -120, 0, 0), Qt.AlignCenter, "GAME OVER")
-            
-            # 设置 "Press Space to Restart" 字体和颜色
-            restart_font = QFont(FONT_FAMILY, 12)  # 设置字体大小为24
-            painter.setFont(restart_font)
-            painter.setPen(Qt.black)  # 设置字体颜色为白色
-            painter.drawText(self.rect().adjusted(0, 50, 0, 0), Qt.AlignCenter, "Press Space to Restart")
+            painter.setPen(Qt.white)  # 设置字体颜色为白色
+            painter.drawText(self.rect().adjusted(0, int(-40 * SCALE_FACTOR), 0, 0), Qt.AlignCenter, "GAME OVER")
 
-            font = QFont(FONT_FAMILY, 12)
-            painter.setFont(font)
-            painter.setPen(Qt.black)
-            painter.drawText(self.rect().adjusted(-10, 10, -50, 10), Qt.AlignTop | Qt.AlignRight, f"Score: {self.score}")
+            # 设置 "Press Space to Restart" 字体和颜色
+            restart_font = QFont(FONT_FAMILY, int(12 * SCALE_FACTOR))  # 设置字体大小为12
+            painter.setFont(restart_font)
+            painter.setPen(Qt.black)  # 设置字体颜色为黑色
+            painter.drawText(self.rect().adjusted(0, int(50 * SCALE_FACTOR), 0, 0), Qt.AlignCenter, "Press Space to Restart")
+
+            # 绘制分数
+            self.draw_score(painter, restart_font)
+
+            # 绘制最高分
+            painter.setFont(restart_font)
+            if self.score >= self.topScore:
+                painter.setPen('#DC143C')
+            else:
+                painter.setPen(Qt.black)
+            painter.drawText(self.rect().adjusted(0, int(100 * SCALE_FACTOR), 0, 0), Qt.AlignCenter, "TopScore: {}".format(self.topScore))
         else:
+            palette = self.palette()
+            palette.setColor(QPalette.Window, QColor("#ffffff"))
+            self.setPalette(palette)
             self.setGraphicsEffect(None)
             # 绘制分数
-            font = QFont(FONT_FAMILY, 12)
-            painter.setFont(font)
-            painter.setPen(Qt.black)
-            painter.drawText(self.rect().adjusted(-10, 10, -50, 10), Qt.AlignTop | Qt.AlignRight, f"Score: {self.score}")
+            self.draw_score(painter, QFont(FONT_FAMILY, int(12 - (1 / SCALE_FACTOR))))
+
+    def draw_score(self, painter, font):
+        painter.setFont(font)
+        if self.score >= self.topScore:
+            painter.setPen(QColor('#DC143C'))  # 设置分数颜色为淡蓝色
+        else:
+            painter.setPen(QColor(Qt.black))  # 设置分数颜色为红色
+        painter.drawText(self.rect().adjusted(int(-10 * SCALE_FACTOR), int(10 * SCALE_FACTOR), int(-50 * SCALE_FACTOR), int(10 * SCALE_FACTOR)), Qt.AlignTop | Qt.AlignRight, "Score: {}".format(self.score))
 
 if __name__ == "__main__":
     #app = QApplication(sys.argv)
-    window = MainWindow()
+    windsdasdow = MainWindow(size=150)
+    windsdasdow.show()
     #sys.exit(app.exec())

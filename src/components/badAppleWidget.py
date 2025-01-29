@@ -1,7 +1,13 @@
-from PySide2.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu, QAction
-from PySide2.QtGui import QMovie
-from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
-from PySide2.QtCore import Qt, QUrl
+try:
+    from PySide2.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu, QAction
+    from PySide2.QtGui import QMovie
+    from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
+    from PySide2.QtCore import Qt, QUrl
+except ImportError:
+    from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu, QAction
+    from PySide6.QtGui import QMovie
+    from PySide6.QtMultimedia import QMediaPlayer, QMediaContent
+    from PySide6.QtCore import Qt, QUrl
 
 class GifPlayer(QWidget):
     def __init__(self, gif_path, audio_path):
