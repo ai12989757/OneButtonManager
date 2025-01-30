@@ -925,15 +925,15 @@ class ButtonEditorWindow(QDialog):
             pass
         # 重新连接 aboutToShow
         if 'menuShow' in self.buttonDict['command'].keys():
-            self.editButton.menu.aboutToShow.connect(lambda: runCommand.runCommand(self, self.editButton.command, 'menuShow'))
+            self.editButton.menu.aboutToShow.connect(lambda: runCommand.runCommand(self.editButton, self.editButton.command, 'menuShow'))
 
         # 设置菜单 # 移除所有菜单后重新添加
         self.editButton.menu.clear()
         self.editButton.subIcon = None
-        if hasattr(self.editButton, 'menuSubLable'):
-            if self.editButton.menuSubLable:
-                self.editButton.menuSubLable.setPixmap(QPixmap())
-                self.editButton.menuSubLable = None
+        if self.editButton.menuSubLable:
+            #self.editButton.menuSubLable.setPixmap(QPixmap())
+            self.editButton.menuSubLable.deleteLater()
+            self.editButton.menuSubLable = None
         if self.menuItems:
             for key in self.menuItems.keys():
                 if key == 'Separator':

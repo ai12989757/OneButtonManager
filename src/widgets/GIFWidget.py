@@ -177,7 +177,7 @@ class GIFButtonWidget(QWidget):
         else:
             if self.movie:
                 self.movie.stop()
-                self.movie.deleteLater()
+                self.movie = None
             self.iconLabel.setPixmap(self.pixmap)
         self.iconLabel.setGeometry(0, 0, self.pixmap.width(), self.pixmap.height())
         self.iconLabel.show()
@@ -281,8 +281,8 @@ class GIFButtonWidget(QWidget):
                     self.updateSubLabel('ctrl')
                 elif modifiers & Qt.AltModifier:
                     self.updateSubLabel('alt')
-                # else:
-                #     self.updateSubLabel(None)
+                else:
+                    if self.iconSub != 'default': self.updateSubLabel('default')
             elif event.key() == Qt.Key_Menu:
                 # show admin edit menu
                 pass

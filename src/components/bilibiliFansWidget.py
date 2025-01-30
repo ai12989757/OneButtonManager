@@ -2,13 +2,21 @@ import os
 import sys
 import json
 try:
-    from PySide2.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel, QLineEdit, QMenu
-    from PySide2.QtGui import QFontDatabase, QPixmap
-    from PySide2.QtCore import Qt, QSize, QTimer
+    from PySide6.QtCore import *
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel, QLineEdit, QMenu
-    from PySide6.QtGui import QFontDatabase, QPixmap
-    from PySide6.QtCore import Qt, QSize, QTimer
+    from PySide2.QtCore import *
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
+
+# 创建一个按钮编辑器窗口
+def maya_main_window():
+    """
+    Return the Maya main window widget as a Python object
+    """
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    return wrapInstance(int(main_window_ptr), QWidget)
 
 try:
     # For Python 3
@@ -61,9 +69,8 @@ class BilibiliFanWidget(QWidget):
     def adjust_width(self):
         # 根据粉丝数的长度调整宽度
         extra_digits = len(self.fans_count) - 5
-        if extra_digits > 0:
-            self.WIDTH += extra_digits * ((self.SIZE+6) // 2)
-            self.setFixedSize(QSize(self.WIDTH, self.SIZE))
+        self.WIDTH = int(165 * self.SIZE / 42) + extra_digits * ((self.SIZE+6) // 2)
+        self.setFixedSize(QSize(self.WIDTH, self.SIZE))
 
     def initUI(self):
         self.globalLayout = QHBoxLayout()
@@ -83,14 +90,13 @@ class BilibiliFanWidget(QWidget):
         self.label = QLabel(self.fans_count, self)
         self.label.setStyleSheet("font-size: {}px; font-weight: bold; color: #BDBDBD; font-family: {};".format(self.SIZE, FONT_FAMILY))
         self.inputLayout.addWidget(self.label)
-
         self.globalLayout.addLayout(self.inputLayout)
 
         self.inputUID = QLineEdit(self)
         self.inputUID.setPlaceholderText("输入UID并回车")
         self.inputUID.returnPressed.connect(self.update_uid)
         self.inputUID.hide()
-        self.inputUID.setGeometry(0, 0, self.WIDTH, int(self.SIZE/3*2))
+        self.inputUID.setGeometry(0, int(self.SIZE/4), self.WIDTH, int(self.SIZE/2))
 
 
         self.setLayout(self.globalLayout)
@@ -101,6 +107,8 @@ class BilibiliFanWidget(QWidget):
         self.menu.exec_(self.mapToGlobal(event.pos()))
 
     def get_bilibili_fans(self, uid):
+        if not uid or uid == 0:
+            return "00000"
         url = "https://api.bilibili.com/x/relation/stat?vmid={}".format(uid)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
@@ -120,6 +128,7 @@ class BilibiliFanWidget(QWidget):
     def update_fans_count(self):
         self.fans_count = self.get_bilibili_fans(self.uid)
         self.label.setText(self.fans_count)
+        self.adjust_width()
 
     def update_uid(self):
         new_uid = self.inputUID.text()
@@ -127,6 +136,8 @@ class BilibiliFanWidget(QWidget):
             self.uid = int(new_uid)
             self.update_fans_count()
         self.inputUID.hide()
+        self.adjust_width()
+
         docPath = os.path.expanduser('~') + '/OneTools/data/componentsData.json'
         with open(docPath, 'r') as f:
             data = json.load(f)
@@ -153,7 +164,18 @@ class BilibiliFanWidget(QWidget):
             with open(docPath, 'w') as f:
                 json.dump(data, f)
         return uid
-    
+
+# 创建一个模糊组件，用来叠在输入框下面，从而模糊背景
+class BilibiliFanWidgetBlur(QWidget):
+    def __init__(self, parent=None):
+        super(BilibiliFanWidgetBlur, self).__init__(parent)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setFixedSize(QApplication.desktop().size())
+        self.setStyleSheet("background-color: rgba(255, 255, 255, 0.5);")
+        self.show()
+
 if __name__ == "__main__":
     #app = QApplication(sys.argv)
     uid = 14857382  # 替换为目标用户的 UID
