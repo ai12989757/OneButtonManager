@@ -15,12 +15,10 @@ try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
     from PySide6.QtWidgets import *
-    from PySide6.QtMultimedia import QMediaPlayer, QMediaContent
 except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
-    from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
 from functools import partial
 from collections import OrderedDict
 

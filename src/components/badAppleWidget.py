@@ -1,13 +1,16 @@
+PYSIDE_VERSION = 2
 try:
-    from PySide2.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu, QAction
+    from PySide2.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu
     from PySide2.QtGui import QMovie
     from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
     from PySide2.QtCore import Qt, QUrl
+    PYSIDE_VERSION = 2
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu, QAction
+    from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu
     from PySide6.QtGui import QMovie
-    from PySide6.QtMultimedia import QMediaPlayer, QMediaContent
+    from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
     from PySide6.QtCore import Qt, QUrl
+    PYSIDE_VERSION = 6
 
 class ComponentWidget(QWidget):
     def __init__(self, gif_path, audio_path):
@@ -24,8 +27,14 @@ class ComponentWidget(QWidget):
         self.movie = QMovie(gif_path)
         self.label.setMovie(self.movie)
         # 创建 QMediaPlayer 对象
-        self.media_player = QMediaPlayer()
-        self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(audio_path)))
+        if PYSIDE_VERSION == 2:
+            self.media_player = QMediaPlayer()
+            self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(audio_path)))
+        else:
+            self.media_player = QMediaPlayer()
+            self.audio_output = QAudioOutput()
+            self.media_player.setAudioOutput(self.audio_output)
+            self.media_player.setSource(QUrl.fromLocalFile(audio_path))
 
         # 创建布局
         layout = QVBoxLayout()
@@ -48,7 +57,7 @@ class ComponentWidget(QWidget):
 if __name__ == "__main__":
     #app = QApplication([])
     gif_path = "E:/OneButtonManager/icons/components/bad_apple.gif"  # 替换为你的 GIF 文件路径
-    audio_path = "E:/OneButtonManager/icons/components/bad_apple.wav"  # 替换为你的音频文件路径
-    player = GifPlayer(gif_path, audio_path)
+    audio_path = "E:/OneButtonManager/icons/components/bad_apple.mp3"  # 替换为你的音频文件路径
+    player = ComponentWidget(gif_path, audio_path)
     player.show()
     #app.exec_()

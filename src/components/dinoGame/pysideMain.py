@@ -1,12 +1,12 @@
 import os, json, random
 try:
-    from PySide2.QtWidgets import QApplication, QWidget, QLabel, QMenu
-    from PySide2.QtGui import QPixmap, QPainter, QFont, QFontDatabase, QPalette, QColor, QPainterPath, QRegion, QPen
-    from PySide2.QtCore import QTimer, Qt
+    from PySide6.QtCore import *
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QWidget, QLabel, QMenu
-    from PySide6.QtGui import QPixmap, QPainter, QFont, QPalette, QColor, QPainterPath, QRegion, QPen
-    from PySide6.QtCore import QTimer, Qt
+    from PySide2.QtCore import *
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
 
 ASSETS_PATH = __file__.replace("pysideMain.py", "Assets/")
 FONT = ASSETS_PATH+"Font/Minecraft.ttf"
@@ -227,11 +227,11 @@ class ComponentWidget(QWidget):
         self.show_game_over = True
         self.obstacles = []  # 初始化障碍物列表
         self.score = 0  # 初始化计分器
-        self.setFocusPolicy(Qt.StrongFocus) # 设置焦点策略为 StrongFocus
+        self.setFocusPolicy(Qt.StrongFocus) # 设置焦点策略为 StrongFocus, 组织焦点被其他控件抢走
         self.show_start_screen()
         self.menu = QMenu(self)
         self.topScore = 0
-        self.docPath = os.path.expanduser('~') + '/OneTools/data/componentsData.json'
+        self.docPath = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation) + '/OneTools/data/componentsData.json'
         self.componentsData = {}
         if os.path.exists(self.docPath):
             with open(self.docPath, 'r') as f:
@@ -316,11 +316,11 @@ class ComponentWidget(QWidget):
             self.start_game()
         if self.game_over and event.key() == Qt.Key_Space:
             self.reset_game()
-        event.accept()  # 阻止事件传播到 Maya
+        #event.accept()  # 阻止事件传播到 Maya
 
     def keyReleaseEvent(self, event):
         self.keys_pressed.discard(event.key())
-        event.accept()  # 阻止事件传播到 Maya
+        #event.accept()  # 阻止事件传播到 Maya
 
     def reset_game(self):
         self.score = 0

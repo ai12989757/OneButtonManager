@@ -1,11 +1,14 @@
+PYSIDE_VERSION = 2
 try:
-    from PySide2.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QWidget, QLCDNumber, QMenu, QAction, QLabel
-    from PySide2.QtCore import QTimer, QTime, Qt, QElapsedTimer
-    from PySide2.QtGui import QColor
+    from PySide6.QtCore import *
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
+    PYSIDE_VERSION = 6
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QWidget, QLCDNumber, QMenu, QAction, QLabel
-    from PySide6.QtCore import QTimer, QTime, Qt, QElapsedTimer
-    from PySide6.QtGui import QColor
+    from PySide2.QtCore import *
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
+    PYSIDE_VERSION = 2
 
 class ComponentWidget(QWidget):
     def __init__(self, countdown_time="00:00:00.000"):
@@ -87,24 +90,46 @@ class ComponentWidget(QWidget):
         self.dragging_component = None
 
     def eventFilter(self, source, event):
-        if event.type() == event.MouseButtonPress and event.button() == Qt.MiddleButton:
-            self.indexTepm = 0
-            self.drag_start_pos = event.pos()
-            self.dragging_component = source
-            return True
-        elif event.type() == event.MouseMove and self.drag_start_pos:
-            self.dragging = True
-            self.handle_drag(event.pos())
-            return True
-        elif event.type() == event.MouseButtonRelease and event.button() == Qt.MiddleButton:
-            self.indexTepm = 0
-            self.drag_start_pos = None
-            self.dragging_component = None
-            return True
-        elif event.type() == event.Wheel:
-            self.dragging_component = source
-            self.handle_wheel(event.angleDelta())
-            return True
+        if PYSIDE_VERSION == 2:
+            if event.type() == event.MouseButtonPress and event.button() == Qt.MiddleButton:
+                self.indexTepm = 0
+                self.drag_start_pos = event.pos()
+                self.dragging_component = source
+                return True
+            elif event.type() == event.MouseMove and self.drag_start_pos:
+                self.dragging = True
+                self.handle_drag(event.pos())
+                return True
+            elif event.type() == event.MouseButtonRelease and event.button() == Qt.MiddleButton:
+                self.indexTepm = 0
+                self.drag_start_pos = None
+                self.dragging_component = None
+                return True
+            elif event.type() == event.Wheel:
+                self.dragging_component = source
+                self.handle_wheel(event.angleDelta())
+                event.accept()  # 阻止事件传播
+                return True
+        elif PYSIDE_VERSION == 6:
+            if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MiddleButton:
+                self.indexTepm = 0
+                self.drag_start_pos = event.pos()
+                self.dragging_component = source
+                return True
+            elif event.type() == QEvent.Type.MouseMove and self.drag_start_pos:
+                self.dragging = True
+                self.handle_drag(event.pos())
+                return True
+            elif event.type() == QEvent.Type.MouseButtonRelease and event.button() == Qt.MiddleButton:
+                self.indexTepm = 0
+                self.drag_start_pos = None
+                self.dragging_component = None
+                return True
+            elif event.type() == QEvent.Type.Wheel:
+                self.dragging_component = source
+                self.handle_wheel(event.angleDelta())
+                event.accept()  # 阻止事件传播
+                return True
 
         return super().eventFilter(source, event)
     

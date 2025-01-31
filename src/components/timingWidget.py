@@ -1,12 +1,12 @@
 import random
 try:
-    from PySide2.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
-    from PySide2.QtCore import QTimer, QTime, Qt
-    from PySide2.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+    from PySide6.QtCore import *
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
-    from PySide6.QtCore import QTimer, QTime, Qt
-    from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+    from PySide2.QtCore import *
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
     
 def random_rainbow_color():
     """生成随机彩虹颜色，避免过暗的颜色"""

@@ -138,7 +138,7 @@ class ComponentWidget(QWidget):
         self.inputUID.hide()
         self.adjust_width()
 
-        docPath = os.path.expanduser('~') + '/OneTools/data/componentsData.json'
+        docPath = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation) + '/OneTools/data/componentsData.json'
         with open(docPath, 'r') as f:
             data = json.load(f)
             data['UID'] = self.uid
@@ -152,7 +152,7 @@ class ComponentWidget(QWidget):
     def getUID(self):
         # 读取json文件
         # 获取系统文档路径
-        docPath = os.path.expanduser('~') + '/OneTools/data/componentsData.json'
+        docPath = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation) + '/OneTools/data/componentsData.json'
         uid = None
         if os.path.exists(docPath):
             with open(docPath, 'r') as f:
@@ -179,6 +179,6 @@ class BilibiliFanWidgetBlur(QWidget):
 if __name__ == "__main__":
     #app = QApplication(sys.argv)
     uid = 14857382  # 替换为目标用户的 UID
-    widget = BilibiliFanWidget(uid)
+    widget = ComponentWidget(uid)
     widget.show()
     #sys.exit(app.exec_())

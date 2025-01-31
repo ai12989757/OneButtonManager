@@ -6,7 +6,7 @@ except ImportError:
     from shiboken2 import wrapInstance
 
 try:
-    from PySide6.QtCore import QWidget
+    from PySide6.QtWidgets import QWidget
 except ImportError:
     from PySide2.QtWidgets import QWidget
 

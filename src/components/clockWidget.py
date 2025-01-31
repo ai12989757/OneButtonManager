@@ -1,9 +1,11 @@
 try:
-    from PySide2.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
-    from PySide2.QtCore import QTimer, QTime
+    from PySide6.QtCore import *
+    from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
 except ImportError:
-    from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
-    from PySide6.QtCore import QTimer, QTime
+    from PySide2.QtCore import *
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
 
 class ComponentWidget(QWidget):
     def __init__(self):
