@@ -5,7 +5,7 @@ except ImportError:
     from PySide6.QtWidgets import QApplication, QVBoxLayout, QWidget, QLCDNumber, QMenu, QAction
     from PySide6.QtCore import QTimer, QTime
 
-class ClockWidget(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("QFrame { border: none; }")

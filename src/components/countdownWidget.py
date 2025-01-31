@@ -7,7 +7,7 @@ except ImportError:
     from PySide6.QtCore import QTimer, QTime, Qt, QElapsedTimer
     from PySide6.QtGui import QColor
 
-class CountdownWidget(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self, countdown_time="00:00:00.000"):
         super().__init__()
         self.indexTepm = 0

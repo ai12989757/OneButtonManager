@@ -9,7 +9,7 @@ except ImportError:
     from PySide6.QtMultimedia import QMediaPlayer, QMediaContent
     from PySide6.QtCore import Qt, QUrl
 
-class GifPlayer(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self, gif_path, audio_path):
         super().__init__()
 

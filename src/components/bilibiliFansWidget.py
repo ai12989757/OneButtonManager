@@ -42,9 +42,9 @@ ICON_PATH = PATH + "/icons/"
 FONT = PATH + "/Font/RepetitionScrolling.ttf"
 FONT_FAMILY = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(FONT))[0]
 
-class BilibiliFanWidget(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self, uid=0, size=42):
-        super(BilibiliFanWidget, self).__init__()
+        super().__init__()
         try:
             uid = self.getUID()
         except:

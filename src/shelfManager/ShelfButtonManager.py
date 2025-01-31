@@ -177,18 +177,18 @@ class ShelfButtonManager(QWidget):
         self.shelfComponentsAction = self.contextMenu.addAction(QIcon(ICONPATH + 'components/components.png'),sl(u"组件", abs(1 - self.language)))
         self.shelfComponentsMenu = QMenu()
         self.shelfComponentsAction.setMenu(self.shelfComponentsMenu)
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/clock.png'), sl(u"时钟", self.language), self.addClockComponent).setStatusTip(sl(u"时钟", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/timing.png'), sl(u"秒表", self.language), self.addTimingComponent).setStatusTip(sl(u"秒表", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/stopwatch.png'), sl(u"倒计时", self.language), self.addCountdownComponent).setStatusTip(sl(u"倒计时", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/woodenFish.png'), sl(u"功德", self.language), self.addMeritsVirtuesComponent).setStatusTip(sl(u"功德", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/DinoJump.png'), sl(u"小恐龙", self.language), self.addDinoGameComponent).setStatusTip(sl(u"小恐龙", self.language))
-        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/bilibili.png'), sl(u"bilibili粉丝", self.language), self.addBilibiliFansComponent).setStatusTip(sl(u"bilibili粉丝", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/clock.png'), sl(u"时钟", self.language), lambda: self.addComponent('clock')).setStatusTip(sl(u"时钟", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/timing.png'), sl(u"秒表", self.language), lambda: self.addComponent('timing')).setStatusTip(sl(u"秒表", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/stopwatch.png'), sl(u"倒计时", self.language), lambda: self.addComponent('countdown')).setStatusTip(sl(u"倒计时", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/woodenFish.png'), sl(u"功德", self.language), lambda: self.addComponent('meritsVirtues')).setStatusTip(sl(u"功德", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/DinoJump.png'), sl(u"小恐龙", self.language), lambda: self.addComponent('dinoGame')).setStatusTip(sl(u"小恐龙", self.language))
+        self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'components/bilibili.png'), sl(u"bilibili粉丝", self.language), lambda: self.addComponent('bilibiliFans')).setStatusTip(sl(u"bilibili粉丝", self.language))
         #self.shelfComponentsMenu.addAction(QIcon(ICONPATH + 'siri.gif'), sl(u"Bad Apple", self.language), self.toGIF).setStatusTip(sl(u"敢试吗", self.language))
         badAppleAction = GIFAction.gifIconMenuAction(
             icon = ICONPATH + 'components/bad_apple.gif', 
             label = sl(u"Bad Apple",self.language), annotation = sl(u"敢试吗",self.language), 
             parent = self.shelfComponentsMenu,
-            command = {'click':['function', self.addBadAppleComponent]}
+            command = {'click':['function', lambda: self.addComponent('badApple')]}
             )
         self.shelfComponentsMenu.addAction(badAppleAction)
         # 工具栏设置
@@ -828,6 +828,8 @@ class ShelfButtonManager(QWidget):
         for shelfButtonName in data.keys():
             if 'separator' in data[shelfButtonName] or 'Separator' in data[shelfButtonName]:
                 self.addSeparator()
+            elif 'Component' in data[shelfButtonName]:
+                self.addComponent(data[shelfButtonName][1])
             else:
                 shelfButtonData = data[shelfButtonName]
                 shelfButtonData = self.GIFButtonJsonDataSwitch(shelfButtonData)
@@ -931,7 +933,6 @@ class ShelfButtonManager(QWidget):
         self.shelfManagers[shelfName].menu = self.shelfManagers[shelfName].createContextMenu()
 
     def saveGifShelf(self):
-        # 打开文件对话框
         jsonPath = self.OneToolsDataDir + 'shelf_'+self.currentShelf+'.json'
     
         self.buttonList = self.getButtonList()[1]
@@ -941,6 +942,8 @@ class ShelfButtonManager(QWidget):
                 data[index] = self.getGIFButtonData(i)
             elif i.__class__.__name__ == 'Separator':
                 data[index] = 'separator'
+            elif i.__class__.__name__ == 'ComponentWidget':
+                data[index] = ['Component', i.objectName().split('_')[-2]]
         # 写入json文件
         jsonData = OrderedDict()
         jsonData['shelfName'] = self.currentShelf
@@ -989,6 +992,22 @@ class ShelfButtonManager(QWidget):
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
 
+    def addComponent(self, component):
+        if component == 'badApple':
+            self.addBadAppleComponent()
+        elif component == 'clock':
+            self.addClockComponent()
+        elif component == 'timing':
+            self.addTimingComponent()
+        elif component == 'countdown':
+            self.addCountdownComponent()
+        elif component == 'meritsVirtues':
+            self.addMeritsVirtuesComponent()
+        elif component == 'dinoGame':
+            self.addDinoGameComponent()
+        elif component == 'bilibiliFans':
+            self.addBilibiliFansComponent()
+
     # bad apple
     def addBadAppleComponent(self):
         mel.eval('int $sjkhs = `shelfTabLayout -q -h $gShelfTopLevel`;')
@@ -999,7 +1018,7 @@ class ShelfButtonManager(QWidget):
         gif_path = ICONPATH + 'components/bad_apple.gif'
         audio_path = ICONPATH + 'components/bad_apple.mp3'
 
-        self.badAppleComponent = badAppleWidget.GifPlayer(gif_path, audio_path)
+        self.badAppleComponent = badAppleWidget.ComponentWidget(gif_path, audio_path)
         def closeBadAppleComponent():
             mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
             self.badAppleComponent.movie.stop()
@@ -1007,7 +1026,7 @@ class ShelfButtonManager(QWidget):
             self.badAppleComponent.deleteLater()
         self.badAppleComponent.menu.addAction(QIcon(ICONPATH + 'red/Delete.png'), u'关闭', closeBadAppleComponent)
 
-        self.badAppleComponent.setObjectName('Component_BadApple_'+str(self.badAppleComponent.winId()))
+        self.badAppleComponent.setObjectName('Component_badApple_'+str(self.badAppleComponent.winId()))
         self.badAppleComponentPrt = omui.MQtUtil.findControl(self.badAppleComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.badAppleComponentPrt), int(self.shelfParentPtr))
         self.badAppleComponent.setFixedSize(QSize(400, 300))
@@ -1015,8 +1034,8 @@ class ShelfButtonManager(QWidget):
     # 时钟
     def addClockComponent(self):
         from ..components import clockWidget
-        self.clockComponent = clockWidget.ClockWidget()
-        self.clockComponent.setObjectName('Component_Clock_'+str(self.clockComponent.winId()))
+        self.clockComponent = clockWidget.ComponentWidget()
+        self.clockComponent.setObjectName('Component_clock_'+str(self.clockComponent.winId()))
         self.clockComponentPrt = omui.MQtUtil.findControl(self.clockComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.clockComponentPrt), int(self.shelfParentPtr))
         self.clockComponent.setFixedSize(QSize(150, 42))
@@ -1025,8 +1044,8 @@ class ShelfButtonManager(QWidget):
     # 计时器
     def addTimingComponent(self):
         from ..components import timingWidget
-        self.timingComponent = timingWidget.TimerWidget()
-        self.timingComponent.setObjectName('Component_Timing_'+str(self.timingComponent.winId()))
+        self.timingComponent = timingWidget.ComponentWidget()
+        self.timingComponent.setObjectName('Component_timing_'+str(self.timingComponent.winId()))
         self.timingComponentPrt = omui.MQtUtil.findControl(self.timingComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.timingComponentPrt), int(self.shelfParentPtr))
         self.timingComponent.setFixedSize(QSize(235, 42))
@@ -1035,8 +1054,8 @@ class ShelfButtonManager(QWidget):
     # 倒计时
     def addCountdownComponent(self):
         from ..components import countdownWidget
-        self.countdownComponent = countdownWidget.CountdownWidget()
-        self.countdownComponent.setObjectName('Component_Countdown_'+str(self.countdownComponent.winId()))
+        self.countdownComponent = countdownWidget.ComponentWidget()
+        self.countdownComponent.setObjectName('Component_countdown_'+str(self.countdownComponent.winId()))
         self.countdownComponentPrt = omui.MQtUtil.findControl(self.countdownComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.countdownComponentPrt), int(self.shelfParentPtr))
         self.countdownComponent.setFixedSize(QSize(235, 42))
@@ -1063,11 +1082,11 @@ class ShelfButtonManager(QWidget):
             mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
             self.dinoGameComponent.close()
         from ..components.dinoGame import pysideMain
-        self.dinoGameComponent = pysideMain.MainWindow(size=size)
+        self.dinoGameComponent = pysideMain.ComponentWidget(size=size)
         self.dinoGameComponent.menu.addAction(QIcon(), u'原始尺寸', lambda: setWidgetSize(size=300))
         self.dinoGameComponent.menu.addAction(QIcon(), u'小窗口', lambda: setWidgetSize(size=42))
         self.dinoGameComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', closeDinoGameComponent)
-        self.dinoGameComponent.setObjectName('Component_DinoGame_'+str(self.dinoGameComponent.winId()))
+        self.dinoGameComponent.setObjectName('Component_dinoGame_'+str(self.dinoGameComponent.winId()))
         self.dinoGameComponentPrt = omui.MQtUtil.findControl(self.dinoGameComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.dinoGameComponentPrt), int(self.shelfParentPtr))
         self.dinoGameComponent.setFixedSize(QSize(pysideMain.SCREEN_WIDTH, pysideMain.SCREEN_HEIGHT))
@@ -1075,9 +1094,9 @@ class ShelfButtonManager(QWidget):
     # bilibili 粉丝
     def addBilibiliFansComponent(self):
         from ..components import bilibiliFansWidget
-        self.bilibiliFansComponent = bilibiliFansWidget.BilibiliFanWidget(size=42)
+        self.bilibiliFansComponent = bilibiliFansWidget.ComponentWidget(size=42)
         self.bilibiliFansComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', self.bilibiliFansComponent.close)
-        self.bilibiliFansComponent.setObjectName('Component_BilibiliFans_'+str(self.bilibiliFansComponent.winId()))
+        self.bilibiliFansComponent.setObjectName('Component_bilibiliFans_'+str(self.bilibiliFansComponent.winId()))
         self.bilibiliFansComponentPrt = omui.MQtUtil.findControl(self.bilibiliFansComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.bilibiliFansComponentPrt), int(self.shelfParentPtr))
         self.bilibiliFansComponent.setFixedSize(QSize(self.bilibiliFansComponent.WIDTH, self.bilibiliFansComponent.SIZE))

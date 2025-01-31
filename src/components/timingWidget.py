@@ -15,7 +15,7 @@ def random_rainbow_color():
     value = random.randint(200, 255)  # 保持较高的亮度
     return QColor.fromHsv(hue, saturation, value)
 
-class TimerWidget(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setStyleSheet("QFrame { border: none; }")

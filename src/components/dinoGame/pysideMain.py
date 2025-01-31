@@ -196,7 +196,7 @@ class Cloud(QLabel):
             self.y = random.randint(int(50*SCALE_FACTOR), int(150*SCALE_FACTOR))
         self.move(self.x, self.y)
 
-class MainWindow(QWidget):
+class ComponentWidget(QWidget):
     def __init__(self,size=300):
         super().__init__()
         update_globals(size)
