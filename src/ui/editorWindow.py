@@ -141,13 +141,19 @@ class ButtonEditorWindow(QDialog):
         # 图标风格 三个单选按钮
         self.iconStyleLayout = QHBoxLayout()
         self.iconStyleLabel = QLabel(sl(u"动画:", self.language))
-        self.iconStyleAuto = self.createRadioButton(sl(u"循环播放", self.language), 'auto')
-        self.iconStyleHover = self.createRadioButton(sl(u"离开停止", self.language), 'hover')
-        self.iconStylePause = self.createRadioButton(sl(u"离开暂停", self.language), 'pause')
-        self.iconStyleLayout.addWidget(self.iconStyleLabel)
-        self.iconStyleLayout.addWidget(self.iconStyleAuto)
-        self.iconStyleLayout.addWidget(self.iconStyleHover)
-        self.iconStyleLayout.addWidget(self.iconStylePause)
+        def createRadioButton( text, style):
+            radioButton = QRadioButton(text)
+            radioButton.clicked.connect(lambda: self.iconStyleChanged(style))
+            if self.gifButton.style == style:
+                radioButton.setChecked(True)
+            if not self.gifButton.iconPath.lower().endswith('.gif'):
+                radioButton.setEnabled(False)
+            self.iconStyleLayout.addWidget(radioButton)
+        createRadioButton(sl(u"循环播放", self.language), 'auto')
+        createRadioButton(sl(u"播放一次", self.language), 'once')
+        createRadioButton(sl(u"点击开始", self.language), 'clickAction')
+        createRadioButton(sl(u"离开停止", self.language), 'leaveStop')
+        createRadioButton(sl(u"离开暂停", self.language), 'leavePause')
         self.iconParamLayout.addLayout(self.iconStyleLayout)
         # 图标注释 标签 输入框
         self.iconAnnotationLayout = QHBoxLayout()
@@ -370,15 +376,6 @@ class ButtonEditorWindow(QDialog):
         button.enterEvent = lambda event: self.showMenuIconBorder(button, event)
         button.leaveEvent = lambda event: self.hideMenuIconBorder(button, event)
         return button
-
-    def createRadioButton(self, text, style):
-        radioButton = QRadioButton(text)
-        radioButton.clicked.connect(lambda: self.iconStyleChanged(style))
-        if self.gifButton.style == style:
-            radioButton.setChecked(True)
-        if not self.gifButton.iconPath.lower().endswith('.gif'):
-            radioButton.setEnabled(False)
-        return radioButton
 
     def editMenuCommandType(self):
         row = self.menuListWidget.currentRow()
@@ -846,46 +843,54 @@ class ButtonEditorWindow(QDialog):
             self.iconPathLineEdit.setText(self.iconPath.replace(self.iconPathDrt, ''))
             # 更新图标
             # 如果是 GIF 图片
+            style = 'auto'
             if self.iconPath.lower().endswith('.gif'):
-                self.iconStyleAuto.setChecked(True)
-                self.iconStyleAuto.setEnabled(True)
-                self.iconStyleHover.setEnabled(True)
-                self.iconStylePause.setEnabled(True)
+                for i in range(self.iconStyleLayout.count()):
+                    widget = self.iconStyleLayout.itemAt(i).widget()
+                    widget.setEnabled(True)
+                    if widget.isChecked():
+                        style = widget.text()
+                        if style == u'循环播放': style = 'auto'
+                        elif style == u'播放一次': style = 'once'
+                        elif style == u'点击开始': style = 'clickAction'
+                        elif style == u'离开停止': style = 'leaveStop'
+                        elif style == u'离开暂停': style = 'leavePause'
             else:
-                self.iconStyleAuto.setEnabled(False)
-                self.iconStyleHover.setEnabled(False)
-                self.iconStylePause.setEnabled(False)
+               for i in range(self.iconStyleLayout.count()):
+                    widget = self.iconStyleLayout.itemAt(i).widget()
+                    widget.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
             self.gifButton.setIconImage(self.iconPath)
+            self.gifButton.setGIFStyle(style)
         #return self.iconPath
 
     def iconPathChanged(self):
         self.iconPath = self.iconPathLineEdit.text()
         if self.iconPath:
+            style = 'auto'
             if self.iconPath.lower().endswith('.gif'):
-                self.iconStyleAuto.setChecked(True)
-                self.iconStyleAuto.setEnabled(True)
-                self.iconStyleHover.setEnabled(True)
-                self.iconStylePause.setEnabled(True)
+                for i in range(self.iconStyleLayout.count()):
+                    widget = self.iconStyleLayout.itemAt(i).widget()
+                    widget.setEnabled(True)
+                    if widget.isChecked():
+                        style = widget.text()
+                        if style == u'循环播放': style = 'auto'
+                        elif style == u'播放一次': style = 'once'
+                        elif style == u'点击开始': style = 'clickAction'
+                        elif style == u'离开停止': style = 'leaveStop'
+                        elif style == u'离开暂停': style = 'leavePause'
             else:
-                self.iconStyleAuto.setEnabled(False)
-                self.iconStyleHover.setEnabled(False)
-                self.iconStylePause.setEnabled(False)
+               for i in range(self.iconStyleLayout.count()):
+                    widget = self.iconStyleLayout.itemAt(i).widget()
+                    widget.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
             self.gifButton.setIconImage(self.iconPath)
+            self.gifButton.setGIFStyle(style)
 
     def iconStyleChanged(self, key):
         # 应用按钮的图标风格
         self.gifButton.style = key
-        # 如果是 GIF 图片
-        if self.gifButton.iconPath.lower().endswith('.gif'):
-            if key == "auto":
-                self.gifButton.movie.start()
-            elif key == "hover":
-                self.gifButton.movie.stop()
-                self.gifButton.movie.jumpToFrame(0)
-            elif key == "pause":
-                self.gifButton.movie.setPaused(True)
+        self.gifButton.setGIFStyle(key)
 
     def iconAnnotationChanged(self):
         # 应用按钮的图标注释
@@ -904,6 +909,8 @@ class ButtonEditorWindow(QDialog):
         # 设置图标图片
         self.editButton.iconPath = self.gifButton.iconPath
         self.editButton.setIconImage(self.editButton.iconPath)
+        self.editButton.style = self.gifButton.style
+        self.editButton.setGIFStyle(self.editButton.style)
 
         # # 设置图标风格
         # self.editButton.style = self.gifButton.style

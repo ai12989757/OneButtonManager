@@ -66,7 +66,6 @@ class GIFButtonWidget(QWidget):
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
         self.hiIconPath = None                          # 高亮图标路径
-        self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
@@ -182,7 +181,42 @@ class GIFButtonWidget(QWidget):
         self.iconLabel.setGeometry(0, 0, self.pixmap.width(), self.pixmap.height())
         self.iconLabel.show()
 
+    def setGIFStyle(self, style='auto'):
+        if not self.iconPath.lower().endswith('.gif'):
+            return
+        try:
+            self.movie.frameChanged.disconnect(None, None)
+        except:
+            pass
+        if style == 'auto' or style == 'loop': # 默认循环播放
+            if self.movie.state() != QMovie.Running: self.movie.start()
+        elif style == 'once': # 播放一次
+            if not self.underMouse():
+                self.movie.jumpToFrame(0)
+                self.movie.stop()
+            else:
+                if self.movie.state() != QMovie.Running: self.movie.start()
+                def gifFrameChanged(self):
+                    # 如果当前帧数等于总帧数-1，说明已经播放到最后一帧
+                    if self.movie.currentFrameNumber() == self.movie.frameCount()-1:
+                        self.movie.stop()
+                        self.movie.frameChanged.disconnect(None, None)
+                    return
+                self.movie.frameChanged.connect(lambda: gifFrameChanged(self))
+        elif style == 'leaveStop': # 鼠标离开停止播放  回到第一帧
+            if not self.underMouse():
+                self.movie.jumpToFrame(0)
+                self.movie.stop()
+            else:
+                if self.movie.state() != QMovie.Running: self.movie.start()
+        elif style == 'leavePause': # 鼠标离开暂停播放
+            if self.underMouse():
+                self.movie.setPaused(False)
+            else:
+                self.movie.setPaused(True)
+
     def enterEvent(self, event):
+        self.setGIFStyle(self.style)
         if self.iconPath.lower().endswith('.gif'):
             pass
         else:
@@ -210,6 +244,7 @@ class GIFButtonWidget(QWidget):
         #QObject.event(self, event)
 
     def leaveEvent(self, event):
+        self.setGIFStyle(self.style)
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         if self.iconPath.lower().endswith('.gif'):
             pass
@@ -307,6 +342,11 @@ class GIFButtonWidget(QWidget):
         self.startPos = event.pos()
         self.raise_() # 置顶
         if event.button() == Qt.LeftButton:
+            if self.style == 'clickAction': # 点击播放/暂停
+                if self.movie.state() == QMovie.Running:
+                    self.movie.setPaused(True)
+                elif self.movie.state() == QMovie.Paused or self.movie.state() == QMovie.NotRunning:
+                    self.movie.setPaused(False)
             self.mouseState = 'leftPress'
             self.executeDragCommand('leftPress')
             self.dragging = True

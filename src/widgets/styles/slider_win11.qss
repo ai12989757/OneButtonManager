@@ -1,0 +1,42 @@
+/* 水平滑槽样式 */
+QSlider::groove:horizontal {
+    border: 0px solid #ffffff; /* 边框颜色 */
+    height: 4px; /* 高度 */
+    background: #bdbdbd; /* 背景颜色 */
+    margin: 0px 0; /* 外边距 */
+    border-radius: 2px; /* 圆角 */
+}
+/* 滑槽滑过的部分样式 */
+QSlider::sub-page:horizontal {
+    background: #1a76c6; /* 滑过部分的背景颜色 */
+    border-radius: 2px; /* 圆角 */
+}
+/* 水平滑块手柄样式 */
+QSlider::handle:horizontal {
+    background: #1a76c6; /* 背景颜色 */
+    border: 5px solid #ffffff; /* 边框颜色 */
+    width: 14px; /* 宽度 */
+    height: 14px; /* 高度 */
+    margin: -10px 0; /* 外边距 */
+    border-radius: 12px; /* 圆角 */
+    transition: all 1s ease; /* 动画过渡效果 */
+}
+/* 进入滑块手柄样式 */
+QSlider::handle:horizontal:hover {
+    background: #1a76c6; /* 背景颜色 */
+    border: 3px solid #ffffff; /* 边框颜色 */
+    width: 18px; /* 宽度 */
+    height: 18px; /* 高度 */
+    margin: -10px 0; /* 外边距 */
+    border-radius: 12px; /* 圆角 */
+    transition: all 1s ease; /* 动画过渡效果 */
+}
+QSlider::handle:horizontal:pressed {
+    background: #1a76c6; /* 背景颜色 */
+    border: 6px solid #ffffff; /* 边框颜色 */
+    width: 12px; /* 宽度 */
+    height: 12px; /* 高度 */
+    margin: -10px 0; /* 外边距 */
+    border-radius: 12px; /* 圆角 */
+    transition: all 1s ease; /* 动画过渡效果 */
+}

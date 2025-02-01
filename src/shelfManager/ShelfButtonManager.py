@@ -1037,7 +1037,6 @@ class ShelfButtonManager(QWidget):
         self.clockComponentPrt = omui.MQtUtil.findControl(self.clockComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.clockComponentPrt), int(self.shelfParentPtr))
         self.clockComponent.setFixedSize(QSize(150, 42))
-        #self.clockComponent.setGeometry(0, 0, 150, 42)
     
     # 计时器
     def addTimingComponent(self):
@@ -1047,7 +1046,6 @@ class ShelfButtonManager(QWidget):
         self.timingComponentPrt = omui.MQtUtil.findControl(self.timingComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.timingComponentPrt), int(self.shelfParentPtr))
         self.timingComponent.setFixedSize(QSize(235, 42))
-        #self.timingComponent.setGeometry(0, 0, 150, 42)
 
     # 倒计时
     def addCountdownComponent(self):
@@ -1099,6 +1097,18 @@ class ShelfButtonManager(QWidget):
         omui.MQtUtil.addWidgetToMayaLayout(int(self.bilibiliFansComponentPrt), int(self.shelfParentPtr))
         self.bilibiliFansComponent.setFixedSize(QSize(self.bilibiliFansComponent.WIDTH, self.bilibiliFansComponent.SIZE))
 
+    def addShelfWidget(self, widget):
+        if widget is None:
+            return
+        if self.mayaVersion < 2022:
+            self.shelfLayoutInfo.addWidget(widget)
+        elif self.mayaVersion >= 2022:
+            widget.setObjectName('OneShelf_'+widget.__class__.__name__+'_'+str(widget.winId()))
+            widgetPrt = omui.MQtUtil.findControl(widget.objectName())
+            omui.MQtUtil.addWidgetToMayaLayout(int(widgetPrt), int(self.shelfParentPtr))
+            if hasattr(widget, 'SCREEN_WIDTH') and hasattr(widget, 'SCREEN_HEIGHT'):
+                widget.setFixedSize(QSize(widget.SCREEN_WIDTH, widget.SCREEN_HEIGHT))
+        
 def main():
     sys.dont_write_bytecode = True
     
