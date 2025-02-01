@@ -861,7 +861,6 @@ class ButtonEditorWindow(QDialog):
                     widget.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
             self.gifButton.setIconImage(self.iconPath)
-            self.gifButton.setGIFStyle(style)
         #return self.iconPath
 
     def iconPathChanged(self):
@@ -885,7 +884,6 @@ class ButtonEditorWindow(QDialog):
                     widget.setEnabled(False)
             self.gifButton.iconPath = self.iconPath
             self.gifButton.setIconImage(self.iconPath)
-            self.gifButton.setGIFStyle(style)
 
     def iconStyleChanged(self, key):
         # 应用按钮的图标风格
@@ -908,9 +906,8 @@ class ButtonEditorWindow(QDialog):
         self.editButton.setStatusTip(self.editButton.annotation)
         # 设置图标图片
         self.editButton.iconPath = self.gifButton.iconPath
-        self.editButton.setIconImage(self.editButton.iconPath)
         self.editButton.style = self.gifButton.style
-        self.editButton.setGIFStyle(self.editButton.style)
+        self.editButton.setIconImage(self.editButton.iconPath)
 
         # # 设置图标风格
         # self.editButton.style = self.gifButton.style

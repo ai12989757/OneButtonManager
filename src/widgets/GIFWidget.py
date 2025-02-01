@@ -173,6 +173,7 @@ class GIFButtonWidget(QWidget):
             self.movie.setScaledSize(self.iconSizeValue)
             self.iconLabel.setMovie(self.movie)
             self.movie.start()
+            self.setGIFStyle(self.style)
         else:
             if self.movie:
                 self.movie.stop()
@@ -191,17 +192,20 @@ class GIFButtonWidget(QWidget):
         if style == 'auto' or style == 'loop': # 默认循环播放
             if self.movie.state() != QMovie.Running: self.movie.start()
         elif style == 'once': # 播放一次
+            def gifFrameChanged(self):
+                # 如果当前帧数等于总帧数-1，说明已经播放到最后一帧
+                if self.movie.currentFrameNumber() == self.movie.frameCount()-1:
+                    self.movie.stop()
+                    try:
+                        self.movie.frameChanged.disconnect(None, None)
+                    except:
+                        pass
+                return
             if not self.underMouse():
-                self.movie.jumpToFrame(0)
-                self.movie.stop()
+                if self.movie.currentFrameNumber() != self.movie.frameCount()-1:
+                    self.movie.frameChanged.connect(lambda: gifFrameChanged(self))
             else:
                 if self.movie.state() != QMovie.Running: self.movie.start()
-                def gifFrameChanged(self):
-                    # 如果当前帧数等于总帧数-1，说明已经播放到最后一帧
-                    if self.movie.currentFrameNumber() == self.movie.frameCount()-1:
-                        self.movie.stop()
-                        self.movie.frameChanged.disconnect(None, None)
-                    return
                 self.movie.frameChanged.connect(lambda: gifFrameChanged(self))
         elif style == 'leaveStop': # 鼠标离开停止播放  回到第一帧
             if not self.underMouse():
