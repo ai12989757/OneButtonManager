@@ -14,7 +14,7 @@ from ..utils import dragWidgetOrder
 
 ICONPATH = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace('src/widgets', 'icons/')
 class Separator(QPushButton):
-    def __init__(self, parent=None, language=0, dragMove=True, size=42, alignment='H'):
+    def __init__(self, parent=None, language=0, dragMove=True, size=42, alignment='H', color=(158, 158, 158, 255)):
         super(Separator, self).__init__(parent)
         self.language = language
         self.dragMove = dragMove
@@ -23,9 +23,9 @@ class Separator(QPushButton):
         elif alignment == 'H' or alignment == 'h': self.separatorSize = [2, size]
         self.setIconSize(QSize(size,size))
         self.pixmap = QPixmap(self.separatorSize[0], self.separatorSize[1])
-        self.pixmap.fill(QColor(158, 158, 158, 255)) # rgba(158, 158, 158, 255)
+        self.pixmap.fill(QColor(color[0],color[1],color[2],color[3])) # rgba(158, 158, 158, 255)
         self.setIcon(self.pixmap)
-        self.setStyleSheet("""QPushButton {background-color: rgba(0, 0, 0, 0);border: none;}""")
+        self.setStyleSheet("border: none; background-color: none;")
         # 添加一个右击菜单
         self.menu = QMenu(self)
         self.deleteAction = QAction(QIcon(os.path.join(ICONPATH, "red/Delete.png")), sl(u"删除",self.language), self)
@@ -35,6 +35,7 @@ class Separator(QPushButton):
         self.dragging = False
         self.startPos = QPoint()
         self.valueX = 0.00  # 初始化数值
+        self.valueY = 0.00  # 初始化数值
         self.currentPos = QPoint()
         self.delta = QPoint()
         
@@ -45,6 +46,7 @@ class Separator(QPushButton):
 
     def mousePressEvent(self, event):
         self.valueX = 0.00  # 重置数值
+        self.valueY = 0.00
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.dragging = True
@@ -55,6 +57,7 @@ class Separator(QPushButton):
             self.currentPos = event.pos()
             self.delta = self.currentPos - self.startPos
             self.valueX += self.delta.x()
+            self.valueY += self.delta.y()
             self.startPos = self.currentPos
             if event.buttons() == Qt.MiddleButton:
                 if self.dragMove:

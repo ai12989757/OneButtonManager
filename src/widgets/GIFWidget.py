@@ -69,6 +69,7 @@ class GIFButtonWidget(QWidget):
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.style = kwargs.get('style', 'auto')        # 按钮样式
         self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
+        self.tearOff = kwargs.get('tearOff', True)     # 是否允许拖动按钮
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 按钮是否处于拖拽状态
@@ -104,9 +105,9 @@ class GIFButtonWidget(QWidget):
 
     def initUI(self):
         self.setStyleSheet("border: none; background-color: none;")
-        self.golablLayout  = QVBoxLayout()
-        self.golablLayout .setContentsMargins(0, 0, 0, 0)
-        self.golablLayout .setSpacing(0)
+        self.golablLayout = QVBoxLayout()
+        self.golablLayout.setContentsMargins(0, 0, 0, 0)
+        self.golablLayout.setSpacing(0)
         self.setLayout(self.golablLayout )
         self.movie = None               # GIF动画
         self.iconSub = 'default'        # 图标角标
@@ -116,7 +117,7 @@ class GIFButtonWidget(QWidget):
         self.setIconImage(self.iconPath)             # 设置按钮
         self.keySubLabel = None         # 用于显示角标
         self.menu = QMenu(self)         # 菜单
-        self.menu.setTearOffEnabled(True)
+        self.menu.setTearOffEnabled(self.tearOff) # 设置菜单是否可以撕下
     
     # 有菜单项时，按钮右下角显示角标
     def menuSubLabel(self):

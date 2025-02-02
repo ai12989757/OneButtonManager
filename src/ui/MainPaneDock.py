@@ -7,8 +7,10 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+from functools import partial
 
 from ..widgets.GIFWidget import GIFButtonWidget
+from ..widgets.Separator import Separator
 
 from maya import mel
 
@@ -113,18 +115,24 @@ class mainUI(QWidget):
         self.addLayoutAction = QAction("添加布局", self)
         self.addLayoutMenu = self.menu.addMenu("添加布局")
         self.addLayoutAction.setMenu(self.addLayoutMenu)
-        actionIcon = QPixmap(20, 20)
-        actionIcon.fill(QColor(255, 127, 80))
-        self.addLayoutMenu.addAction(actionIcon, 'Coral', lambda: self.addColorLayout("Coral"))
-        actionIcon.fill(QColor(147, 112, 219))
-        self.addLayoutMenu.addAction(actionIcon, 'MediumPurple', lambda: self.addColorLayout("MediumPurple"))
-        actionIcon.fill(QColor(255, 150, 229))
-        self.addLayoutMenu.addAction(actionIcon, 'Pink', lambda: self.addColorLayout("Pink"))
+        self.colorDict = {
+            "Coral": (255, 127, 80),
+            "MediumPurple": (147, 112, 219),
+            "Pink": (255, 150, 229)
+        }
+        for color in self.colorDict.keys():
+            actionIcon = QPixmap(20, 20)
+            actionIcon.fill(QColor(self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2]))
+            self.addLayoutMenu.addAction(actionIcon, color, partial(self.addColorLayout,color=color))
+
         # 关闭
         self.menu.addAction('关闭', self.close)
+    # 右击显示菜单
+    def contextMenuEvent(self, event):
+        self.menu.exec_(event.globalPos())
 
-    def addNewButton(self, icon, size=32, dragMove=False):
-        button = GIFButtonWidget(icon=icon, size=size, dragMove=dragMove)
+    def addNewButton(self):
+        button = GIFButtonWidget(icon=ICONPATH + 'siri.gif', size=38, dragMove=True, tearOff=False)
         button.addDefaultMenuItems()
         return button
 
@@ -132,18 +140,20 @@ class mainUI(QWidget):
         '''
         color: str, 颜色 Coral
         '''
-        colorDict = {
-            "Coral": (255, 127, 80),
-            "MediumPurple": (147, 112, 219),
-            "Pink": (255, 150, 229)
-        }
-        if color not in colorDict:
+        # 查询是否存在
+        for i in range(self.layout2.count()):
+            item = self.layout2.itemAt(i)
+            if item.widget() is not None:
+                if item.widget().objectName() == color+"Widget":
+                    item.widget().show()
+                    return
+        if color not in self.colorDict:
             return
-        color = colorDict[color]
-        rgbColor = "rgb(%s, %s, %s)" % (color[0], color[1], color[2])
-        opacityColor = "rgba(%s, %s, %s, 0.5)" % (color[0], color[1], color[2])
+        rgbColor = "rgb(%s, %s, %s)" % (self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
+        opacityColor = "rgba(%s, %s, %s, 0.5)" % (self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
         colorWidget = QWidget()
-        colorWidget.setMinimumSize(20, 42)
+        colorWidget.setObjectName(color+"Widget")
+        
         colorWidget.setStyleSheet("""
             QWidget { 
                 border: 2px solid %s; 
@@ -151,58 +161,77 @@ class mainUI(QWidget):
                 background-color: %s; 
             }
         """ % (rgbColor, opacityColor))
-        # 设置透明度
-        #colorWidget.setWindowOpacity(0.5)
+
         # 移动角标
         tranSub = QLabel()
         tranSub.setStyleSheet("background-color: rgba(0,0,0,0); border: none;")
-        tranSubImagr = QImage(ICONPATH + 'sub/tran.png')
+        if self.alignment == "top" or self.alignment == "bottom":
+            tranSubImagr = QImage(ICONPATH + 'sub/tran.png')
+            colorWidget.setMinimumSize(20, 42)
+        elif self.alignment == "left" or self.alignment == "right":
+            tranSubImagr = QImage(ICONPATH + 'sub/tranV.png')
+            colorWidget.setMinimumSize(42, 20)
         # 更改图片颜色
-        newColor = QColor(color[0], color[1], color[2])
+        newColor = QColor(self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
         for y in range(tranSubImagr.height()):
             for x in range(tranSubImagr.width()):
-                color = tranSubImagr.pixelColor(x, y)
-                alpha = color.alpha()
+                imageColor = tranSubImagr.pixelColor(x, y)
+                alpha = imageColor.alpha()
                 if alpha > 0:
                     tranSubImagr.setPixelColor(x, y, newColor)
         tranSubImagr = QPixmap.fromImage(tranSubImagr)
         tranSub.setPixmap(tranSubImagr)
-
+        # 存放按钮的组件
+        colorGLayoutWidget = QWidget()
+        colorGLayoutWidget.setStyleSheet("background-color: rgba(0,0,0,0); border: none;")
         if self.alignment == "top" or self.alignment == "bottom":
             colorLayout = QBoxLayout(QBoxLayout.RightToLeft)
             colorLayout.setAlignment(Qt.AlignRight|Qt.AlignCenter)
             colorWidget.setLayout(colorLayout)
             self.layout2.addWidget(colorWidget)
-            #tranSub.setFixedSize(12, 38)
+            # 功能角标
             colorLayout.addWidget(tranSub)
+            # 组件布局
+            colorGLayout = QHBoxLayout()
+            colorGLayoutWidget.setLayout(colorGLayout)
+            colorGLayout.setAlignment(Qt.AlignLeft)
+            colorLayout.addWidget(colorGLayoutWidget)
         elif self.alignment == "left" or self.alignment == "right":
-            colorLayout = QBoxLayout(QBoxLayout.TopToBottom)
-            colorLayout.setAlignment(Qt.AlignTop|Qt.AlignCenter)
+            colorLayout = QBoxLayout(QBoxLayout.BottomToTop)
+            colorLayout.setAlignment(Qt.AlignBottom)
             colorWidget.setLayout(colorLayout)
             self.layout2.addWidget(colorWidget)
-            # 移动角标
-            #tranSub.setFixedSize(38, 12)
+            # 功能角标
             colorLayout.addWidget(tranSub)
-        colorLayout.setSpacing(5)
+            # 组件布局
+            colorGLayout = QVBoxLayout()
+            colorGLayoutWidget.setLayout(colorGLayout)
+            colorGLayout.setAlignment(Qt.AlignTop)
+            colorLayout.addWidget(colorGLayoutWidget)
+
+        colorGLayout.setSpacing(2)
+        colorGLayout.setContentsMargins(0, 0, 0, 0)
+        colorLayout.setSpacing(2)
         colorLayout.setContentsMargins(2, 2, 2, 2)
         
         colorWidget.menu = QMenu()
-        colorWidget.menu.addAction('添加按钮', lambda: colorLayout.addWidget(self.addNewButton(ICONPATH + 'siri.gif', size=38, dragMove=False)))
-        colorWidget.menu.addAction('删除', lambda: colorWidget.deleteLater())
+        colorWidget.menu.addAction('添加按钮', lambda: colorGLayout.addWidget(self.addNewButton()))
+        def addSeparator(size=30, alignment='H'):
+            separator = Separator(size=size, alignment=alignment, color=(self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2], 255))
+            if alignment == 'H':
+                separator.setFixedWidth(15)
+            elif alignment == 'V':
+                separator.setFixedHeight(15)
+            colorGLayout.addWidget(separator)
+        if self.alignment == "top" or self.alignment == "bottom":
+            colorWidget.menu.addAction('添加分割线', lambda: addSeparator(size=30, alignment='H'))
+        elif self.alignment == "left" or self.alignment == "right":
+            colorWidget.menu.addAction('添加分割线', lambda: addSeparator(size=30, alignment='V'))
+        colorWidget.menu.addAction('删除', lambda: colorWidget.hide())
         colorWidget.setContextMenuPolicy(Qt.CustomContextMenu)
         colorWidget.customContextMenuRequested.connect(lambda: colorWidget.menu.exec_(QCursor.pos()))
         self.CoralLayout = colorLayout
-        if color == "rgb(255, 127, 80)":
-            self.CoralLayout = colorLayout
-        elif color == "rgb(147, 112, 219)":
-            self.MediumPurpleLayout = colorLayout
-        elif color == "rgb(255, 150, 229)":
-            self.PinkLayout = colorLayout
-        return colorLayout
-
-    # 右击显示菜单
-    def contextMenuEvent(self, event):
-        self.menu.exec_(event.globalPos())
+        #return colorLayout
 
     def update_window_position(self, position):
         global_pos = self.MainPane.mapToGlobal(self.MainPane.rect().topLeft())
