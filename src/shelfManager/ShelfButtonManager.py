@@ -1059,10 +1059,13 @@ class ShelfButtonManager(QWidget):
 
     # 功德
     def addMeritsVirtuesComponent(self):
-        mel.eval('int $gongDe = 0;')
+        mel.eval('int $gongDe = 1;')
         self.addButton(
             icon=ICONPATH + 'components/woodenFish.png', 
-            command={'leftPress': ['mel', '$gongDe += 1; print("\\n// 结果: 功德 +"+$gongDe);']}
+            command={
+                'leftPress': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFishClicked.png")\nmel.eval(\'print("\\\\n// 结果: 功德+"+$gongDe)\')\nmel.eval(\'$gongDe += 1;\')'],
+                'leftRelease': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFish.png")']
+                }
             )
         self.gifButton.addDefaultMenuItems()
 

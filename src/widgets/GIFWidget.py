@@ -103,6 +103,7 @@ class GIFButtonWidget(QWidget):
         self.initUI() # 初始化UI
 
     def initUI(self):
+        self.setStyleSheet("border: none; background-color: none;")
         self.golablLayout  = QVBoxLayout()
         self.golablLayout .setContentsMargins(0, 0, 0, 0)
         self.golablLayout .setSpacing(0)
@@ -168,6 +169,10 @@ class GIFButtonWidget(QWidget):
         self.setFixedSize(self.iconSizeValue)
         
         if iconPath.lower().endswith('.gif'):
+            if self.movie:
+                # 获取 QMovie 使用的图片
+                self.movie.stop()
+
             self.movie = QMovie(iconPath)
             self.movie.setCacheMode(QMovie.CacheAll)
             self.movie.setScaledSize(self.iconSizeValue)
@@ -221,6 +226,12 @@ class GIFButtonWidget(QWidget):
 
     def enterEvent(self, event):
         self.setGIFStyle(self.style)
+        imageName = self.iconPath.split('/')[-1].split('.')[0]
+        self.hiIconPath = self.iconPath.replace(imageName, imageName+'_hi') if self.iconPath else None
+        # 如果 self.hiIconPath 存在
+        if self.hiIconPath and not os.path.exists(self.hiIconPath): self.hiIconPath = None
+        if self.hiIconPath:
+            self.setIconImage(self.hiIconPath)
         if self.iconPath.lower().endswith('.gif'):
             pass
         else:
@@ -248,6 +259,8 @@ class GIFButtonWidget(QWidget):
         #QObject.event(self, event)
 
     def leaveEvent(self, event):
+        if self.hiIconPath:
+            self.setIconImage(self.iconPath)
         self.setGIFStyle(self.style)
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         if self.iconPath.lower().endswith('.gif'):
@@ -329,12 +342,6 @@ class GIFButtonWidget(QWidget):
         #return super(GIFButton, self).eventFilter(obj, event)
     
     def mousePressEvent(self, event):
-        imageName = self.iconPath.split('/')[-1].split('.')[0]
-        self.hiIconPath = self.iconPath.replace(imageName, imageName+'_hi') if self.iconPath else None
-        # 如果 self.hiIconPath 存在
-        if self.hiIconPath and not os.path.exists(self.hiIconPath): self.hiIconPath = None
-        if self.hiIconPath:
-            self.setIconImage(self.hiIconPath)
         self.lastMoveValueX = 0
         self.lastMoveValueY = 0
         self.moveThreshold = 10
@@ -359,8 +366,6 @@ class GIFButtonWidget(QWidget):
                 dragWidgetOrder.DragWidgetOrder.startDrag(self, event)
            
     def mouseReleaseEvent(self, event):
-        if self.hiIconPath:
-            self.setIconImage(self.iconPath)
         self.iconDragEffect('back')
         self.dragging = False
         self.eventPos = event.pos()
@@ -537,7 +542,7 @@ class GIFButtonWidget(QWidget):
             start_pos = self.pos()
             end_pos = QPoint(self.x() - self.lastMoveValueX, self.y() - self.lastMoveValueY)
             self.animation = QPropertyAnimation(self, b"pos")
-            self.animation.setDuration(500)
+            self.animation.setDuration(200)
             self.animation.setStartValue(start_pos)
             self.animation.setEndValue(end_pos)
             self.animation.setEasingCurve(QEasingCurve.OutBounce)

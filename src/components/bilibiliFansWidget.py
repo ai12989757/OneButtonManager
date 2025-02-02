@@ -88,7 +88,7 @@ class ComponentWidget(QWidget):
         self.inputLayout.addWidget(self.logo)
 
         self.label = QLabel(self.fans_count, self)
-        self.label.setStyleSheet("font-size: {}px; font-weight: bold; color: #BDBDBD; font-family: {};".format(self.SIZE, FONT_FAMILY))
+        self.label.setStyleSheet("font-size: {}px; color: #BDBDBD; font-family: {};".format(self.SIZE, FONT_FAMILY))
         self.inputLayout.addWidget(self.label)
         self.globalLayout.addLayout(self.inputLayout)
 
@@ -165,16 +165,6 @@ class ComponentWidget(QWidget):
                 json.dump(data, f)
         return uid
 
-# 创建一个模糊组件，用来叠在输入框下面，从而模糊背景
-class BilibiliFanWidgetBlur(QWidget):
-    def __init__(self, parent=None):
-        super(BilibiliFanWidgetBlur, self).__init__(parent)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setAttribute(Qt.WA_NoSystemBackground)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setFixedSize(QApplication.desktop().size())
-        self.setStyleSheet("background-color: rgba(255, 255, 255, 0.5);")
-        self.show()
 
 if __name__ == "__main__":
     #app = QApplication(sys.argv)

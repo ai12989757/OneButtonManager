@@ -8,11 +8,11 @@ except ImportError:
     from PySide2.QtWidgets import *
 from functools import partial
 
-
 class DragWidgetOrder:
     buttonList = []
     buttonIndex = 0
     spacing = 0
+    margin = 0
     loopIndex = 0
 
     @staticmethod
@@ -27,6 +27,8 @@ class DragWidgetOrder:
                 widgetLayout = parentLayout
                 if widgetLayout != None:
                     DragWidgetOrder.spacing = widgetLayout.spacing()
+                    DragWidgetOrder.margin = widgetLayout.contentsMargins().left()
+                    # 获取布局是否是水平还是垂直
                     return widgetLayout
         if widgetLayout == None:
             checkLayout = parentLayout.itemAt(i).layout()
@@ -35,6 +37,7 @@ class DragWidgetOrder:
                     widgetLayout = checkLayout
                     if widgetLayout != None:
                         DragWidgetOrder.spacing = widgetLayout.spacing()
+                        DragWidgetOrder.margin = widgetLayout.contentsMargins().left()
                         return widgetLayout
         
 
@@ -45,14 +48,7 @@ class DragWidgetOrder:
         widget.buttonParent = widget.parent()
         # 列出所有的按钮
         DragWidgetOrder.buttonList = []
-        if widget.buttonParent.__class__.__name__ == 'ButtonEditorWindow':
-            DragWidgetOrder.buttonList = [widget]
-            DragWidgetOrder.buttonIndex = 0
-            return
         try:
-            if DragWidgetOrder.loopIndex > 10:
-                return
-            DragWidgetOrder.loopIndex += 1
             for i in range(widgetParentLayout.count()):
                 DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
             # 获取按钮的索引
@@ -61,7 +57,11 @@ class DragWidgetOrder:
             DragWidgetOrder.startDrag(widget, event)
 
     def performDrag(widget, event):
-        
+        if DragWidgetOrder.buttonList == []:
+            DragWidgetOrder.startDrag(widget, event)
+            if DragWidgetOrder.buttonList == []:
+                print('buttonList is empty')
+            return
         # 将当前拖拽的按钮显示在最前面
         widget.raise_()
 
@@ -70,7 +70,6 @@ class DragWidgetOrder:
 
         # 求出当前按钮移动的距离
         movePos = widget.pos()
-
         # 判断按钮移动方向
         if len(DragWidgetOrder.buttonList) != 1:  # 如果不止一个按钮
             if widget.valueX > 0:  # 如果按钮向右移动
@@ -96,6 +95,7 @@ class DragWidgetOrder:
                         DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex], DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex - 1] = DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex - 1], DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex]
                         # 交换按钮的索引
                         DragWidgetOrder.buttonIndex -= 1
+
 
     def endDrag(widget, event):
         animationDuration = 100
@@ -149,7 +149,7 @@ class DragWidgetOrder:
                     # 将 button 移动到 rightButton 的左边
                     target_x = rightButtonPos.x() - buttonWidth - DragWidgetOrder.spacing
         else:
-            target_x = 0
+            target_x = DragWidgetOrder.margin
             animationDuration = 1000
             animationEasingCurve = QEasingCurve.OutBounce
 
@@ -178,3 +178,4 @@ class DragWidgetOrder:
                 i.setParent(None)
             for i in DragWidgetOrder.buttonList:
                 widgetParentLayout.addWidget(i)
+            DragWidgetOrder.buttonList = buttonListNew
