@@ -9,56 +9,102 @@ except ImportError:
 from functools import partial
 
 class DragWidgetOrder:
+    widgetLayout = None
+    alignment = 'h'
     buttonList = []
     buttonIndex = 0
     spacing = 0
     margin = 0
-    loopIndex = 0
+
+    dragging = False
+    startPos = QPoint()
+    valueX = 0.00  # 初始化数值
+    valueY = 0.00  # 初始化数值
+    currentPos = QPoint()
+    delta = QPoint()
+    widgetStartPos = QPoint()
+    widgetCurrentPos = QPoint()
+    
+    @staticmethod
+    def __init__(widget):
+        def widgetMousePressEvent(event):
+            if event.button() == Qt.MiddleButton:
+                DragWidgetOrder.dragging = True
+                DragWidgetOrder.startDrag(widget, event)
+            #super(widget.__class__, widget).mousePressEvent(event)
+        def widgetMouseMoveEvent(event):
+            if DragWidgetOrder.dragging:
+                DragWidgetOrder.performDrag(widget, event)
+            #super(widget.__class__, widget).mouseMoveEvent(event)
+        def widgetMouseReleaseEvent(event):
+            #if event.button() == Qt.MiddleButton:
+            if DragWidgetOrder.dragging:
+                DragWidgetOrder.endDrag(widget, event)
+            DragWidgetOrder.dragging = False
+            #super(widget.__class__, widget).mouseReleaseEvent(event)
+        widget.mousePressEvent = widgetMousePressEvent
+        widget.mouseMoveEvent = widgetMouseMoveEvent
+        widget.mouseReleaseEvent = widgetMouseReleaseEvent
 
     @staticmethod
     def find_widget_layout(widget):
         parent = widget.parent()
         parentLayout = parent.layout()
+        if parentLayout == None:
+            return
         DragWidgetOrder.widgetLayout = parentLayout
-        DragWidgetOrder.spacing = DragWidgetOrder.widgetLayout.spacing()
-        DragWidgetOrder.margin = DragWidgetOrder.widgetLayout.contentsMargins().left()
-        # 获取布局是否是水平还是垂直
-        DragWidgetOrder.alignment = DragWidgetOrder.widgetLayout.alignment()
-        if DragWidgetOrder.alignment & Qt.AlignLeft or DragWidgetOrder.alignment & Qt.AlignRight or DragWidgetOrder.alignment & Qt.AlignHCenter:
-            DragWidgetOrder.alignment = 'h'
-        elif DragWidgetOrder.alignment & Qt.AlignTop or DragWidgetOrder.alignment & Qt.AlignBottom or DragWidgetOrder.alignment & Qt.AlignVCenter:
-            DragWidgetOrder.alignment = 'v'
-        else:
-            DragWidgetOrder.alignment = 'h'
         # for i in range(parentLayout.count()):
         #     if parentLayout.itemAt(i).widget() == widget:
         #         DragWidgetOrder.widgetLayout = parentLayout
         #         if DragWidgetOrder.widgetLayout != None:
         #             DragWidgetOrder.spacing = DragWidgetOrder.widgetLayout.spacing()
         #             DragWidgetOrder.margin = DragWidgetOrder.widgetLayout.contentsMargins().left()
-        #             # 获取布局是否是水平还是垂直
-        #             return
 
+        if DragWidgetOrder.widgetLayout != None:
+            DragWidgetOrder.spacing = DragWidgetOrder.widgetLayout.spacing()
+            DragWidgetOrder.margin = DragWidgetOrder.widgetLayout.contentsMargins().left()
+            DragWidgetOrder.widgetLayout = parentLayout
+            DragWidgetOrder.spacing = DragWidgetOrder.widgetLayout.spacing()
+            DragWidgetOrder.margin = DragWidgetOrder.widgetLayout.contentsMargins().left()
+            # 获取布局是否是水平还是垂直
+            DragWidgetOrder.alignment = DragWidgetOrder.widgetLayout.alignment()
+            if DragWidgetOrder.alignment & Qt.AlignLeft or DragWidgetOrder.alignment & Qt.AlignRight or DragWidgetOrder.alignment & Qt.AlignHCenter:
+                DragWidgetOrder.alignment = 'h'
+            elif DragWidgetOrder.alignment & Qt.AlignTop or DragWidgetOrder.alignment & Qt.AlignBottom or DragWidgetOrder.alignment & Qt.AlignVCenter:
+                DragWidgetOrder.alignment = 'v'
+            else:
+                DragWidgetOrder.alignment = 'h'
+                
     def startDrag(widget, event):
         DragWidgetOrder.find_widget_layout(widget)
         widgetParentLayout = DragWidgetOrder.widgetLayout
         if widgetParentLayout == None:
             print('widgetParentLayout is None')
             return
+        DragWidgetOrder.valueX = 0.00  # 初始化数值
+        DragWidgetOrder.valueY = 0.00  # 初始化数值
         # 获取光标移动的距离
-        widget.startPos = event.pos()
+        DragWidgetOrder.startPos = event.pos()
+        DragWidgetOrder.widgetStartPos = widget.pos()
         widget.buttonParent = widget.parent()
         # 列出所有的按钮
         DragWidgetOrder.buttonList = []
-        try:
-            for i in range(widgetParentLayout.count()):
-                DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
-            # 获取按钮的索引
+
+        for i in range(widgetParentLayout.count()):
+            DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
+        # 获取按钮的索引
+        if widget in DragWidgetOrder.buttonList:
             DragWidgetOrder.buttonIndex = DragWidgetOrder.buttonList.index(widget)
-        except:
-            DragWidgetOrder.startDrag(widget, event)
 
     def performDrag(widget, event):
+        if not DragWidgetOrder.buttonList:
+            return
+        DragWidgetOrder.currentPos = event.pos()
+        DragWidgetOrder.delta = DragWidgetOrder.currentPos - DragWidgetOrder.startPos
+        DragWidgetOrder.valueX += DragWidgetOrder.delta.x()
+        DragWidgetOrder.valueY += DragWidgetOrder.delta.y()
+        DragWidgetOrder.startPos = DragWidgetOrder.currentPos
+
         if DragWidgetOrder.buttonList == []:
             DragWidgetOrder.startDrag(widget, event)
             if DragWidgetOrder.buttonList == []:
@@ -69,17 +115,17 @@ class DragWidgetOrder:
 
         # 移动按钮
         if DragWidgetOrder.alignment == 'v':
-            widget.move(widget.pos() + QPoint(0, widget.valueY))
+            widget.move(widget.pos() + QPoint(0, DragWidgetOrder.valueY))
         elif DragWidgetOrder.alignment == 'h':
-            widget.move(widget.pos() + QPoint(widget.valueX, 0))
-
+            widget.move(widget.pos() + QPoint(DragWidgetOrder.valueX, 0))
+        DragWidgetOrder.widgetCurrentPos = widget.pos()
         # 求出当前按钮移动的距离
         movePos = widget.pos()
-
+    
         # 判断按钮移动方向
         if len(DragWidgetOrder.buttonList) != 1:  # 如果不止一个按钮
             if DragWidgetOrder.alignment == 'h':
-                if widget.valueX > 0:  # 如果按钮向右移动
+                if DragWidgetOrder.valueX > 0:  # 如果按钮向右移动
                     if DragWidgetOrder.buttonIndex != len(DragWidgetOrder.buttonList) - 1:
                         # 获取右边按钮的位置
                         rightButton = DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex + 1]
@@ -102,7 +148,7 @@ class DragWidgetOrder:
                             # 交换按钮的索引
                             DragWidgetOrder.buttonIndex -= 1
             elif DragWidgetOrder.alignment == 'v':
-                if widget.valueY > 0:  # 如果按钮向下移动
+                if DragWidgetOrder.valueY > 0:  # 如果按钮向下移动
                     if DragWidgetOrder.buttonIndex != len(DragWidgetOrder.buttonList) - 1:
                         # 获取下边按钮的位置
                         bottomButton = DragWidgetOrder.buttonList[DragWidgetOrder.buttonIndex + 1]
@@ -127,6 +173,8 @@ class DragWidgetOrder:
 
 
     def endDrag(widget, event):
+        if not DragWidgetOrder.buttonList:
+            return
         animationDuration = 100
         animationEasingCurve = QEasingCurve.Linear
         # 中键释放后，将按钮的位置依附到相邻的按钮边上
@@ -197,9 +245,15 @@ class DragWidgetOrder:
                     else:
                         target_pos = QPoint(widget.pos().x(), bottomButtonPos.y() - buttonHeight - DragWidgetOrder.spacing)
         else:
-            target_pos = QPoint(DragWidgetOrder.margin, widget.pos().y()) if DragWidgetOrder.alignment == 'h' else QPoint(widget.pos().x(), DragWidgetOrder.margin)
-            animationDuration = 1000
-            animationEasingCurve = QEasingCurve.OutBounce
+            target_pos = DragWidgetOrder.widgetStartPos # 如果只有一个按钮，那么按钮回到原来的位置
+            if DragWidgetOrder.alignment == 'h':
+                if abs(DragWidgetOrder.widgetCurrentPos.x()-DragWidgetOrder.widgetStartPos.x()) > widget.width()*2:
+                    animationDuration = 1000
+                    animationEasingCurve = QEasingCurve.OutBounce
+            elif DragWidgetOrder.alignment == 'v':
+                if abs(target_pos.y()) > widget.height()*2:
+                    animationDuration = 1000
+                    animationEasingCurve = QEasingCurve.OutBounce
 
         animation = QPropertyAnimation(widget, b"pos")
         animation.setDuration(animationDuration)

@@ -1,4 +1,7 @@
 import os
+import json
+import codecs # 用于解决中文乱码问题
+from collections import OrderedDict # 有序字典
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -11,6 +14,13 @@ from functools import partial
 
 from ..widgets.GIFWidget import GIFButtonWidget
 from ..widgets.Separator import Separator
+from ..widgets import colorWidget
+from ..utils import dragWidgetOrder
+try:
+    reload(colorWidget)
+except:
+    from importlib import reload
+    reload(colorWidget)
 
 from maya import mel
 
@@ -76,7 +86,7 @@ class mainUI(QWidget):
         self.size = 50
         self.setAttribute(Qt.WA_TranslucentBackground, True)  # 设置窗口透明
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)  # 设置窗口无边框
-
+        self.setFocusPolicy(Qt.ClickFocus)
         # 全局布局
         self.globalLayout = QBoxLayout(QBoxLayout.LeftToRight)
         self.globalLayout.setSpacing(0)
@@ -88,12 +98,17 @@ class mainUI(QWidget):
         self.globalLayout.addLayout(self.layout1)
 
         # 中间布局
+        self.layout2Widget = QWidget()
+        self.layout2Widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.layout2Widget.setStyleSheet("background-color: rgba(0,0,0,0); border: none;")
         self.layout2 = QBoxLayout(QBoxLayout.LeftToRight)
+        self.layout2Widget.setLayout(self.layout2)
         self.layout2.setSpacing(20)
-        self.centerSpacerLeft = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.centerSpacerRight = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.layout2.setContentsMargins(0, 0, 0, 0)
+        self.centerSpacerLeft = QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.centerSpacerRight = QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.globalLayout.addItem(self.centerSpacerLeft)
-        self.globalLayout.addLayout(self.layout2)
+        self.globalLayout.addWidget(self.layout2Widget)
         self.globalLayout.addItem(self.centerSpacerRight)
 
         # 右侧布局
@@ -116,9 +131,12 @@ class mainUI(QWidget):
         self.addLayoutMenu = self.menu.addMenu("添加布局")
         self.addLayoutAction.setMenu(self.addLayoutMenu)
         self.colorDict = {
-            "Coral": (255, 127, 80),
-            "MediumPurple": (147, 112, 219),
-            "Pink": (255, 150, 229)
+            "Coral": (255, 127, 80), # 珊瑚色 #FF7F50
+            "MediumPurple": (147, 112, 219), # 中紫色 #9370DB
+            "Pink": (255, 150, 229), # 粉红色 #FF96E5
+            "Turquoise": (64, 224, 208),  # 青绿色 #40E0D0
+            "LightSkyBlue": (135, 206, 250), # 亮天蓝色 #87CEFA
+            "IndianRed": (205, 92, 92) # 印度红色 #CD5C5C
         }
         for color in self.colorDict.keys():
             actionIcon = QPixmap(20, 20)
@@ -130,11 +148,6 @@ class mainUI(QWidget):
     # 右击显示菜单
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
-
-    def addNewButton(self):
-        button = GIFButtonWidget(icon=ICONPATH + 'siri.gif', size=38, dragMove=True, tearOff=False)
-        button.addDefaultMenuItems()
-        return button
 
     def addColorLayout(self, color):
         '''
@@ -149,89 +162,9 @@ class mainUI(QWidget):
                     return
         if color not in self.colorDict:
             return
-        rgbColor = "rgb(%s, %s, %s)" % (self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
-        opacityColor = "rgba(%s, %s, %s, 0.5)" % (self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
-        colorWidget = QWidget()
-        colorWidget.setObjectName(color+"Widget")
-        
-        colorWidget.setStyleSheet("""
-            QWidget { 
-                border: 2px solid %s; 
-                border-radius: 8px; 
-                background-color: %s; 
-            }
-        """ % (rgbColor, opacityColor))
-
-        # 移动角标
-        tranSub = QLabel()
-        tranSub.setStyleSheet("background-color: rgba(0,0,0,0); border: none;")
-        if self.alignment == "top" or self.alignment == "bottom":
-            tranSubImagr = QImage(ICONPATH + 'sub/tran.png')
-            colorWidget.setMinimumSize(20, 42)
-        elif self.alignment == "left" or self.alignment == "right":
-            tranSubImagr = QImage(ICONPATH + 'sub/tranV.png')
-            colorWidget.setMinimumSize(42, 20)
-        # 更改图片颜色
-        newColor = QColor(self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2])
-        for y in range(tranSubImagr.height()):
-            for x in range(tranSubImagr.width()):
-                imageColor = tranSubImagr.pixelColor(x, y)
-                alpha = imageColor.alpha()
-                if alpha > 0:
-                    tranSubImagr.setPixelColor(x, y, newColor)
-        tranSubImagr = QPixmap.fromImage(tranSubImagr)
-        tranSub.setPixmap(tranSubImagr)
-        # 存放按钮的组件
-        colorGLayoutWidget = QWidget()
-        colorGLayoutWidget.setStyleSheet("background-color: rgba(0,0,0,0); border: none;")
-        if self.alignment == "top" or self.alignment == "bottom":
-            colorLayout = QBoxLayout(QBoxLayout.RightToLeft)
-            colorLayout.setAlignment(Qt.AlignRight|Qt.AlignCenter)
-            colorWidget.setLayout(colorLayout)
-            self.layout2.addWidget(colorWidget)
-            # 功能角标
-            colorLayout.addWidget(tranSub)
-            # 组件布局
-            colorGLayout = QHBoxLayout()
-            colorGLayoutWidget.setLayout(colorGLayout)
-            colorGLayout.setAlignment(Qt.AlignLeft)
-            colorLayout.addWidget(colorGLayoutWidget)
-        elif self.alignment == "left" or self.alignment == "right":
-            colorLayout = QBoxLayout(QBoxLayout.BottomToTop)
-            colorLayout.setAlignment(Qt.AlignBottom)
-            colorWidget.setLayout(colorLayout)
-            self.layout2.addWidget(colorWidget)
-            # 功能角标
-            colorLayout.addWidget(tranSub)
-            # 组件布局
-            colorGLayout = QVBoxLayout()
-            colorGLayoutWidget.setLayout(colorGLayout)
-            colorGLayout.setAlignment(Qt.AlignTop)
-            colorLayout.addWidget(colorGLayoutWidget)
-
-        colorGLayout.setSpacing(2)
-        colorGLayout.setContentsMargins(0, 0, 0, 0)
-        colorLayout.setSpacing(2)
-        colorLayout.setContentsMargins(2, 2, 2, 2)
-        
-        colorWidget.menu = QMenu()
-        colorWidget.menu.addAction('添加按钮', lambda: colorGLayout.addWidget(self.addNewButton()))
-        def addSeparator(size=30, alignment='H'):
-            separator = Separator(size=size, alignment=alignment, color=(self.colorDict[color][0], self.colorDict[color][1], self.colorDict[color][2], 255))
-            if alignment == 'H':
-                separator.setFixedWidth(15)
-            elif alignment == 'V':
-                separator.setFixedHeight(15)
-            colorGLayout.addWidget(separator)
-        if self.alignment == "top" or self.alignment == "bottom":
-            colorWidget.menu.addAction('添加分割线', lambda: addSeparator(size=30, alignment='H'))
-        elif self.alignment == "left" or self.alignment == "right":
-            colorWidget.menu.addAction('添加分割线', lambda: addSeparator(size=30, alignment='V'))
-        colorWidget.menu.addAction('删除', lambda: colorWidget.hide())
-        colorWidget.setContextMenuPolicy(Qt.CustomContextMenu)
-        colorWidget.customContextMenuRequested.connect(lambda: colorWidget.menu.exec_(QCursor.pos()))
-        self.CoralLayout = colorLayout
-        #return colorLayout
+        colorIetm = colorWidget.ColorWidget(color=color, alignment=self.alignment)
+        self.layout2.addWidget(colorIetm)
+        return colorIetm
 
     def update_window_position(self, position):
         global_pos = self.MainPane.mapToGlobal(self.MainPane.rect().topLeft())
@@ -240,6 +173,7 @@ class mainUI(QWidget):
             self.globalLayout.setDirection(QBoxLayout.LeftToRight)
             self.layout1.setDirection(QBoxLayout.LeftToRight)
             self.layout2.setDirection(QBoxLayout.LeftToRight)
+            self.layout2.setAlignment(Qt.AlignHCenter)
             self.layout3.setDirection(QBoxLayout.LeftToRight)
             self.layout3.setAlignment(Qt.AlignRight)
         elif position == "bottom":
@@ -247,6 +181,7 @@ class mainUI(QWidget):
             self.globalLayout.setDirection(QBoxLayout.LeftToRight)
             self.layout1.setDirection(QBoxLayout.LeftToRight)
             self.layout2.setDirection(QBoxLayout.LeftToRight)
+            self.layout2.setAlignment(Qt.AlignHCenter)
             self.layout3.setDirection(QBoxLayout.LeftToRight)
             self.layout3.setAlignment(Qt.AlignRight)
         elif position == "left":
@@ -255,7 +190,7 @@ class mainUI(QWidget):
             self.layout1.setDirection(QBoxLayout.TopToBottom)
             self.layout1.setAlignment(Qt.AlignTop)
             self.layout2.setDirection(QBoxLayout.TopToBottom)
-            self.layout2.setAlignment(Qt.AlignCenter)
+            self.layout2.setAlignment(Qt.AlignVCenter)
             self.layout3.setDirection(QBoxLayout.BottomToTop)
             self.layout3.setAlignment(Qt.AlignBottom)
         elif position == "right":
@@ -264,7 +199,7 @@ class mainUI(QWidget):
             self.layout1.setDirection(QBoxLayout.TopToBottom)
             self.layout1.setAlignment(Qt.AlignTop)
             self.layout2.setDirection(QBoxLayout.TopToBottom)
-            self.layout2.setAlignment(Qt.AlignCenter)
+            self.layout2.setAlignment(Qt.AlignVCenter)
             self.layout3.setDirection(QBoxLayout.BottomToTop)
             self.layout3.setAlignment(Qt.AlignBottom)
         self.update()
@@ -276,15 +211,29 @@ class mainUI(QWidget):
         return False
     
     def keyPressEvent(self, event):
+        for i in range(self.layout2.count()):
+            item = self.layout2.itemAt(i)
+            if item.widget() is not None:
+                if "Widget" in item.widget().objectName():
+                    item.widget().keyPressEvent(event)
         if event.key() == Qt.Key_Control:
             if is_right_ctrl_pressed():
-                self.background_opacity = 129
+                self.background_opacity = 0
                 self.update()
 
     def keyReleaseEvent(self, event):
+        for i in range(self.layout2.count()):
+            item = self.layout2.itemAt(i)
+            if item.widget() is not None:
+                if "Widget" in item.widget().objectName():
+                    item.widget().keyReleaseEvent(event)
         if event.key() == Qt.Key_Control:
             self.background_opacity = 0
             self.update()
+
+    # def focusOutEvent(self, event):
+    #     self.background_opacity = 0
+    #     self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -295,6 +244,81 @@ class mainUI(QWidget):
         painter.drawRoundedRect(self.rect(), 15, 15)  # 绘制圆角矩形
         self.update()
 
+    def loadToolsData(self, toolsData):
+        toolName = toolsData['ToolName']
+        toolSttting = toolsData['ToolSetting']
+        self.alignment = toolSttting['alignment']
+        if self.alignment == 'top' or self.alignment == 'bottom':
+            alignment = 'v'
+        elif self.alignment == 'left' or self.alignment == 'right':
+            alignment = 'h'
+        toolData = toolsData['ToolData']
+        for key in toolData.keys():
+            if key == 'logo':
+                if not toolData[key]:
+                    continue
+                logoWidget = GIFButtonWidget(**toolData[key])
+                self.layout1.addWidget(logoWidget)
+            elif key == 'colorWidget':
+                if not toolData[key]:
+                    continue
+                for color in toolData[key]:
+                    colorIetm = colorWidget.ColorWidget(color=color, alignment=self.alignment)
+                    self.layout2.addWidget(colorIetm)
+                    for i in toolData[key][color].keys():
+                        buttonData = toolData[key][color][i]
+                        if buttonData == 'separator' or buttonData == 'Separator':
+                            colorIetm.addSeparator()
+                        else:
+                            # 确保 buttonData 是字典类型
+                            if isinstance(buttonData, dict):
+                                button = GIFButtonWidget(
+                                    icon=buttonData['image'] if 'image' in buttonData else None,
+                                    size=buttonData['size'] if 'size' in buttonData else 38,
+                                    dragMove=buttonData['dragMove'] if 'dragMove' in buttonData else True,
+                                    tearOff=buttonData['tearOff'] if 'tearOff' in buttonData else False,
+                                    alignment=alignment,
+                                    label=buttonData['label'] if 'label' in buttonData else None,
+                                    annotation=buttonData['annotation'] if 'annotation' in buttonData else None,
+                                    command=buttonData['command'] if 'command' in buttonData else {'click': ['python',None]}
+                                )
+                                colorIetm.colorLayout.addWidget(button)
+                                if 'menuItem' in buttonData:
+                                    if buttonData['menuItem']:
+                                        for j in buttonData['menuItem'].keys():
+                                            menuData = buttonData['menuItem'][j]
+                                            if menuData == 'Separator':
+                                                button.addSeparator()
+                                            else:
+                                                button.addMenuItem(
+                                                    icon=menuData['image'] if 'image' in menuData else None,
+                                                    label=menuData['label'] if 'label' in menuData else None,
+                                                    annotation=menuData['annotation'] if 'annotation' in menuData else None,
+                                                    command=menuData['command'] if 'command' in menuData else {'click': ['python',None]}
+                                                )
+                                button.addDefaultMenuItems()
+            elif key == 'Setting':
+                if not toolData[key]:
+                    continue
+                settingButton = GIFButtonWidget(**toolData[key])
+                self.layout3.addWidget(settingButton)
+
+    def loadTools(self):
+        # # 打开文件对话框
+        # fileDialog = QFileDialog()
+        # fileDialog.setFileMode(QFileDialog.ExistingFile)
+        # fileDialog.setNameFilter("JSON Files (*.json)")
+        # fileDialog.setViewMode(QFileDialog.Detail)
+        # if fileDialog.exec_():
+        #     filePath = fileDialog.selectedFiles()[0]
+        #     with codecs.open(filePath, 'r', 'utf-8') as f:
+        #         toolsData = json.load(f, object_pairs_hook=OrderedDict)
+        #         self.loadToolsData(toolsData)
+        filePath = 'E:/OneButtonManager/src/AniBotPro/AniBotPro.json'
+        with codecs.open(filePath, 'r', 'utf-8') as f:
+            toolsData = json.load(f, object_pairs_hook=OrderedDict)
+            self.loadToolsData(toolsData)
+            
 def main():
     mainPaneCtrl = mainUI(alignment = "bottom")
     mainPaneCtrl.show()

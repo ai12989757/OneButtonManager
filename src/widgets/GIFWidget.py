@@ -440,7 +440,7 @@ class GIFButtonWidget(QWidget):
         # 如果是鼠标中键拖动
         elif event.buttons() == Qt.MiddleButton:
             if self.dragMove:
-                self.move(self.mapToParent(event.pos() - self.startPos))
+                #self.move(self.mapToParent(event.pos() - self.startPos))
                 dragWidgetOrder.DragWidgetOrder.performDrag(self, event)
         
     def singleClickEvent(self):
@@ -551,6 +551,8 @@ class GIFButtonWidget(QWidget):
 
     # 添加右键菜单,没有这个方法，右键菜单不会显示
     def contextMenuEvent(self, event):
+        if self.menu.isEmpty():
+            return
         self.menu.exec_(event.globalPos())
 
     def addMenuItem(self, label=None, command=None, icon=None, annotation=None, checkable=False):

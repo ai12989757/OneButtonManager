@@ -19,8 +19,10 @@ class Separator(QPushButton):
         self.language = language
         self.dragMove = dragMove
         self.separatorSize = None
-        if alignment == 'V' or alignment == 'v': self.separatorSize = [size, 2]
-        elif alignment == 'H' or alignment == 'h': self.separatorSize = [2, size]
+        if alignment == 'V' or alignment == 'v': 
+            self.separatorSize = [size, 2]
+        elif alignment == 'H' or alignment == 'h': 
+            self.separatorSize = [2, size]
         self.setIconSize(QSize(size,size))
         self.pixmap = QPixmap(self.separatorSize[0], self.separatorSize[1])
         self.pixmap.fill(QColor(color[0],color[1],color[2],color[3])) # rgba(158, 158, 158, 255)
@@ -32,42 +34,15 @@ class Separator(QPushButton):
         self.deleteAction.triggered.connect(self.deleteButton)
         self.menu.addAction(self.deleteAction)
 
-        self.dragging = False
-        self.startPos = QPoint()
-        self.valueX = 0.00  # 初始化数值
-        self.valueY = 0.00  # 初始化数值
-        self.currentPos = QPoint()
-        self.delta = QPoint()
+        if dragMove:
+            #self.setMouseTracking(True)
+            dragWidgetOrder.DragWidgetOrder(self)
         
     def deleteButton(self):
         self.menu.deleteLater()
         self.setParent(None)
         self.deleteLater()
 
-    def mousePressEvent(self, event):
-        self.valueX = 0.00  # 重置数值
-        self.valueY = 0.00
-        if event.button() == Qt.MiddleButton:
-            if self.dragMove:
-                self.dragging = True
-                dragWidgetOrder.DragWidgetOrder.startDrag(self, event)
-
-    def mouseMoveEvent(self, event):
-        if self.dragging:
-            self.currentPos = event.pos()
-            self.delta = self.currentPos - self.startPos
-            self.valueX += self.delta.x()
-            self.valueY += self.delta.y()
-            self.startPos = self.currentPos
-            if event.buttons() == Qt.MiddleButton:
-                if self.dragMove:
-                    dragWidgetOrder.DragWidgetOrder.performDrag(self, event)
-
-    def mouseReleaseEvent(self, event):
-        self.dragging = False
-        if event.button() == Qt.MiddleButton:
-            if self.dragMove:
-                dragWidgetOrder.DragWidgetOrder.endDrag(self, event)
     # 添加右键菜单
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
