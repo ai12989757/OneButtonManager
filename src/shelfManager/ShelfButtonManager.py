@@ -736,7 +736,9 @@ class ShelfButtonManager(QWidget):
 
     def findIconImage(self, imagePath, InternalIconDict):
         if imagePath is None:
-            imagePath = 'white/undetected.png'
+            imagePath = ICONPATH+'white/undetected.png'
+            return imagePath
+        if imagePath.lower().endswith('.gif'):
             return imagePath
         if os.path.exists(imagePath):
             return imagePath
@@ -753,11 +755,10 @@ class ShelfButtonManager(QWidget):
                         imagePath = ':\\'+imagePath
                     elif imagePath in InternalIconDict['plugIcon']:
                         imagePath = InternalIconDict['plugIcon'][imagePath]
-                    else:
-                        imagePath = ':\\'+imagePath 
+                    # else:
+                    #     imagePath = ':\\'+imagePath 
                 except:
                     pass
-
         return imagePath
     
     def GIFButtonJsonDataSwitch(self, data):

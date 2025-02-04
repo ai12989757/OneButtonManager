@@ -179,6 +179,16 @@ class GIFButtonWidget(QWidget):
     def setIconImage(self, iconPath=None):
         if not iconPath:
             iconPath = ICONPATH+'white/undetected.png'
+        if not os.path.exists(iconPath) and ':\\' not in iconPath:
+            self.tempPixmap = QPixmap(ICONPATH+'white/undetected.png')
+            self.tempPixmap = self.tempPixmap.scaledToHeight(self.size, Qt.SmoothTransformation)
+            self.iconLabel.setPixmap(self.tempPixmap)
+            self.iconLabel.setGeometry(0, 0, self.size, self.size)
+            self.iconSizeValue=QSize(self.size, self.size)
+            self.setFixedSize(self.iconSizeValue)
+            self.iconLabel.show()
+            mel.eval('warning -n "图标不存在: ' + iconPath + '"')
+            return
         self.pixmap = QPixmap(iconPath)
         
         if self.alignment == 'H' or self.alignment == 'h':
@@ -208,7 +218,7 @@ class GIFButtonWidget(QWidget):
         self.iconLabel.show()
 
     def setGIFStyle(self, style='auto'):
-        if not self.iconPath.lower().endswith('.gif'):
+        if not os.path.exists(self.iconPath) or not self.iconPath.lower().endswith('.gif'):
             return
         try:
             self.movie.frameChanged.disconnect(None, None)
