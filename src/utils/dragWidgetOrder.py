@@ -68,33 +68,36 @@ class DragWidgetOrder:
             DragWidgetOrder.margin = DragWidgetOrder.widgetLayout.contentsMargins().left()
             # 获取布局是否是水平还是垂直
             DragWidgetOrder.alignment = DragWidgetOrder.widgetLayout.alignment()
-            if DragWidgetOrder.alignment & Qt.AlignLeft or DragWidgetOrder.alignment & Qt.AlignRight or DragWidgetOrder.alignment & Qt.AlignHCenter:
+            if DragWidgetOrder.alignment & Qt.AlignLeft or DragWidgetOrder.alignment & Qt.AlignRight or DragWidgetOrder.alignment & Qt.AlignVCenter:
                 DragWidgetOrder.alignment = 'h'
-            elif DragWidgetOrder.alignment & Qt.AlignTop or DragWidgetOrder.alignment & Qt.AlignBottom or DragWidgetOrder.alignment & Qt.AlignVCenter:
+            elif DragWidgetOrder.alignment & Qt.AlignTop or DragWidgetOrder.alignment & Qt.AlignBottom or DragWidgetOrder.alignment & Qt.AlignHCenter:
                 DragWidgetOrder.alignment = 'v'
             else:
                 DragWidgetOrder.alignment = 'h'
                 
     def startDrag(widget, event):
-        DragWidgetOrder.find_widget_layout(widget)
-        widgetParentLayout = DragWidgetOrder.widgetLayout
-        if widgetParentLayout == None:
-            print('widgetParentLayout is None')
-            return
-        DragWidgetOrder.valueX = 0.00  # 初始化数值
-        DragWidgetOrder.valueY = 0.00  # 初始化数值
-        # 获取光标移动的距离
-        DragWidgetOrder.startPos = event.pos()
-        DragWidgetOrder.widgetStartPos = widget.pos()
-        widget.buttonParent = widget.parent()
-        # 列出所有的按钮
-        DragWidgetOrder.buttonList = []
+        try:
+            DragWidgetOrder.find_widget_layout(widget)
+            widgetParentLayout = DragWidgetOrder.widgetLayout
+            if widgetParentLayout == None:
+                print('widgetParentLayout is None')
+                return
+            DragWidgetOrder.valueX = 0.00  # 初始化数值
+            DragWidgetOrder.valueY = 0.00  # 初始化数值
+            # 获取光标移动的距离
+            DragWidgetOrder.startPos = event.pos()
+            DragWidgetOrder.widgetStartPos = widget.pos()
+            widget.buttonParent = widget.parent()
+            # 列出所有的按钮
+            DragWidgetOrder.buttonList = []
 
-        for i in range(widgetParentLayout.count()):
-            DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
-        # 获取按钮的索引
-        if widget in DragWidgetOrder.buttonList:
-            DragWidgetOrder.buttonIndex = DragWidgetOrder.buttonList.index(widget)
+            for i in range(widgetParentLayout.count()):
+                DragWidgetOrder.buttonList.append(widgetParentLayout.itemAt(i).widget())
+            # 获取按钮的索引
+            if widget in DragWidgetOrder.buttonList:
+                DragWidgetOrder.buttonIndex = DragWidgetOrder.buttonList.index(widget)
+        except:
+            DragWidgetOrder.startDrag(widget, event) # 重新尝试，maya中会出现错误 already deleted 错误, 重新尝试一次就可以了
 
     def performDrag(widget, event):
         if not DragWidgetOrder.buttonList:

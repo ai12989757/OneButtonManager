@@ -45,7 +45,6 @@ class ColorWidget(QWidget):
         self.background_opacity = 100
         self.border_opacity = 255
         self.setFocusPolicy(Qt.ClickFocus)
-        dragWidgetOrder.DragWidgetOrder(self)
         self.setObjectName(self.color+"Widget")
         self.colorDict = {
             "Coral": (255, 127, 80), # 珊瑚色 #FF7F50
@@ -58,6 +57,7 @@ class ColorWidget(QWidget):
         self.initUI()
         self.createColorWidget()
         self.careateMenu()
+        dragWidgetOrder.DragWidgetOrder(self)
 
     def initUI(self):
         if self.alignment == "bottom" or self.alignment == "top":
@@ -102,7 +102,7 @@ class ColorWidget(QWidget):
             # 组件布局
             self.colorLayout = QHBoxLayout()
             self.colorWidget.setLayout(self.colorLayout)
-            self.colorLayout.setAlignment(Qt.AlignLeft)
+            self.colorLayout.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
             self.mainLayout.addWidget(self.colorWidget)
         elif self.alignment == "left" or self.alignment == "right":
             # 功能角标
@@ -110,7 +110,7 @@ class ColorWidget(QWidget):
             # 组件布局
             self.colorLayout = QVBoxLayout()
             self.colorWidget.setLayout(self.colorLayout)
-            self.colorLayout.setAlignment(Qt.AlignTop)
+            self.colorLayout.setAlignment(Qt.AlignTop|Qt.AlignHCenter)
             self.mainLayout.addWidget(self.colorWidget)
         self.colorLayout.setSpacing(0)
         self.colorLayout.setContentsMargins(0, 0, 0, 0)
@@ -121,7 +121,7 @@ class ColorWidget(QWidget):
         elif self.alignment == "left" or self.alignment == "right":
             alignment = 'V'
         separator = Separator(size=30, alignment=alignment, color=(self.colorDict[self.color][0], self.colorDict[self.color][1], self.colorDict[self.color][2], 255))
-        self.colorLayout.addWidget(separator)
+        self.colorLayout.addWidget(separator, 0, Qt.AlignCenter)
         if alignment == 'H': separator.setFixedSize(20, 24)
         elif alignment == 'V': separator.setFixedSize(24, 20)
         
@@ -141,32 +141,6 @@ class ColorWidget(QWidget):
         self.menu.addAction('删除', lambda: self.hide())
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(lambda: self.menu.exec_(QCursor.pos()))
-        
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            if is_right_ctrl_pressed():
-                self.tranSub.show()
-                self.background_opacity = 100
-                self.border_opacity = 255
-                self.update()
-        # 将事件传递给父级处理
-        super(ColorWidget, self).keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        if event.key() == Qt.Key_Control:
-            self.tranSub.hide()
-            self.background_opacity = 0
-            self.border_opacity = 0
-            self.update()
-        # 将事件传递给父级处理
-        super(ColorWidget, self).keyReleaseEvent(event)
-
-    # def focusOutEvent(self, event):
-    #     self.tranSub.hide()
-    #     self.background_opacity = 0
-    #     self.border_opacity = 0
-    #     self.update()
-    #     super(ColorWidget, self).focusOutEvent(event)
 
     def paintEvent(self, event):
         painter = QPainter(self)

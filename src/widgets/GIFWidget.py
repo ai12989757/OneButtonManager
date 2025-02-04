@@ -35,6 +35,25 @@ except:
     reload(dragWidgetOrder)
     reload(buttonManager)
 
+import ctypes
+from ctypes import wintypes
+
+# 定义虚拟键码
+VK_RCONTROL = 0xA3
+
+# 加载 user32.dll
+user32 = ctypes.WinDLL('user32', use_last_error=True)
+
+# 定义 GetAsyncKeyState 函数
+GetAsyncKeyState = user32.GetAsyncKeyState
+GetAsyncKeyState.argtypes = [wintypes.INT]
+GetAsyncKeyState.restype = wintypes.SHORT
+
+def is_right_ctrl_pressed():
+    # 检查右 Ctrl 键是否被按下
+    state = GetAsyncKeyState(VK_RCONTROL)
+    return state & 0x8000 != 0
+
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 SHELF_BACKUP_PATH = os.path.expanduser('~') + '/OneTools/data/shelf_backup/'
 
@@ -250,6 +269,8 @@ class GIFButtonWidget(QWidget):
         elif modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
             self.updateSubLabel('altShift')
         elif modifiers & Qt.ControlModifier:
+            if is_right_ctrl_pressed():
+                return
             self.updateSubLabel('ctrl')
         elif modifiers & Qt.ShiftModifier:
             self.updateSubLabel('shift')
@@ -289,6 +310,8 @@ class GIFButtonWidget(QWidget):
                 else:
                     self.updateSubLabel('alt')
             elif event.key() == Qt.Key_Control:
+                if is_right_ctrl_pressed():
+                    return False
                 if modifiers & Qt.AltModifier and modifiers & Qt.ShiftModifier:
                     self.updateSubLabel('ctrlAltShift')
                 elif modifiers & Qt.AltModifier:

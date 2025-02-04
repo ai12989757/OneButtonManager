@@ -23,7 +23,7 @@ class Separator(QPushButton):
             self.separatorSize = [size, 2]
         elif alignment == 'H' or alignment == 'h': 
             self.separatorSize = [2, size]
-        self.setIconSize(QSize(size,size))
+        self.setIconSize(QSize(self.separatorSize[0], self.separatorSize[1]))
         self.pixmap = QPixmap(self.separatorSize[0], self.separatorSize[1])
         self.pixmap.fill(QColor(color[0],color[1],color[2],color[3])) # rgba(158, 158, 158, 255)
         self.setIcon(self.pixmap)
