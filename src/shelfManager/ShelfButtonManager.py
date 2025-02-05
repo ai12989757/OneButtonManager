@@ -1095,7 +1095,6 @@ class ShelfButtonManager(QWidget):
     def addBilibiliFansComponent(self):
         from ..components import bilibiliFansWidget
         self.bilibiliFansComponent = bilibiliFansWidget.ComponentWidget(size=42)
-        self.bilibiliFansComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', self.bilibiliFansComponent.close)
         self.bilibiliFansComponent.setObjectName('Component_bilibiliFans_'+str(self.bilibiliFansComponent.winId()))
         self.bilibiliFansComponentPrt = omui.MQtUtil.findControl(self.bilibiliFansComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.bilibiliFansComponentPrt), int(self.shelfParentPtr))
