@@ -53,7 +53,7 @@ class ComponentWidget(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_fans_count)
-        self.set_timer_interval(10 * 60 * 1000)  # 默认10分钟，单位为毫秒
+        self.set_timer_interval(10 * 1000)  # 默认10分钟，单位为毫秒
 
     def set_timer_interval(self, interval_ms):
         """设置定时器的时间间隔"""
