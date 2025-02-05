@@ -860,7 +860,7 @@ class ShelfButtonManager(QWidget):
 
     def loadGifShelf(self):
         # 打开文件对话框
-        jsonPath = mel.eval(u'fileDialog2 -fm 1 -ff "*.json" -okc "导入"')[0]
+        jsonPath = QFileDialog.getOpenFileName(self, u"打开文件", self.OneToolsDataDir, u"JSON文件(*.json)")[0]
         if not jsonPath:
             return
         jsonData = {}
