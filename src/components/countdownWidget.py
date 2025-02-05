@@ -9,45 +9,60 @@ except ImportError:
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
     PYSIDE_VERSION = 2
+from ..utils import dragWidgetOrder
+class CustomLCDNumber(QLCDNumber):
+    def __init__(self, parent=None, component_type=None):
+        super().__init__(parent)
+        self.component_type = component_type
 
+    def wheelEvent(self, event):
+        self.parent().handle_wheel(event.angleDelta(), self.component_type)
+        
 class ComponentWidget(QWidget):
     def __init__(self, countdown_time="00:00:00.000"):
         super().__init__()
+        dragWidgetOrder.DragWidgetOrder(self)
         self.indexTepm = 0
         # 单击鼠标左键开始倒计时
-        self.mousePressEvent = self.toggle_timer
+        self.wheelEvent = self.handle_wheel
         self.setStyleSheet("QFrame { border: none; }")
         # 创建 QLCDNumber 显示时间
         self.lcd_hours = QLCDNumber(self)
         self.lcd_hours.setDigitCount(2)  # 设置显示位数为2位，格式为 hh
         self.lcd_hours.setSegmentStyle(QLCDNumber.Flat)
         self.lcd_hours.setFixedSize(42, 42)
-        self.lcd_hours.setMouseTracking(True)  # 确保鼠标事件被捕获
-        self.lcd_hours.installEventFilter(self)  # 安装事件过滤器
+        self.lcd_hours.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
+        self.lcd_hours.wheelEvent = self.handle_wheel
 
         self.lcd_minutes = QLCDNumber(self)
         self.lcd_minutes.setDigitCount(2)  # 设置显示位数为2位，格式为 mm
         self.lcd_minutes.setSegmentStyle(QLCDNumber.Flat)
         self.lcd_minutes.setFixedSize(42, 42)
-        self.lcd_minutes.setMouseTracking(True)  # 确保鼠标事件被捕获
-        self.lcd_minutes.installEventFilter(self)  # 安装事件过滤器
+        self.lcd_minutes.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
+        self.lcd_minutes.wheelEvent = self.handle_wheel
 
         self.lcd_seconds = QLCDNumber(self)
         self.lcd_seconds.setDigitCount(2)  # 设置显示位数为2位，格式为 ss
         self.lcd_seconds.setSegmentStyle(QLCDNumber.Flat)
         self.lcd_seconds.setFixedSize(42, 42)
-        self.lcd_seconds.setMouseTracking(True)  # 确保鼠标事件被捕获
-        self.lcd_seconds.installEventFilter(self)  # 安装事件过滤器
+        self.lcd_seconds.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
+        self.lcd_seconds.wheelEvent = self.handle_wheel
 
         self.lcd_ms = QLCDNumber(self)
         self.lcd_ms.setFixedSize(63, 42)
         self.lcd_ms.setDigitCount(3)  # 设置显示位数为3位，格式为 zzz
         self.lcd_ms.setSegmentStyle(QLCDNumber.Flat)
+        self.lcd_ms.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
+        self.lcd_ms.wheelEvent = self.handle_wheel
+        
 
         # 创建 QLabel 显示冒号
         self.label_colon1 = QLabel(":")
+        self.label_colon1.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
         self.label_colon2 = QLabel(":")
+        self.label_colon2.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
         self.label_colon3 = QLabel(".")
+        self.label_colon3.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
 
         self.lcd_hours.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
         self.lcd_minutes.setStyleSheet(f"QLCDNumber {{ color:#bdbdbd; }}")
@@ -88,77 +103,40 @@ class ComponentWidget(QWidget):
         # 记录鼠标拖拽的起始位置
         self.drag_start_pos = None
         self.dragging_component = None
-
-    def eventFilter(self, source, event):
-        if PYSIDE_VERSION == 2:
-            if event.type() == event.MouseButtonPress and event.button() == Qt.MiddleButton:
-                self.indexTepm = 0
-                self.drag_start_pos = event.pos()
-                self.dragging_component = source
-                return True
-            elif event.type() == event.MouseMove and self.drag_start_pos:
-                self.dragging = True
-                self.handle_drag(event.pos())
-                return True
-            elif event.type() == event.MouseButtonRelease and event.button() == Qt.MiddleButton:
-                self.indexTepm = 0
-                self.drag_start_pos = None
-                self.dragging_component = None
-                return True
-            elif event.type() == event.Wheel:
-                self.dragging_component = source
-                self.handle_wheel(event.angleDelta())
-                event.accept()  # 阻止事件传播
-                return True
-        elif PYSIDE_VERSION == 6:
-            if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MiddleButton:
-                self.indexTepm = 0
-                self.drag_start_pos = event.pos()
-                self.dragging_component = source
-                return True
-            elif event.type() == QEvent.Type.MouseMove and self.drag_start_pos:
-                self.dragging = True
-                self.handle_drag(event.pos())
-                return True
-            elif event.type() == QEvent.Type.MouseButtonRelease and event.button() == Qt.MiddleButton:
-                self.indexTepm = 0
-                self.drag_start_pos = None
-                self.dragging_component = None
-                return True
-            elif event.type() == QEvent.Type.Wheel:
-                self.dragging_component = source
-                self.handle_wheel(event.angleDelta())
-                event.accept()  # 阻止事件传播
-                return True
-
-        return super().eventFilter(source, event)
     
-    def handle_wheel(self, delta):
+    def handle_wheel(self, event):
+        delta = event.angleDelta()
         direction = 1 if delta.y() > 0 else -1
-        if self.dragging_component is self.lcd_hours:
+        if self.lcd_hours.underMouse():
             if self.time.hour() == 0 and direction < 0:
-                return
+                event.accept()
+                return False
             if self.time.hour() == 23 and direction > 0:
-                return
+                event.accept()
+                return False
             new_time = self.time.addSecs(3600 * direction)
             # 确保小时在0到24之间
             if 0 <= new_time.hour() <= 23:
                 self.time = new_time
-        elif self.dragging_component is self.lcd_minutes:
+        elif self.lcd_minutes.underMouse():
             if self.time.minute() == 0 and direction < 0:
-                return
+                event.accept()
+                return False
             if self.time.minute() == 59 and direction > 0:
-                return
+                event.accept()
+                return False
             
             new_time = self.time.addSecs(60 * direction)
             # 确保分钟在0到59之间
             if 0 <= new_time.minute() <= 59:
                 self.time = new_time
-        elif self.dragging_component is self.lcd_seconds:
+        elif self.lcd_seconds.underMouse():
             if self.time.second() == 0 and direction < 0:
-                return
+                event.accept()
+                return False
             if self.time.second() == 59 and direction > 0:
-                return
+                event.accept()
+                return False
             new_time = self.time.addSecs(direction)
 
             # 确保秒在0到59之间
@@ -167,52 +145,9 @@ class ComponentWidget(QWidget):
         # 初始化倒计时时间
         self.initial_time = self.time
         self.update_time()
-
-    def handle_drag(self, current_pos):
-        if not self.drag_start_pos or not self.dragging_component:
-            return
-
-        delta = current_pos - self.drag_start_pos
-        
-        direction = 1 if delta.x() > 0 else -1
-        if self.indexTepm != 5 and self.indexTepm != -5:
-            self.indexTepm += direction
-            return 
-        self.indexTepm = 0
-        if self.dragging_component is self.lcd_hours:
-            if self.time.hour() == 0 and direction < 0:
-                return
-            if self.time.hour() == 23 and direction > 0:
-                return
-            new_time = self.time.addSecs(3600 * direction)
-            # 确保小时在0到24之间
-            if 0 <= new_time.hour() <= 23:
-                self.time = new_time
-        elif self.dragging_component is self.lcd_minutes:
-            if self.time.minute() == 0 and direction < 0:
-                return
-            if self.time.minute() == 59 and direction > 0:
-                return
-            
-            new_time = self.time.addSecs(60 * direction)
-            # 确保分钟在0到59之间
-            if 0 <= new_time.minute() <= 59:
-                self.time = new_time
-        elif self.dragging_component is self.lcd_seconds:
-            if self.time.second() == 0 and direction < 0:
-                return
-            if self.time.second() == 59 and direction > 0:
-                return
-            new_time = self.time.addSecs(direction)
-
-            # 确保秒在0到59之间
-            if 0 <= new_time.second() <= 59:
-                self.time = new_time
-
-        # 初始化倒计时时间
-        self.initial_time = self.time
-        self.update_time()
-        self.drag_start_pos = current_pos
+        #super().wheelEvent(event)
+        event.accept()
+        return False
 
     def update_time(self):
         if self.timer.isActive():
@@ -261,15 +196,18 @@ class ComponentWidget(QWidget):
         self.label_colon1.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
         self.label_colon2.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
         self.label_colon3.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
+    
+    def handle_mouse_press(self, event):
+        if event.button() == Qt.LeftButton:
+            self.toggle_timer()
+        super().mousePressEvent(event)
 
-    def toggle_timer(self,event=None):
-        # 如果是左击事件
-        if event and event.button() == Qt.LeftButton:
-            if self.timer.isActive():
-                self.timer.stop()
-            else:
-                self.elapsed_timer.restart()  # 重置计时器
-                self.timer.start(10)  # 每1毫秒更新一次
+    def toggle_timer(self):
+        if self.timer.isActive():
+            self.timer.stop()
+        else:
+            self.elapsed_timer.restart()  # 重置计时器
+            self.timer.start(10)  # 每1毫秒更新一次
 
     def contextMenuEvent(self, event):
         context_menu = QMenu(self)
@@ -335,6 +273,6 @@ class ComponentWidget(QWidget):
 if __name__ == "__main__":
     #app = QApplication([])
     countdown_time = "00:00:10.000"  # 设置倒计时时间为默认值
-    countdown = CountdownWidget(countdown_time)
+    countdown = ComponentWidget(countdown_time)
     countdown.show()
     #app.exec_()

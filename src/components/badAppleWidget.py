@@ -11,11 +11,12 @@ except ImportError:
     from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
     from PySide6.QtCore import Qt, QUrl
     PYSIDE_VERSION = 6
+from ..utils import dragWidgetOrder
 
 class ComponentWidget(QWidget):
     def __init__(self, gif_path, audio_path):
         super().__init__()
-
+        dragWidgetOrder.DragWidgetOrder(self)
         self.setWindowTitle("GIF 播放器")
         self.setGeometry(100, 100, 300, 300)
 

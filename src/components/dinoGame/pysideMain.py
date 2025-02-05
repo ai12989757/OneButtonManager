@@ -196,9 +196,11 @@ class Cloud(QLabel):
             self.y = random.randint(int(50*SCALE_FACTOR), int(150*SCALE_FACTOR))
         self.move(self.x, self.y)
 
+from ...utils import dragWidgetOrder
 class ComponentWidget(QWidget):
     def __init__(self,size=300):
         super().__init__()
+        dragWidgetOrder.DragWidgetOrder(self)
         update_globals(size)
         # 设置背景颜色
         self.setAutoFillBackground(True)

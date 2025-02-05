@@ -7,7 +7,9 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
-    
+
+from ..utils import dragWidgetOrder
+
 def random_rainbow_color():
     """生成随机彩虹颜色，避免过暗的颜色"""
     hue = random.randint(0, 360)
@@ -18,6 +20,7 @@ def random_rainbow_color():
 class ComponentWidget(QWidget):
     def __init__(self):
         super().__init__()
+        dragWidgetOrder.DragWidgetOrder(self)
         self.setStyleSheet("QFrame { border: none; }")
         # self.setWindowTitle("计时器组件")
         # self.setGeometry(0, 0, 245, 42)
@@ -60,6 +63,7 @@ class ComponentWidget(QWidget):
     def handle_mouse_press(self, event):
         if event.button() == Qt.LeftButton:
             self.toggle_timer()
+        super().mousePressEvent(event)
 
     def toggle_timer(self):
         if self.timer.isActive():
@@ -108,5 +112,5 @@ class ComponentWidget(QWidget):
 
 if __name__ == "__main__":
 
-    timer = TimerWidget()
+    timer = ComponentWidget()
     timer.show()

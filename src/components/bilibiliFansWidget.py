@@ -9,6 +9,7 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+from ..utils import dragWidgetOrder
 
 # 创建一个按钮编辑器窗口
 def maya_main_window():
@@ -44,6 +45,7 @@ class ComponentWidget(QWidget):
         self.SIZE = size
         self.WIDTH = int(165 * size / 42)
         self.fans_count = "00000"
+        dragWidgetOrder.DragWidgetOrder(self)
         if self.uid:
             self.update_fans_count()
         self.initUI()
@@ -54,6 +56,7 @@ class ComponentWidget(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_fans_count)
         self.set_timer_interval(10 * 1000)  # 默认10分钟，单位为毫秒
+
 
     def set_timer_interval(self, interval_ms):
         """设置定时器的时间间隔"""

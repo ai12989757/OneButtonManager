@@ -31,17 +31,19 @@ class DragWidgetOrder:
             if event.button() == Qt.MiddleButton:
                 DragWidgetOrder.dragging = True
                 DragWidgetOrder.startDrag(widget, event)
-            #super(widget.__class__, widget).mousePressEvent(event)
+            #super().mousePressEvent(event)
+            super(widget.__class__, widget).mousePressEvent(event)
         def widgetMouseMoveEvent(event):
             if DragWidgetOrder.dragging:
                 DragWidgetOrder.performDrag(widget, event)
-            #super(widget.__class__, widget).mouseMoveEvent(event)
+            #super().mouseMoveEvent(event)
+            super(widget.__class__, widget).mouseMoveEvent(event)
         def widgetMouseReleaseEvent(event):
             #if event.button() == Qt.MiddleButton:
             if DragWidgetOrder.dragging:
                 DragWidgetOrder.endDrag(widget, event)
             DragWidgetOrder.dragging = False
-            #super(widget.__class__, widget).mouseReleaseEvent(event)
+            super(widget.__class__, widget).mouseReleaseEvent(event)
         widget.mousePressEvent = widgetMousePressEvent
         widget.mouseMoveEvent = widgetMouseMoveEvent
         widget.mouseReleaseEvent = widgetMouseReleaseEvent

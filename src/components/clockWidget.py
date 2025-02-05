@@ -6,10 +6,12 @@ except ImportError:
     from PySide2.QtCore import *
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+from ..utils import dragWidgetOrder
 
 class ComponentWidget(QWidget):
     def __init__(self):
         super().__init__()
+        dragWidgetOrder.DragWidgetOrder(self)
         self.setStyleSheet("QFrame { border: none; }")
         # 创建 QLCDNumber 显示时间
         self.lcd = QLCDNumber(self)
@@ -48,6 +50,6 @@ class ComponentWidget(QWidget):
 
 if __name__ == "__main__":
     #app = QApplication([])
-    clock = ClockWidget()
+    clock = ComponentWidget()
     clock.show()
     #app.exec_()
