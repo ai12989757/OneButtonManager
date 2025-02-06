@@ -1,9 +1,8 @@
+# -*- coding: utf-8 -*-
 import os
 import json
 import codecs
 from collections import OrderedDict
-
-
 
 def getGIFButtonData(button):
     # 获取按钮数据

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from maya import mel
 from datetime import datetime

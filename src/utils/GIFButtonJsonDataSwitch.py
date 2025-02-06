@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 def GIFButtonJsonDataSwitch(data):
     newDict = {}
     newDict['size'] = data['size']

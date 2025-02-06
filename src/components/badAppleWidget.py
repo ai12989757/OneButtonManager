@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 PYSIDE_VERSION = 2
 try:
     from PySide2.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget, QMenu
@@ -15,7 +16,7 @@ from ..utils import dragWidgetOrder
 
 class ComponentWidget(QWidget):
     def __init__(self, gif_path, audio_path):
-        super().__init__()
+        super(ComponentWidget,self).__init__()
         dragWidgetOrder.DragWidgetOrder(self)
         self.setWindowTitle("GIF 播放器")
         self.setGeometry(100, 100, 300, 300)

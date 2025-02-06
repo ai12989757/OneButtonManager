@@ -61,7 +61,10 @@ SHELF_BACKUP_PATH = os.path.expanduser('~') + '/OneTools/data/shelf_backup/'
 class GIFButtonWidget(QWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(GIFButtonWidget, self).__init__(parent)
-
+        self.dragWidgetOrder = dragWidgetOrder.DragWidgetOrder(self)
+        self.mousePressEvent = self.widgetMousePressEvent
+        self.mouseMoveEvent = self.widgetMouseMoveEvent
+        self.mouseReleaseEvent = self.widgetMouseReleaseEvent
         ################## command ##################
         self.context = globals().copy()
         self.context.update({'self': self})
@@ -375,7 +378,7 @@ class GIFButtonWidget(QWidget):
         return False
         #return super(GIFButton, self).eventFilter(obj, event)
     
-    def mousePressEvent(self, event):
+    def widgetMousePressEvent(self, event):
         self.lastMoveValueX = 0
         self.lastMoveValueY = 0
         self.moveThreshold = 10
@@ -397,9 +400,9 @@ class GIFButtonWidget(QWidget):
             self.dragging = True
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
-                dragWidgetOrder.DragWidgetOrder.startDrag(self, event)
+                self.dragWidgetOrder.startDrag(event)
            
-    def mouseReleaseEvent(self, event):
+    def widgetMouseReleaseEvent(self, event):
         self.iconDragEffect('back')
         self.dragging = False
         self.eventPos = event.pos()
@@ -413,7 +416,7 @@ class GIFButtonWidget(QWidget):
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.singleClick = 0
-                dragWidgetOrder.DragWidgetOrder.endDrag(self, event)
+                self.dragWidgetOrder.endDrag(event)
         if self.minValue < -10 or self.maxValue > 10: # 说明按钮被拖动了，不执行单击事件
             self.minValue = 0.00
             self.maxValue = 0.00
@@ -443,7 +446,7 @@ class GIFButtonWidget(QWidget):
                         self.mouseState = 'doubleClick'
                         runCommand.runCommand(self, self.command, 'doubleClick')
 
-    def mouseMoveEvent(self, event):
+    def widgetMouseMoveEvent(self, event):
         # 更改光标样式
         # QApplication.setOverrideCursor(Qt.SizeHorCursor)
         #setToolTo('moveSuperContext')
@@ -474,7 +477,7 @@ class GIFButtonWidget(QWidget):
         elif event.buttons() == Qt.MiddleButton:
             if self.dragMove:
                 #self.move(self.mapToParent(event.pos() - self.startPos))
-                dragWidgetOrder.DragWidgetOrder.performDrag(self, event)
+                self.dragWidgetOrder.performDrag(event)
         
     def singleClickEvent(self):
         self.singleClick = 0

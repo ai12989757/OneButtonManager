@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import json
@@ -36,7 +37,7 @@ FONT_FAMILY = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplication
 
 class ComponentWidget(QWidget):
     def __init__(self, uid=0, size=42):
-        super().__init__()
+        super(ComponentWidget,self).__init__()
         try:
             uid = self.getUID()
         except:
@@ -163,7 +164,7 @@ class FansThread(QThread):
     fans_count_signal = Signal(str)
 
     def __init__(self, uid):
-        super().__init__()
+        super(FansThread, self).__init__()
         self.uid = uid
 
     def run(self):

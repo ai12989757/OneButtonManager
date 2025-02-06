@@ -1064,7 +1064,7 @@ class ShelfButtonManager(QWidget):
         self.addButton(
             icon=ICONPATH + 'components/woodenFish.png', 
             command={
-                'leftPress': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFishClicked.png")\nmel.eval(\'print("\\\\n// 结果: 功德+"+$gongDe)\')\nmel.eval(\'$gongDe += 1;\')'],
+                'leftPress': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFishClicked.png")\nmel.eval(u\'print("\\\\n// 结果: 功德+"+$gongDe)\')\nmel.eval(\'$gongDe += 1;\')'],
                 'leftRelease': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFish.png")']
                 }
             )
@@ -1093,6 +1093,8 @@ class ShelfButtonManager(QWidget):
 
     # bilibili 粉丝
     def addBilibiliFansComponent(self):
+        if self.mayaVersion < 2022:
+            return
         from ..components import bilibiliFansWidget
         self.bilibiliFansComponent = bilibiliFansWidget.ComponentWidget(size=42)
         self.bilibiliFansComponent.setObjectName('Component_bilibiliFans_'+str(self.bilibiliFansComponent.winId()))

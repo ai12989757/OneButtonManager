@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 PYSIDE_VERSION = 2
 try:
     from PySide6.QtCore import *
@@ -12,7 +13,7 @@ except ImportError:
 from ..utils import dragWidgetOrder
 class CustomLCDNumber(QLCDNumber):
     def __init__(self, parent=None, component_type=None):
-        super().__init__(parent)
+        super(CustomLCDNumber, self).__init__(parent)
         self.component_type = component_type
 
     def wheelEvent(self, event):
@@ -20,7 +21,7 @@ class CustomLCDNumber(QLCDNumber):
         
 class ComponentWidget(QWidget):
     def __init__(self, countdown_time="00:00:00.000"):
-        super().__init__()
+        super(ComponentWidget,self).__init__()
         dragWidgetOrder.DragWidgetOrder(self)
         self.indexTepm = 0
         # 单击鼠标左键开始倒计时
@@ -64,14 +65,13 @@ class ComponentWidget(QWidget):
         self.label_colon3 = QLabel(".")
         self.label_colon3.mousePressEvent = self.handle_mouse_press  # 绑定点击事件
 
-        self.lcd_hours.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-        self.lcd_minutes.setStyleSheet(f"QLCDNumber {{ color:#bdbdbd; }}")
-        self.lcd_seconds.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-        self.lcd_ms.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-        self.label_colon1.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-        self.label_colon2.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-        self.label_colon3.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-        
+        self.lcd_hours.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+        self.lcd_minutes.setStyleSheet("QLCDNumber {{ color:#bdbdbd; }}".format())
+        self.lcd_seconds.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+        self.lcd_ms.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+        self.label_colon1.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
+        self.label_colon2.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
+        self.label_colon3.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
 
         # 创建定时器
         self.timer = QTimer(self)
@@ -189,18 +189,18 @@ class ComponentWidget(QWidget):
 
         color = QColor(int(red), int(green), int(blue)).name()
 
-        self.lcd_hours.setStyleSheet(f"QLCDNumber {{ color: {color}; }}")
-        self.lcd_minutes.setStyleSheet(f"QLCDNumber {{ color: {color}; }}")
-        self.lcd_seconds.setStyleSheet(f"QLCDNumber {{ color: {color}; }}")
-        self.lcd_ms.setStyleSheet(f"QLCDNumber {{ color: {color}; }}")
-        self.label_colon1.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-        self.label_colon2.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-        self.label_colon3.setStyleSheet(f"QLabel {{ color: {color}; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-    
+        self.lcd_hours.setStyleSheet("QLCDNumber {{ color: {}; }}".format(color))
+        self.lcd_minutes.setStyleSheet("QLCDNumber {{ color: {}; }}".format(color))
+        self.lcd_seconds.setStyleSheet("QLCDNumber {{ color: {}; }}".format(color))
+        self.lcd_ms.setStyleSheet("QLCDNumber {{ color: {}; }}".format(color))
+        self.label_colon1.setStyleSheet("QLabel {{ color: {}; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format(color))
+        self.label_colon2.setStyleSheet("QLabel {{ color: {}; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format(color))
+        self.label_colon3.setStyleSheet("QLabel {{ color: {}; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format(color))
+
     def handle_mouse_press(self, event):
         if event.button() == Qt.LeftButton:
             self.toggle_timer()
-        super().mousePressEvent(event)
+        super(ComponentWidget, self).mousePressEvent(event)
 
     def toggle_timer(self):
         if self.timer.isActive():
@@ -213,34 +213,34 @@ class ComponentWidget(QWidget):
         context_menu = QMenu(self)
 
         # 添加停止菜单项
-        stop_action = QAction("停止", self)
+        stop_action = QAction(u"停止", self)
         stop_action.triggered.connect(self.stop_timer)
         context_menu.addAction(stop_action)
 
         # 归零
-        reset_action = QAction("归零", self)
+        reset_action = QAction(u"归零", self)
         reset_action.triggered.connect(lambda: self.set_preset_time("00:00:00.000"))
         context_menu.addAction(reset_action)
 
         # 添加倒计时预设菜单项
-        preset_menu = QMenu("倒计时预设", self)
-        preset_5min = QAction("5分钟", self)
+        preset_menu = QMenu(u"倒计时预设", self)
+        preset_5min = QAction(u"5分钟", self)
         preset_5min.triggered.connect(lambda: self.set_preset_time("00:05:00.000"))
         preset_menu.addAction(preset_5min)
-        preset_10min = QAction("10分钟", self)
+        preset_10min = QAction(u"10分钟", self)
         preset_10min.triggered.connect(lambda: self.set_preset_time("00:10:00.000"))
         preset_menu.addAction(preset_10min)
-        preset_15min = QAction("15分钟", self)
+        preset_15min = QAction(u"15分钟", self)
         preset_15min.triggered.connect(lambda: self.set_preset_time("00:15:00.000"))
         preset_menu.addAction(preset_15min)
-        preset_30min = QAction("30分钟", self)
+        preset_30min = QAction(u"30分钟", self)
         preset_30min.triggered.connect(lambda: self.set_preset_time("00:30:00.000"))
         preset_menu.addAction(preset_30min)
         context_menu.addMenu(preset_menu)
         
         # 添加删除菜单项
         context_menu.addSeparator()
-        delete_action = QAction("删除", self)
+        delete_action = QAction(u"删除", self)
         delete_action.triggered.connect(self.delete_widget)
         context_menu.addAction(delete_action)
 
@@ -252,13 +252,13 @@ class ComponentWidget(QWidget):
         self.initial_time = QTime.fromString(preset_time, 'hh:mm:ss.zzz')
         self.time = QTime.fromString(preset_time, 'hh:mm:ss.zzz')
         if self.time == QTime(0, 0, 0, 0):
-            self.lcd_hours.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-            self.lcd_minutes.setStyleSheet(f"QLCDNumber {{ color:#bdbdbd; }}")
-            self.lcd_seconds.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-            self.lcd_ms.setStyleSheet(f"QLCDNumber {{ color: #bdbdbd; }}")
-            self.label_colon1.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-            self.label_colon2.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
-            self.label_colon3.setStyleSheet(f"QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}")
+            self.lcd_hours.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+            self.lcd_minutes.setStyleSheet("QLCDNumber {{ color:#bdbdbd; }}".format())
+            self.lcd_seconds.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+            self.lcd_ms.setStyleSheet("QLCDNumber {{ color: #bdbdbd; }}".format())
+            self.label_colon1.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
+            self.label_colon2.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
+            self.label_colon3.setStyleSheet("QLabel {{ color: #bdbdbd; font-size: 32px; font-family: '等线'; font-weight: bold;}}".format())
         self.update_time()
 
     def stop_timer(self):

@@ -1,5 +1,16 @@
+# -*- coding: utf-8 -*-
 from maya import mel
 import maya.cmds as cmds
+
+
+# 兼容 Python 2 和 3 的 exec 函数
+def exec_(code, globals=None, locals=None):
+    if globals is None:
+        globals = {}
+    globals.update({
+        '__builtins__': __builtins__,
+    })
+    exec(code, globals, locals)
 
 def runCommand(widget, command, trigger='click'):
     
@@ -19,7 +30,7 @@ def runCommand(widget, command, trigger='click'):
             
             if command[trigger][1] == '' or command[trigger][1] is None: return
             if command[trigger][0] == 'python': 
-                cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
+                cmds.evalDeferred(lambda: exec_(command[trigger][1], widget.context))
             elif command[trigger][0] == 'mel':
                 commendText = repr(command[trigger][1])
                 commendText = "mel.eval(" + commendText + ")"
@@ -27,7 +38,7 @@ def runCommand(widget, command, trigger='click'):
                     mel.eval("string $mouseState=\""+str(widget.mouseState)+"\";")
                     mel.eval("int $deltaX="+str(widget.delta.x())+";")
                     mel.eval("int $deltaY="+str(widget.delta.y())+";")
-                exec(commendText)
+                exec_(commendText)
             elif command[trigger][0] == 'function': 
                 command[trigger][1]()
     elif widget.type == 'QAction':
@@ -37,13 +48,13 @@ def runCommand(widget, command, trigger='click'):
         if command[trigger][1] == '' or command[trigger][1] is None: return
         if command[trigger][0] == 'python': 
             cmds.undoInfo(openChunk=True)
-            cmds.evalDeferred(lambda: exec(command[trigger][1], widget.context))
+            cmds.evalDeferred(lambda: exec_(command[trigger][1], widget.context))
             cmds.undoInfo(closeChunk=True)
         elif command[trigger][0] == 'mel':
             commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"
             cmds.undoInfo(openChunk=True)
-            exec(commendText)
+            exec_(commendText)
             cmds.undoInfo(closeChunk=True)
         elif command[trigger][0] == 'function': 
             cmds.undoInfo(openChunk=True)

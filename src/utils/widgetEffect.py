@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 try:
     from PySide2.QtCore import QPropertyAnimation
     from PySide2.QtGui import QColor

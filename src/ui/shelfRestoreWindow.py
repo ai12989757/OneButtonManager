@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 try:
     from PySide6.QtCore import *
@@ -135,7 +136,7 @@ class toDefUI(QWidget):
         self.fileListWidget = QTreeWidget()
         self.fileListWidget.setColumnCount(4)
         if self.language == 0:
-            self.fileListWidget.setHeaderLabels(["名称", "日期", "大小", "操作"])
+            self.fileListWidget.setHeaderLabels([u"名称", u"日期", u"大小", u"操作"])
         elif self.language == 1:
             self.fileListWidget.setHeaderLabels(["Name", "Date", "Size", "Set"])
         self.fileListWidget.header().setDefaultAlignment(Qt.AlignLeft)
@@ -442,7 +443,7 @@ class titleBar(QWidget):
                 if r + g + b > 600:  # 确保颜色不偏黑
                     break
             color = QColor(r, g, b)
-            self.colored_text += f'<span style="color: rgb({color.red()}, {color.green()}, {color.blue()});">{char}</span>'
+            self.colored_text += '<span style="color: rgb({}, {}, {});">{}</span>'.format(color.red(), color.green(), color.blue(), char)
         self.titleLabel.setText(self.colored_text)
         self.titleLabel.setTextFormat(Qt.RichText)
 

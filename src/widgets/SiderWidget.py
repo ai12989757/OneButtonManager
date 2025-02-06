@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 try:
     from PySide6.QtCore import *

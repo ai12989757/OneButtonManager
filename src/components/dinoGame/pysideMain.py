@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os, json, random
 try:
     from PySide6.QtCore import *
@@ -57,7 +58,7 @@ def update_globals(size):
 
 class Dinosaur(QLabel):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(Dinosaur, self).__init__(parent)
         self.X_POS = int(SCREEN_WIDTH/13.75) # default 80
         self.Y_POS = int(SCREEN_HEIGHT*2.6/4) # default 310
         self.Y_POS_DUCK = int(SCREEN_HEIGHT*3/4) # default 340
@@ -123,7 +124,7 @@ class Dinosaur(QLabel):
 
 class SmallCactus(QLabel):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(SmallCactus, self).__init__(parent)
         self.x = SCREEN_WIDTH
         self.y = 215*SCALE_FACTOR
         self.images = SMALL_CACTUS
@@ -142,7 +143,7 @@ class SmallCactus(QLabel):
 
 class LargeCactus(QLabel):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(LargeCactus, self).__init__(parent)
         self.x = SCREEN_WIDTH
         self.y = 190*SCALE_FACTOR
         self.images = LARGE_CACTUS
@@ -161,7 +162,7 @@ class LargeCactus(QLabel):
 
 class Bird(QLabel):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(Bird, self).__init__(parent)
         self.x = SCREEN_WIDTH
         self.y = int(150*SCALE_FACTOR)
         self.images = BIRD
@@ -182,7 +183,7 @@ class Bird(QLabel):
 
 class Cloud(QLabel):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(Cloud, self).__init__(parent)
         self.x = SCREEN_WIDTH + random.randint(0, int(3000*SCALE_FACTOR))
         self.y = random.randint(int(50*SCALE_FACTOR), int(100*SCALE_FACTOR))
         self.image = CLOUD
@@ -199,7 +200,7 @@ class Cloud(QLabel):
 from ...utils import dragWidgetOrder
 class ComponentWidget(QWidget):
     def __init__(self,size=300):
-        super().__init__()
+        super(ComponentWidget,self).__init__()
         dragWidgetOrder.DragWidgetOrder(self)
         update_globals(size)
         # 设置背景颜色

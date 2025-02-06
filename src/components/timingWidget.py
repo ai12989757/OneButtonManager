@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import random
 try:
     from PySide6.QtCore import *
@@ -19,7 +20,7 @@ def random_rainbow_color():
 
 class ComponentWidget(QWidget):
     def __init__(self):
-        super().__init__()
+        super(ComponentWidget,self).__init__()
         dragWidgetOrder.DragWidgetOrder(self)
         self.setStyleSheet("QFrame { border: none; }")
         # self.setWindowTitle("计时器组件")
@@ -63,7 +64,7 @@ class ComponentWidget(QWidget):
     def handle_mouse_press(self, event):
         if event.button() == Qt.LeftButton:
             self.toggle_timer()
-        super().mousePressEvent(event)
+        super(ComponentWidget,self).mousePressEvent(event)
 
     def toggle_timer(self):
         if self.timer.isActive():
@@ -78,7 +79,7 @@ class ComponentWidget(QWidget):
         
         # 添加所有计次菜单项
         for index, lap_time in enumerate(self.lap_times, start=1):
-            lap_action = QAction(f"{lap_time}", self)
+            lap_action = QAction("{}".format(lap_time), self)
             # 创建数字图标
             pixmap = QPixmap(32, 32)
             pixmap.fill(Qt.transparent)
