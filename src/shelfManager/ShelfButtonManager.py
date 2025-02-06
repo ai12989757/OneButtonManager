@@ -526,6 +526,7 @@ class ShelfButtonManager(QWidget):
         self.separator = Separator.Separator(parent=self.shelfParent,language=self.language,size=self.iconH)
         if self.mayaVersion < 2022:
             self.shelfLayoutInfo.addWidget(self.separator)
+
         elif self.mayaVersion >= 2022:
             # 使用winID作为按钮的名称
             self.separator.setObjectName('QPushButton'+str(self.separator.winId()))
@@ -533,8 +534,8 @@ class ShelfButtonManager(QWidget):
             self.separatorButtonPrt = omui.MQtUtil.findControl(self.separator.objectName())
             omui.MQtUtil.addWidgetToMayaLayout(int(self.separatorButtonPrt), int(self.shelfParentPtr)) 
         self.separator.shelfLayoutInfo = self.shelfLayoutInfo
-        # self.separator.iconSizeValue = QSize((self.iconH), self.iconH)
-        # self.separator.setFixedSize(self.separator.iconSizeValue)
+        self.separator.iconSizeValue = QSize(self.iconH, self.iconH)
+        self.separator.setFixedSize(self.iconH, self.iconH)
 
     def getButtonList(self):
         self.buttonList = []
