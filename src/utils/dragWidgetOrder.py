@@ -36,18 +36,18 @@ class DragWidgetOrder:
         if event.button() == Qt.MiddleButton:
             self.dragging = True
             self.startDrag(event)
-        super(self.widget.__class__, self.widget).mousePressEvent(event)
+        #super(self.widget.__class__, self.widget).mousePressEvent(event)
 
     def widgetMouseMoveEvent(self, event):
         if self.dragging:
             self.performDrag(event)
-        super(self.widget.__class__, self.widget).mouseMoveEvent(event)
+        #super(self.widget.__class__, self.widget).mouseMoveEvent(event)
 
     def widgetMouseReleaseEvent(self, event):
         if self.dragging:
             self.endDrag(event)
         self.dragging = False
-        super(self.widget.__class__, self.widget).mouseReleaseEvent(event)
+        #super(self.widget.__class__, self.widget).mouseReleaseEvent(event)
 
     def find_widget_layout(self, widget):
         parent = widget.parent()
@@ -62,12 +62,17 @@ class DragWidgetOrder:
             self.widgetLayout = parentLayout
             self.spacing = self.widgetLayout.spacing()
             self.margin = self.widgetLayout.contentsMargins().left()
-            # 获取布局是否是水平还是垂直
-            self.alignment = self.widgetLayout.alignment()
-            if self.alignment & Qt.AlignLeft or self.alignment & Qt.AlignRight or self.alignment & Qt.AlignVCenter:
+            # 获取布局的类型是HBox还是VBox
+            if isinstance(self.widgetLayout, QHBoxLayout):
                 self.alignment = 'h'
-            elif self.alignment & Qt.AlignTop or self.alignment & Qt.AlignBottom or self.alignment & Qt.AlignHCenter:
+            elif isinstance(self.widgetLayout, QVBoxLayout):
                 self.alignment = 'v'
+            elif isinstance(self.widgetLayout, QBoxLayout):
+                # 获取布局的方向
+                if self.widgetLayout.direction() == QBoxLayout.LeftToRight or self.widgetLayout.direction() == QBoxLayout.RightToLeft:
+                    self.alignment = 'h'
+                elif self.widgetLayout.direction() == QBoxLayout.TopToBottom or self.widgetLayout.direction() == QBoxLayout.BottomToTop:
+                    self.alignment = 'v'
             else:
                 self.alignment = 'h'
 
@@ -279,5 +284,11 @@ class DragWidgetOrder:
             for i in self.buttonList:
                 i.setParent(None)
             for i in self.buttonList:
-                widgetParentLayout.addWidget(i)
+                try:
+                    if self.alignment == 'h':
+                        widgetParentLayout.addWidget(i,0,Qt.AlignVCenter)
+                    elif self.alignment == 'v':
+                        widgetParentLayout.addWidget(i,0,Qt.AlignHCenter)
+                except:
+                    widgetParentLayout.addWidget(i)
             self.buttonList = buttonListNew
