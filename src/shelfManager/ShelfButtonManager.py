@@ -841,6 +841,7 @@ class ShelfButtonManager(QWidget):
                         label=shelfButtonData['label'],
                         annotation=shelfButtonData['annotation'],
                         icon=imagePath,
+                        size=self.iconH,
                         command=shelfButtonData['command']
                     )
                     if 'menuItem' in shelfButtonData.keys():
@@ -1038,7 +1039,8 @@ class ShelfButtonManager(QWidget):
         self.clockComponent.setObjectName('Component_clock_'+str(self.clockComponent.winId()))
         self.clockComponentPrt = omui.MQtUtil.findControl(self.clockComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.clockComponentPrt), int(self.shelfParentPtr))
-        self.clockComponent.setFixedSize(QSize(150, 42))
+        fact = 150/42
+        self.clockComponent.setFixedSize(QSize(int(self.iconH*fact), self.iconH))
     
     # 计时器
     def addTimingComponent(self):
@@ -1047,7 +1049,8 @@ class ShelfButtonManager(QWidget):
         self.timingComponent.setObjectName('Component_timing_'+str(self.timingComponent.winId()))
         self.timingComponentPrt = omui.MQtUtil.findControl(self.timingComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.timingComponentPrt), int(self.shelfParentPtr))
-        self.timingComponent.setFixedSize(QSize(235, 42))
+        fact = 235/42
+        self.timingComponent.setFixedSize(QSize(int(self.iconH*fact), self.iconH))
 
     # 倒计时
     def addCountdownComponent(self):
@@ -1056,8 +1059,12 @@ class ShelfButtonManager(QWidget):
         self.countdownComponent.setObjectName('Component_countdown_'+str(self.countdownComponent.winId()))
         self.countdownComponentPrt = omui.MQtUtil.findControl(self.countdownComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.countdownComponentPrt), int(self.shelfParentPtr))
-        self.countdownComponent.setFixedSize(QSize(235, 42))
-        #self.countdownComponent.setGeometry(0, 0, 150, 42)
+        fact = 235/42
+        self.countdownComponent.setFixedSize(QSize(int(self.iconH*fact), self.iconH))
+        self.countdownComponent.lcd_hours.setFixedSize(self.iconH, self.iconH)
+        self.countdownComponent.lcd_minutes.setFixedSize(self.iconH, self.iconH)
+        self.countdownComponent.lcd_seconds.setFixedSize(self.iconH, self.iconH)
+        self.countdownComponent.lcd_ms.setFixedSize(int(self.iconH/42*63), self.iconH)
 
     # 功德
     def addMeritsVirtuesComponent(self):
@@ -1083,7 +1090,7 @@ class ShelfButtonManager(QWidget):
             mel.eval('workspaceControl -e -ih ($sjkhs-20) "Shelf"')
             self.dinoGameComponent.close()
         from ..components.dinoGame import pysideMain
-        self.dinoGameComponent = pysideMain.ComponentWidget(size=size)
+        self.dinoGameComponent = pysideMain.ComponentWidget(size=self.iconH)
         self.dinoGameComponent.menu.addAction(QIcon(), u'原始尺寸', lambda: setWidgetSize(size=300))
         self.dinoGameComponent.menu.addAction(QIcon(), u'小窗口', lambda: setWidgetSize(size=42))
         self.dinoGameComponent.menu.addAction(QIcon(ICONPATH+'red/Delete.png'), u'关闭', closeDinoGameComponent)
@@ -1097,7 +1104,7 @@ class ShelfButtonManager(QWidget):
         if self.mayaVersion < 2022:
             return
         from ..components import bilibiliFansWidget
-        self.bilibiliFansComponent = bilibiliFansWidget.ComponentWidget(size=42)
+        self.bilibiliFansComponent = bilibiliFansWidget.ComponentWidget(size=self.iconH)
         self.bilibiliFansComponent.setObjectName('Component_bilibiliFans_'+str(self.bilibiliFansComponent.winId()))
         self.bilibiliFansComponentPrt = omui.MQtUtil.findControl(self.bilibiliFansComponent.objectName())
         omui.MQtUtil.addWidgetToMayaLayout(int(self.bilibiliFansComponentPrt), int(self.shelfParentPtr))
@@ -1112,8 +1119,9 @@ class ShelfButtonManager(QWidget):
             widget.setObjectName('OneShelf_'+widget.__class__.__name__+'_'+str(widget.winId()))
             widgetPrt = omui.MQtUtil.findControl(widget.objectName())
             omui.MQtUtil.addWidgetToMayaLayout(int(widgetPrt), int(self.shelfParentPtr))
-            if hasattr(widget, 'SCREEN_WIDTH') and hasattr(widget, 'SCREEN_HEIGHT'):
-                widget.setFixedSize(QSize(widget.SCREEN_WIDTH, widget.SCREEN_HEIGHT))
+        if hasattr(widget, 'SCREEN_WIDTH') and hasattr(widget, 'SCREEN_HEIGHT'):
+            fact = widget.SCREEN_WIDTH/widget.SCREEN_HEIGHT
+            widget.setFixedSize(QSize(int(self.iconH*fact), self.iconH))
         
 def main():
     sys.dont_write_bytecode = True
