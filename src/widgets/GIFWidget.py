@@ -433,18 +433,9 @@ class GIFButtonWidget(QWidget):
                     if self.singleClick == 1:
                         # 延迟30ms,进入等待执行状态
                         self.singleClickWait = QTimer(self)
-                        self.singleClickWait.setInterval(200)
+                        self.singleClickWait.setInterval(150)
                         self.singleClickWait.timeout.connect(self.singleClickEvent)
                         self.singleClickWait.start() 
-                    elif self.singleClick == 2:
-                        # 停止正在延迟等待的单击事件 singleClickWait
-                        # 禁用self.singleClickWait
-                        if self.singleClickWait:
-                            self.singleClickWait.stop()
-                        # 双击事件
-                        self.singleClick = 0
-                        self.mouseState = 'doubleClick'
-                        runCommand.runCommand(self, self.command, 'doubleClick')
 
     def widgetMouseMoveEvent(self, event):
         # 更改光标样式
@@ -509,7 +500,15 @@ class GIFButtonWidget(QWidget):
                 trigger = 'click'
                 self.mouseState = 'click'
             runCommand.runCommand(self, self.command, trigger)
-    
+
+    def mouseDoubleClickEvent(self, event):
+        if self.singleClickWait:
+            self.singleClickWait.stop()
+        # 双击事件
+        self.singleClick = 0
+        self.mouseState = 'doubleClick'
+        runCommand.runCommand(self, self.command, 'doubleClick')
+
     def executeDragCommand(self, mouseState='leftMoving'):
         if mouseState == 'leftMoving':
             modifiers = QApplication.keyboardModifiers()
