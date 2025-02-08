@@ -539,10 +539,6 @@ class GIFButtonWidget(QWidget):
             runCommand.runCommand(self, self.command, trigger)
         else:
             self.mouseState = mouseState
-            if mouseState == 'leftPress':
-                mel.eval('undoInfo -openChunk;')
-            if mouseState == 'leftRelease':
-                mel.eval('undoInfo -closeChunk;')
             runCommand.runCommand(self, self.command, mouseState)
 
     def melSetIconAttr(self, iconPath, attr, value):
