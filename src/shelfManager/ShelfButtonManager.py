@@ -522,8 +522,8 @@ class ShelfButtonManager(QWidget):
         # self.gifButton.setContentsMargins(0, 5, 0, 0) # not work
         # self.gifButton.setGeometry(0, 5, 0, 0) # not work
 
-    def addSeparator(self):
-        self.separator = Separator.Separator(parent=self.shelfParent,language=self.language,size=self.iconH)
+    def addSeparator(self,color=(158, 158, 158, 255)):
+        self.separator = Separator.Separator(parent=self.shelfParent,language=self.language,size=self.iconH,color=color)
         if self.mayaVersion < 2022:
             self.shelfLayoutInfo.addWidget(self.separator)
 
@@ -827,7 +827,10 @@ class ShelfButtonManager(QWidget):
 
         for shelfButtonName in data.keys():
             if 'separator' in data[shelfButtonName] or 'Separator' in data[shelfButtonName]:
-                self.addSeparator()
+                if len(data[shelfButtonName]) == 2:
+                    self.addSeparator(color=data[shelfButtonName][1])
+                else:
+                    self.addSeparator()
             elif 'Component' in data[shelfButtonName]:
                 self.addComponent(data[shelfButtonName][1])
             else:
@@ -942,7 +945,7 @@ class ShelfButtonManager(QWidget):
             if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'GIFButtonWidget':
                 data[index] = self.getGIFButtonData(i)
             elif i.__class__.__name__ == 'Separator':
-                data[index] = 'separator'
+                data[index] = ['separator', i.color]
             elif i.__class__.__name__ == 'ComponentWidget':
                 data[index] = ['Component', i.objectName().split('_')[-2]]
         # 写入json文件

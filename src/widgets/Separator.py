@@ -16,6 +16,7 @@ ICONPATH = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/').replace
 class Separator(QPushButton):
     def __init__(self, parent=None, language=0, dragMove=True, size=42, alignment='H', color=(158, 158, 158, 255)):
         super(Separator, self).__init__(parent)
+        self.color = color
         self.language = language
         self.dragMove = dragMove
         self.separatorSize = None
@@ -33,6 +34,10 @@ class Separator(QPushButton):
         self.deleteAction = QAction(QIcon(os.path.join(ICONPATH, "red/Delete.png")), sl(u"删除",self.language), self)
         self.deleteAction.triggered.connect(self.deleteButton)
         self.menu.addAction(self.deleteAction)
+        # 设置颜色
+        self.setColorAction = QAction(QIcon(os.path.join(ICONPATH, "white/color.png")), sl(u"设置颜色",self.language), self)
+        self.setColorAction.triggered.connect(self.setColor)
+        self.menu.addAction(self.setColorAction)
 
         if dragMove:
             #self.setMouseTracking(True)
@@ -42,6 +47,13 @@ class Separator(QPushButton):
         self.menu.deleteLater()
         self.setParent(None)
         self.deleteLater()
+
+    def setColor(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.pixmap.fill(color)
+            self.setIcon(self.pixmap)
+            self.color = [color.red(), color.green(), color.blue(), color.alpha()]
 
     # 添加右键菜单
     def contextMenuEvent(self, event):
