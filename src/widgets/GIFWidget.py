@@ -19,6 +19,7 @@ from ..utils import buttonManager
 from ..utils.switchLanguage import *
 from . import GIFAction
 from ..utils import buttonManager
+from . import BGwidget
 try:
     reload(widgetEffect)
     reload(imageManager)
@@ -26,6 +27,7 @@ try:
     reload(GIFAction)
     reload(dragWidgetOrder)
     reload(buttonManager)
+    reload(BGwidget)
 except:
     from importlib import reload
     reload(widgetEffect)
@@ -34,6 +36,7 @@ except:
     reload(GIFAction)
     reload(dragWidgetOrder)
     reload(buttonManager)
+    reload(BGwidget)
 
 import ctypes
 from ctypes import wintypes
@@ -57,11 +60,12 @@ def is_right_ctrl_pressed():
 ICONPATH = os.path.dirname(__file__).replace('\\', '/').replace('src/widgets', 'icons/') # /OneButtonManager/icons/
 SHELF_BACKUP_PATH = os.path.expanduser('~') + '/OneTools/data/shelf_backup/'
 
-
 class GIFButtonWidget(QWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super(GIFButtonWidget, self).__init__(parent)
-        self.dragWidgetOrder = dragWidgetOrder.DragWidgetOrder(self)
+        self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
+        if self.dragMove:
+            self.dragWidgetOrder = dragWidgetOrder.DragWidgetOrder(self)
         self.mousePressEvent = self.widgetMousePressEvent
         self.mouseMoveEvent = self.widgetMouseMoveEvent
         self.mouseReleaseEvent = self.widgetMouseReleaseEvent
@@ -87,11 +91,12 @@ class GIFButtonWidget(QWidget):
         self.language = kwargs.get('language', 0)
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
         self.iconPath = kwargs.get('icon', None)        # 图标路径
+        self.bg = kwargs.get('bg', False)               # 是否显示背景
+        self.bgColor = kwargs.get('bgColor', (123, 104, 238)) # 背景颜色
         self.hiIconPath = None                          # 高亮图标路径
         self.size = kwargs.get('size', 42)              # 图标 长或宽 尺寸
         self.style = kwargs.get('style', 'auto')        # 按钮样式
-        self.dragMove = kwargs.get('dragMove', False)   # 是否允许拖动按钮
-        self.tearOff = kwargs.get('tearOff', True)     # 是否允许拖动按钮
+        self.tearOff = kwargs.get('tearOff', True)      # 是否允许撕下菜单
         
         QApplication.instance().removeEventFilter(self) # 移除事件过滤器
         self.dragging = False        # 按钮是否处于拖拽状态
@@ -131,6 +136,9 @@ class GIFButtonWidget(QWidget):
         self.golablLayout.setContentsMargins(0, 0, 0, 0)
         self.golablLayout.setSpacing(0)
         self.setLayout(self.golablLayout )
+        if self.bg:
+            self.bgWidget = BGwidget.WidgetBG(iconPath=self.iconPath, size=self.size, color=self.bgColor)
+            self.golablLayout.addWidget(self.bgWidget, 0, Qt.AlignCenter)
         self.movie = None               # GIF动画
         self.iconSub = 'default'        # 图标角标
         self.menuSubLable = None        # 菜单角标
@@ -140,10 +148,10 @@ class GIFButtonWidget(QWidget):
         self.keySubLabel = None         # 用于显示角标
         self.menu = QMenu(self)         # 菜单
         self.menu.setTearOffEnabled(self.tearOff) # 设置菜单是否可以撕下
-    
+
     # 有菜单项时，按钮右下角显示角标
     def menuSubLabel(self):
-        if not self.menuSubLable:
+        if not self.menuSubLable and not self.bg:
             self.menuSubLable = QLabel(self)
             subImage = QPixmap(ICONPATH+'sub/sub.png')
             subImage = subImage.scaled(self.size, self.size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -269,7 +277,7 @@ class GIFButtonWidget(QWidget):
             pass
         else:
             self.iconLabel.setPixmap(imageManager.enhanceIcon(self.pixmap, 1.3, 1.2))
-        _,self.colorAnimation = widgetEffect.colorCycleEffect(self, 4000, self.alignment) # 彩色循环描边效果
+        _,self.colorAnimation = widgetEffect.colorCycleEffect(self.iconLabel, 4000, self.alignment) # 彩色循环描边效果
 
         QApplication.instance().installEventFilter(self) # 安装事件过滤器, 用于监听键盘事件
         modifiers = QApplication.keyboardModifiers()
@@ -303,7 +311,7 @@ class GIFButtonWidget(QWidget):
         else:
             self.iconLabel.setPixmap(self.pixmap)
         if self.iconSub != 'default': self.updateSubLabel(None)
-        self.setGraphicsEffect(None)
+        self.iconLabel.setGraphicsEffect(None)
         if hasattr(self, 'colorAnimation'): self.colorAnimation.stop()
 
     def eventFilter(self, obj, event):
@@ -500,7 +508,7 @@ class GIFButtonWidget(QWidget):
                 trigger = 'click'
                 self.mouseState = 'click'
             runCommand.runCommand(self, self.command, trigger)
-
+    
     def mouseDoubleClickEvent(self, event):
         if self.singleClickWait:
             self.singleClickWait.stop()
@@ -539,6 +547,10 @@ class GIFButtonWidget(QWidget):
             runCommand.runCommand(self, self.command, trigger)
         else:
             self.mouseState = mouseState
+            # if mouseState == 'leftPress':
+            #     mel.eval('undoInfo -openChunk;')
+            # if mouseState == 'leftRelease':
+            #     mel.eval('undoInfo -closeChunk;')
             runCommand.runCommand(self, self.command, mouseState)
 
     def melSetIconAttr(self, iconPath, attr, value):
@@ -562,8 +574,8 @@ class GIFButtonWidget(QWidget):
             moveValueY = max(min(moveValueY, 5), -5)
             # 只有当移动值发生变化时才移动图标
             if moveValueX != self.lastMoveValueX or moveValueY != self.lastMoveValueY:
-                self.move(self.x() + (moveValueX - self.lastMoveValueX),
-                        self.y() + (moveValueY - self.lastMoveValueY))
+                self.iconLabel.move(self.iconLabel.x() + (moveValueX - self.lastMoveValueX),
+                        self.iconLabel.y() + (moveValueY - self.lastMoveValueY))
             # 更新最后的移动值
             self.lastMoveValueX = moveValueX
             self.lastMoveValueY = moveValueY
@@ -571,9 +583,9 @@ class GIFButtonWidget(QWidget):
             self.moveThreshold += 0.1
         elif mode == 'back':
             # 设置回弹动画
-            start_pos = self.pos()
-            end_pos = QPoint(self.x() - self.lastMoveValueX, self.y() - self.lastMoveValueY)
-            self.animation = QPropertyAnimation(self, b"pos")
+            start_pos = self.iconLabel.pos()
+            end_pos = QPoint(self.iconLabel.x() - self.lastMoveValueX, self.iconLabel.y() - self.lastMoveValueY)
+            self.animation = QPropertyAnimation(self.iconLabel, b"pos")
             self.animation.setDuration(200)
             self.animation.setStartValue(start_pos)
             self.animation.setEndValue(end_pos)
@@ -590,7 +602,12 @@ class GIFButtonWidget(QWidget):
         menu_item = GIFAction.gifIconMenuAction(parent=self, icon=icon, label=label, annotation=annotation, command=command, checkable=checkable)
         self.menu.addAction(menu_item)
         
-        self.menuSubLabel() # 菜单项角标
+        if not self.bg:
+            self.menuSubLabel() # 菜单项角标
+        else:
+            self.bgWidget.menuSub = True
+            #self.bgWidget.setSub()
+            self.bgWidget.update()
             
         # 菜单出现前命令
         try:
