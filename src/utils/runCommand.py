@@ -2,13 +2,14 @@
 from maya import mel
 import maya.cmds as cmds
 
-def exec_command(command, context):
-    exec(command, {}, context)
+widget_instance = None
 
 def exec_mel_command(command):
     exec(command)
 
 def runCommand(widget, command, trigger='click'):
+    global widget_instance
+    widget_instance = widget
     if widget.type == 'QWidget':
         if not command: return
         if trigger not in command: return
@@ -16,7 +17,11 @@ def runCommand(widget, command, trigger='click'):
         if widget.type == 'QWidget':
             if command[trigger][1] == '' or command[trigger][1] is None: return
             if command[trigger][0] == 'python': 
-                cmds.evalDeferred(lambda: exec_command(command[trigger][1], widget.context))
+                def runPythonCommand(command):
+                    global widget_instance
+                    exec("self = widget_instance", globals())
+                    exec(command, globals())
+                runPythonCommand(command[trigger][1])
             elif command[trigger][0] == 'mel':
                 commendText = repr(command[trigger][1])
                 commendText = "mel.eval(" + commendText + ")"
@@ -33,9 +38,11 @@ def runCommand(widget, command, trigger='click'):
         if trigger not in command.keys(): return
         if command[trigger][1] == '' or command[trigger][1] is None: return
         if command[trigger][0] == 'python': 
-            #cmds.undoInfo(openChunk=True)
-            cmds.evalDeferred(lambda: exec_command(command[trigger][1], widget.context))
-            #cmds.undoInfo(closeChunk=True)
+            def runPythonCommand(command):
+                global widget_instance
+                exec("self = widget_instance", globals())
+                exec(command, globals())
+            runPythonCommand(command[trigger][1])
         elif command[trigger][0] == 'mel':
             commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"

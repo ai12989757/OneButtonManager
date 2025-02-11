@@ -31,21 +31,11 @@ class gifIconMenuAction(QAction):
         self.checkable = kwargs.get('checkable', False)
         self.type = 'QAction'
 
-        self.context = globals().copy()
-        self.context.update({'self': self})
-
         if self.checkable:
             self.setCheckable(True)
             
         if self.iconPath:
-            if self.iconPath and not os.path.isabs(self.iconPath) and ':\\' not in self.iconPath:
-                self.iconPath = os.path.join(iconPath, self.iconPath)
-            if self.iconPath.lower().endswith('.gif'):
-                self.movie = QMovie(self.iconPath)
-                self.movie.frameChanged.connect(self.updateIcon)
-                self.movie.start()
-            else:
-                self.setIcon(QIcon(self.iconPath))
+            self.setIconImage(self.iconPath)
             
         if self.label:
             self.setText(self.label)
@@ -59,3 +49,13 @@ class gifIconMenuAction(QAction):
     def updateIcon(self):
         self.current_frame = self.movie.currentPixmap()
         self.setIcon(QIcon(self.current_frame))
+
+    def setIconImage(self, image):
+        if self.iconPath and not os.path.isabs(self.iconPath) and ':\\' not in self.iconPath:
+            self.iconPath = os.path.join(iconPath, self.iconPath)
+        if self.iconPath.lower().endswith('.gif'):
+            self.movie = QMovie(self.iconPath)
+            self.movie.frameChanged.connect(self.updateIcon)
+            self.movie.start()
+        else:
+            self.setIcon(QIcon(self.iconPath))

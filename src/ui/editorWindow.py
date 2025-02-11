@@ -408,7 +408,7 @@ class ButtonEditorWindow(QDialog):
             menuItem['command']['click'][1] = command
 
             # 更新字典
-            self.menuItems[row]['command'][1] = command
+            self.menuItems[row]['command']['click'][1] = command
             self.buttonDict["menuItems"] = self.menuItems
 
             self.updataMenuAction()
