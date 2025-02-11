@@ -37,7 +37,12 @@ def runCommand(widget, command, trigger='click'):
                     mel.eval("string $mouseState=\""+str(widget.mouseState)+"\";")
                     mel.eval("int $deltaX="+str(widget.delta.x())+";")
                     mel.eval("int $deltaY="+str(widget.delta.y())+";")
-                exec_mel_command(commendText)
+                try:
+                    cmds.undoInfo(openChunk=True)
+                    exec_mel_command(commendText)
+                    cmds.undoInfo(closeChunk=True)  
+                except Exception as e:
+                    pass
             elif command[trigger][0] == 'function': 
                 try:
                     cmds.undoInfo(openChunk=True)
@@ -72,8 +77,7 @@ def runCommand(widget, command, trigger='click'):
                 exec_mel_command(commendText)
                 cmds.undoInfo(closeChunk=True)
             except Exception as e:
-                cmds.undoInfo(closeChunk=True)
-                mel.eval('print("// 错误: '+str(e)+' //\\n")')
+                pass
         elif command[trigger][0] == 'function': 
             try:
                 cmds.undoInfo(openChunk=True)
