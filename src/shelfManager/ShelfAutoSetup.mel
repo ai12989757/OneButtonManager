@@ -8,12 +8,14 @@ string $pythonCode = "import sys\n" +
                     "    sys.path.append(PATH)\n" +
                     "if 'ShelfButtonManager' not in sys.modules:\n" +
                     "    from OneButtonManager.src.shelfManager import ShelfButtonManager\n" +
+                    "    from OneButtonManager.src.utils import changeCommandLineBGC\n" +
                     "try:\n" +
                     "    reload(ShelfButtonManager)\n" +
                     "except:\n" +
                     "    from importlib import reload\n" +
                     "    reload(ShelfButtonManager)\n"+
-                    "ShelfButtonManager.ShelfButtonManager("+$Language+").autoSetShelf()";
+                    "ShelfButtonManager.ShelfButtonManager("+$Language+").autoSetShelf()"
+                    ;
 python($pythonCode);
 
 proc GifButton_load(string $jsonPath, string $shelfName)

@@ -21,7 +21,15 @@ def runCommand(widget, command, trigger='click'):
                     global widget_instance
                     exec("self = widget_instance", globals())
                     exec(command, globals())
-                runPythonCommand(command[trigger][1])
+                try:
+                    cmds.undoInfo(openChunk=True)
+                    runPythonCommand(command[trigger][1])
+                    cmds.undoInfo(closeChunk=True)
+                except Exception as e:
+                    cmds.undoInfo(closeChunk=True)
+                    # 打印错误信息
+                    mel.eval('print("// 错误: '+str(e)+' //\\n")')
+
             elif command[trigger][0] == 'mel':
                 commendText = repr(command[trigger][1])
                 commendText = "mel.eval(" + commendText + ")"
@@ -31,7 +39,14 @@ def runCommand(widget, command, trigger='click'):
                     mel.eval("int $deltaY="+str(widget.delta.y())+";")
                 exec_mel_command(commendText)
             elif command[trigger][0] == 'function': 
-                command[trigger][1]()
+                try:
+                    cmds.undoInfo(openChunk=True)
+                    command[trigger][1]()
+                    cmds.undoInfo(closeChunk=True)  
+                except Exception as e:
+                    cmds.undoInfo(closeChunk=True)
+                    mel.eval('print("// 错误: '+str(e)+' //\\n")')
+                    
     elif widget.type == 'QAction':
         if not command: return
         if trigger not in command: return
@@ -42,14 +57,28 @@ def runCommand(widget, command, trigger='click'):
                 global widget_instance
                 exec("self = widget_instance", globals())
                 exec(command, globals())
-            runPythonCommand(command[trigger][1])
+            try:
+                cmds.undoInfo(openChunk=True)
+                runPythonCommand(command[trigger][1])
+                cmds.undoInfo(closeChunk=True)
+            except Exception as e:
+                cmds.undoInfo(closeChunk=True)
+                mel.eval('print("// 错误: '+str(e)+' //\\n")')
         elif command[trigger][0] == 'mel':
             commendText = repr(command[trigger][1])
             commendText = "mel.eval(" + commendText + ")"
-            #cmds.undoInfo(openChunk=True)
-            exec_mel_command(commendText)
-            #cmds.undoInfo(closeChunk=True)
+            try:
+                cmds.undoInfo(openChunk=True)
+                exec_mel_command(commendText)
+                cmds.undoInfo(closeChunk=True)
+            except Exception as e:
+                cmds.undoInfo(closeChunk=True)
+                mel.eval('print("// 错误: '+str(e)+' //\\n")')
         elif command[trigger][0] == 'function': 
-            #cmds.undoInfo(openChunk=True)
-            command[trigger][1]()
-            #cmds.undoInfo(closeChunk=True)
+            try:
+                cmds.undoInfo(openChunk=True)
+                command[trigger][1]()
+                cmds.undoInfo(closeChunk=True)  
+            except Exception as e:
+                cmds.undoInfo(closeChunk=True)
+                mel.eval('print("// 错误: '+str(e)+' //\\n")')
