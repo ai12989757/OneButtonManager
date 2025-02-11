@@ -70,8 +70,6 @@ class GIFButtonWidget(QWidget):
         self.mouseMoveEvent = self.widgetMouseMoveEvent
         self.mouseReleaseEvent = self.widgetMouseReleaseEvent
         ################## command ##################
-        self.context = globals().copy()
-        self.context.update({'self': self})
         self.labelText=kwargs.get('label', "")
         self.annotation=kwargs.get('annotation', None)
         if self.annotation:
@@ -80,13 +78,13 @@ class GIFButtonWidget(QWidget):
         if self.labelText:
             self.setObjectName(self.labelText)
         self.command = kwargs.get('command', {}) # 命令
-        self.type = 'QWidget'
         '''
         command = {触发器: [类型, 命令]}
         tpye 类型: python, mel, function
         trigger 触发器: menuShow, click, doubleClick, ctrlClick, shiftClick, altClick, ctrlShiftClick, ctrlAltClick, altShiftClick, ctrlAltShiftClick, drag, ctrlDrag, shiftDrag, altDrag, ctrlShiftDrag, ctrlAltDrag, altShiftDrag, ctrlAltShiftDrag
         命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
         '''
+        self.type = 'QWidget'
         ################## UI ##################
         self.language = kwargs.get('language', 0)
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
