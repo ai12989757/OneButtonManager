@@ -1,26 +1,5 @@
 # -*- coding: utf-8 -*-
 from maya import mel, cmds
-from contextlib import ContextDecorator
-
-class Undo(ContextDecorator):
-    def __init__(self, name=None):
-        self.name = name
-    def __enter__(self):
-        cmds.undoInfo(openChunk=True, infinity=True, chunkName=self.name)
-        
-    def __exit__(self, exc_type, exc_value, traceback):
-        cmds.undoInfo(closeChunk=True)
-
-def undoWrapper(func):
-    def wrapper(*args, **kwargs):
-        cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand')
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            mel.eval('print("// 错误: '+str(e)+' //\\n")')
-        finally:
-            cmds.undoInfo(closeChunk=True)
-    return wrapper
 
 widget_instance = None
 class RunCommand:
@@ -41,22 +20,6 @@ class RunCommand:
         widget_instance = self.widget
         exec("self = widget_instance", globals())
         exec(command, globals())
-
-    def leftPR(self):
-        '''
-        用于处理 'leftPress', 'leftRelease' 触发的命令
-        不开启撤销块
-        '''
-        if not self.ckeckCommand(): return
-        if self.trigger not in ['leftPress', 'leftRelease']: return
-        if self.command[self.trigger][0] == 'python': 
-            self.runPythonCommand(self.command[self.trigger][1])
-        elif self.command[self.trigger][0] == 'mel':
-            commendText = repr(self.command[self.trigger][1])
-            commendText = "mel.eval(" + commendText + ")"
-            exec(commendText)
-        elif self.command[self.trigger][0] == 'function': 
-            self.command[self.trigger][1]()
 
     def runCommand(self):
         '''
