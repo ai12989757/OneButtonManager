@@ -24,7 +24,8 @@ class RunCommand:
     def leftPR(self):
         '''
         用于处理 'leftPress', 'leftRelease' 触发的命令
-        不开启撤销块
+        按下鼠标左键时开启撤销块，松开鼠标左键时关闭撤销块，形成一个完整的撤销块，用于拖拽命令可以一次性撤销
+        执行按下或释放的命令，不设置撤销块
         '''
         if self.trigger == 'leftPress':
             cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand_leftPR')
