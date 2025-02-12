@@ -394,7 +394,7 @@ class GIFButtonWidget(QWidget):
         self.raise_() # 置顶
         if event.button() == Qt.LeftButton:
             self.mouseState = 'leftPress'
-            RunCommand(self, self.command, 'leftPress').runCommand()
+            RunCommand(self, self.command, 'leftPress').leftPR()
             self.dragging = True
             if self.style == 'clickAction': # 点击播放/暂停
                 if self.movie.state() == QMovie.Running:
@@ -415,7 +415,7 @@ class GIFButtonWidget(QWidget):
             self.updateSubLabel(None)
         if event.button() == Qt.LeftButton:
             self.mouseState = 'leftRelease'
-            RunCommand(self, self.command, 'leftRelease').runCommand()
+            RunCommand(self, self.command, 'leftRelease').leftPR()
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.singleClick = 0

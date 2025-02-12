@@ -21,6 +21,31 @@ class RunCommand:
         exec("self = widget_instance", globals())
         exec(command, globals())
 
+    def leftPR(self):
+        '''
+        用于处理 'leftPress', 'leftRelease' 触发的命令
+        不开启撤销块
+        '''
+        if self.trigger not in ['leftPress', 'leftRelease']: return
+        cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand_leftPR')
+        try:
+            if self.trigger not in ['leftPress', 'leftRelease']: return
+            if self.command[self.trigger][0] == 'python': 
+                self.runPythonCommand(self.command[self.trigger][1])
+            elif self.command[self.trigger][0] == 'mel':
+                commendText = repr(self.command[self.trigger][1])
+                commendText = "mel.eval(" + commendText + ")"
+                exec(commendText)
+            elif self.command[self.trigger][0] == 'function': 
+                self.command[self.trigger][1]()
+        except Exception as e:
+            if self.command[self.trigger][0] == 'mel':
+                pass
+            else:
+                mel.eval('print("// 错误: '+str(e)+' //\\n")')
+        finally:
+            cmds.undoInfo(closeChunk=True)
+
     def runCommand(self):
         '''
         用于处理 'click', 'doubleClick', 'middleClick', 'rightClick', 'ctrlClick', 'shiftClick', 'altClick', 'ctrlShiftClick', 'ctrlAltClick', 'altShiftClick', 'ctrlAltShiftClick' 触发的命令
