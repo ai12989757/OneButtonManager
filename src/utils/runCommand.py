@@ -26,11 +26,12 @@ class RunCommand:
         用于处理 'leftPress', 'leftRelease' 触发的命令
         不开启撤销块
         '''
-        if self.trigger not in ['leftPress', 'leftRelease']: return
-        cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand_leftPR')
-        if not self.ckeckCommand():
+        if self.trigger == 'leftPress':
+            cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand_leftPR')
+        if self.trigger == 'leftRelease':
             cmds.undoInfo(closeChunk=True)
-            return
+        if not self.ckeckCommand(): return
+        if self.trigger not in ['leftPress', 'leftRelease']: return
         try:
             if self.command[self.trigger][0] == 'python': 
                 self.runPythonCommand(self.command[self.trigger][1])
@@ -45,9 +46,7 @@ class RunCommand:
                 pass
             else:
                 mel.eval('print("// 错误: '+str(e)+' //\\n")')
-        finally:
-            cmds.undoInfo(closeChunk=True)
-
+                
     def runCommand(self):
         '''
         用于处理 'click', 'doubleClick', 'middleClick', 'rightClick', 'ctrlClick', 'shiftClick', 'altClick', 'ctrlShiftClick', 'ctrlAltClick', 'altShiftClick', 'ctrlAltShiftClick' 触发的命令
