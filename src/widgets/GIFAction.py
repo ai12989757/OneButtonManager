@@ -2,12 +2,8 @@
 import os
 from maya import mel
 import maya.cmds as cmds
-from ..utils import runCommand
-try:
-    reload(runCommand)
-except:
-    from importlib import reload
-    reload(runCommand)
+from ..utils.runCommand import RunCommand
+
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -43,7 +39,7 @@ class gifIconMenuAction(QAction):
             self.setStatusTip(self.annotation)
 
         if self.command:
-            self.triggered.connect(lambda: runCommand.runCommand(self, self.command, 'click'))
+            self.triggered.connect(lambda: RunCommand(self, self.command, 'click').runCommand())
 
     def updateIcon(self):
         self.current_frame = self.movie.currentPixmap()
