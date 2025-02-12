@@ -28,8 +28,10 @@ class RunCommand:
         '''
         if self.trigger not in ['leftPress', 'leftRelease']: return
         cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand_leftPR')
+        if not self.ckeckCommand():
+            cmds.undoInfo(closeChunk=True)
+            return
         try:
-            if self.trigger not in ['leftPress', 'leftRelease']: return
             if self.command[self.trigger][0] == 'python': 
                 self.runPythonCommand(self.command[self.trigger][1])
             elif self.command[self.trigger][0] == 'mel':
