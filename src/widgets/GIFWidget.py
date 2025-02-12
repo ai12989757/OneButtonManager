@@ -13,7 +13,7 @@ except ImportError:
 from maya import mel
 from ..utils import widgetEffect
 from ..utils import imageManager
-from ..utils import runCommand
+from ..utils.runCommand import RunCommand
 from ..utils import dragWidgetOrder
 from ..utils import buttonManager
 from ..utils.switchLanguage import *
@@ -23,7 +23,6 @@ from . import BGwidget
 try:
     reload(widgetEffect)
     reload(imageManager)
-    reload(runCommand)
     reload(GIFAction)
     reload(dragWidgetOrder)
     reload(buttonManager)
@@ -32,7 +31,6 @@ except:
     from importlib import reload
     reload(widgetEffect)
     reload(imageManager)
-    reload(runCommand)
     reload(GIFAction)
     reload(dragWidgetOrder)
     reload(buttonManager)
@@ -84,7 +82,6 @@ class GIFButtonWidget(QWidget):
         trigger 触发器: menuShow, click, doubleClick, ctrlClick, shiftClick, altClick, ctrlShiftClick, ctrlAltClick, altShiftClick, ctrlAltShiftClick, drag, ctrlDrag, shiftDrag, altDrag, ctrlShiftDrag, ctrlAltDrag, altShiftDrag, ctrlAltShiftDrag
         命令: python: 'cmds.polyCube()', mel: 'polyCube', function: function
         '''
-        self.type = 'QWidget'
         ################## UI ##################
         self.language = kwargs.get('language', 0)
         self.alignment = kwargs.get('alignment', 'H')   # V: 垂直排列, H: 水平排列
@@ -396,14 +393,14 @@ class GIFButtonWidget(QWidget):
         self.startPos = event.pos()
         self.raise_() # 置顶
         if event.button() == Qt.LeftButton:
+            self.mouseState = 'leftPress'
+            RunCommand(self, self.command, 'leftPress').leftPR()
+            self.dragging = True
             if self.style == 'clickAction': # 点击播放/暂停
                 if self.movie.state() == QMovie.Running:
                     self.movie.setPaused(True)
                 elif self.movie.state() == QMovie.Paused or self.movie.state() == QMovie.NotRunning:
                     self.movie.setPaused(False)
-            self.mouseState = 'leftPress'
-            self.executeDragCommand('leftPress')
-            self.dragging = True
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.dragWidgetOrder.startDrag(event)
@@ -418,7 +415,7 @@ class GIFButtonWidget(QWidget):
             self.updateSubLabel(None)
         if event.button() == Qt.LeftButton:
             self.mouseState = 'leftRelease'
-            self.executeDragCommand('leftRelease')
+            RunCommand(self, self.command, 'leftRelease').leftPR()
         if event.button() == Qt.MiddleButton:
             if self.dragMove:
                 self.singleClick = 0
@@ -505,15 +502,16 @@ class GIFButtonWidget(QWidget):
             else:
                 trigger = 'click'
                 self.mouseState = 'click'
-            runCommand.runCommand(self, self.command, trigger)
+            RunCommand(self, self.command, trigger).runCommand()
     
     def mouseDoubleClickEvent(self, event):
+        RunCommand(self, self.command, 'leftPress').leftPR() # 双击事件会覆盖掉一次鼠标按下事件，所有需要在执行双击事件之前补偿一次鼠标按下命令 
         if self.singleClickWait:
             self.singleClickWait.stop()
         # 双击事件
         self.singleClick = 0
         self.mouseState = 'doubleClick'
-        runCommand.runCommand(self, self.command, 'doubleClick')
+        RunCommand(self, self.command, 'doubleClick').runCommand()
 
     def executeDragCommand(self, mouseState='leftMoving'):
         if mouseState == 'leftMoving':
@@ -542,14 +540,8 @@ class GIFButtonWidget(QWidget):
             else:
                 self.mouseState = mouseState
                 trigger = 'drag'
-            runCommand.runCommand(self, self.command, trigger)
-        else:
-            self.mouseState = mouseState
-            if mouseState == 'leftPress':
-                mel.eval('undoInfo -openChunk;')
-            if mouseState == 'leftRelease':
-                mel.eval('undoInfo -closeChunk;')
-            runCommand.runCommand(self, self.command, mouseState)
+            RunCommand(self, self.command, trigger).runDragCommand()
+            
 
     def melSetIconAttr(self, iconPath, attr, value):
         # 使用mel设置按钮属性, 方便在maya中使用mel控制按钮属性
@@ -612,7 +604,7 @@ class GIFButtonWidget(QWidget):
             self.menu.aboutToShow.disconnect(None, None)
         except:
             pass
-        self.menu.aboutToShow.connect(lambda: runCommand.runCommand(self, self.command, 'menuShow'))
+        self.menu.aboutToShow.connect(lambda: RunCommand(self, self.command, 'menuShow').runCommand())
 
     def addDefaultMenuItems(self):
         self.menu.addSeparator()

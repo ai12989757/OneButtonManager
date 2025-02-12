@@ -1,88 +1,111 @@
 # -*- coding: utf-8 -*-
-from maya import mel
-import maya.cmds as cmds
+from maya import mel, cmds
+from contextlib import ContextDecorator
+
+class Undo(ContextDecorator):
+    def __init__(self, name=None):
+        self.name = name
+    def __enter__(self):
+        cmds.undoInfo(openChunk=True, infinity=True, chunkName=self.name)
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        cmds.undoInfo(closeChunk=True)
+
+def undoWrapper(func):
+    def wrapper(*args, **kwargs):
+        cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand')
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            mel.eval('print("// 错误: '+str(e)+' //\\n")')
+        finally:
+            cmds.undoInfo(closeChunk=True)
+    return wrapper
 
 widget_instance = None
+class RunCommand:
+    def __init__(self, widget,command,trigger='click'):
+        self.widget = widget
+        self.command = command
+        self.trigger = trigger
 
-def exec_mel_command(command):
-    exec(command)
+    def ckeckCommand(self):
+        if not self.command: return False
+        if self.trigger not in self.command: return False
+        if self.trigger not in self.command.keys(): return False
+        if self.command[self.trigger][1] == '' or self.command[self.trigger][1] is None: return False
+        return True
 
-def runCommand(widget, command, trigger='click'):
-    global widget_instance
-    widget_instance = widget
-    if widget.type == 'QWidget':
-        if not command: return
-        if trigger not in command: return
-        if trigger not in command.keys(): return
-        if widget.type == 'QWidget':
-            if command[trigger][1] == '' or command[trigger][1] is None: return
-            if command[trigger][0] == 'python': 
-                def runPythonCommand(command):
-                    global widget_instance
-                    exec("self = widget_instance", globals())
-                    exec(command, globals())
-                try:
-                    cmds.undoInfo(openChunk=True)
-                    runPythonCommand(command[trigger][1])
-                    cmds.undoInfo(closeChunk=True)
-                except Exception as e:
-                    cmds.undoInfo(closeChunk=True)
-                    # 打印错误信息
-                    mel.eval('print("// 错误: '+str(e)+' //\\n")')
+    def runPythonCommand(self, command):
+        global widget_instance
+        widget_instance = self.widget
+        exec("self = widget_instance", globals())
+        exec(command, globals())
 
-            elif command[trigger][0] == 'mel':
-                commendText = repr(command[trigger][1])
-                commendText = "mel.eval(" + commendText + ")"
-                if trigger in ['drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag']:
-                    mel.eval("string $mouseState=\""+str(widget.mouseState)+"\";")
-                    mel.eval("int $deltaX="+str(widget.delta.x())+";")
-                    mel.eval("int $deltaY="+str(widget.delta.y())+";")
-                try:
-                    cmds.undoInfo(openChunk=True)
-                    exec_mel_command(commendText)
-                    cmds.undoInfo(closeChunk=True)  
-                except Exception as e:
-                    pass
-            elif command[trigger][0] == 'function': 
-                try:
-                    cmds.undoInfo(openChunk=True)
-                    command[trigger][1]()
-                    cmds.undoInfo(closeChunk=True)  
-                except Exception as e:
-                    cmds.undoInfo(closeChunk=True)
-                    mel.eval('print("// 错误: '+str(e)+' //\\n")')
-                    
-    elif widget.type == 'QAction':
-        if not command: return
-        if trigger not in command: return
-        if trigger not in command.keys(): return
-        if command[trigger][1] == '' or command[trigger][1] is None: return
-        if command[trigger][0] == 'python': 
-            def runPythonCommand(command):
-                global widget_instance
-                exec("self = widget_instance", globals())
-                exec(command, globals())
-            try:
-                cmds.undoInfo(openChunk=True)
-                runPythonCommand(command[trigger][1])
-                cmds.undoInfo(closeChunk=True)
-            except Exception as e:
-                cmds.undoInfo(closeChunk=True)
-                mel.eval('print("// 错误: '+str(e)+' //\\n")')
-        elif command[trigger][0] == 'mel':
-            commendText = repr(command[trigger][1])
+    def leftPR(self):
+        '''
+        用于处理 'leftPress', 'leftRelease' 触发的命令
+        不开启撤销块
+        '''
+        if not self.ckeckCommand(): return
+        if self.trigger not in ['leftPress', 'leftRelease']: return
+        if self.command[self.trigger][0] == 'python': 
+            self.runPythonCommand(self.command[self.trigger][1])
+        elif self.command[self.trigger][0] == 'mel':
+            commendText = repr(self.command[self.trigger][1])
             commendText = "mel.eval(" + commendText + ")"
-            try:
-                cmds.undoInfo(openChunk=True)
-                exec_mel_command(commendText)
-                cmds.undoInfo(closeChunk=True)
-            except Exception as e:
+            exec(commendText)
+        elif self.command[self.trigger][0] == 'function': 
+            self.command[self.trigger][1]()
+
+    def runCommand(self):
+        '''
+        用于处理 'click', 'doubleClick', 'middleClick', 'rightClick', 'ctrlClick', 'shiftClick', 'altClick', 'ctrlShiftClick', 'ctrlAltClick', 'altShiftClick', 'ctrlAltShiftClick' 触发的命令
+        开启撤销块
+        '''
+        if not self.ckeckCommand(): return
+        if self.trigger in ['leftPress', 'leftRelease']: return
+        cmds.undoInfo(openChunk=True, infinity=True, chunkName='OneToolsRunCommand')
+        try:
+            if self.command[self.trigger][0] == 'python': 
+                self.runPythonCommand(self.command[self.trigger][1])
+            elif self.command[self.trigger][0] == 'mel':
+                commendText = repr(self.command[self.trigger][1])
+                commendText = "mel.eval(" + commendText + ")"
+                exec(commendText)
+            elif self.command[self.trigger][0] == 'function': 
+                self.command[self.trigger][1]()
+        except Exception as e:
+            if self.command[self.trigger][0] == 'mel':
                 pass
-        elif command[trigger][0] == 'function': 
-            try:
-                cmds.undoInfo(openChunk=True)
-                command[trigger][1]()
-                cmds.undoInfo(closeChunk=True)  
-            except Exception as e:
-                cmds.undoInfo(closeChunk=True)
+            else:
+                mel.eval('print("// 错误: '+str(e)+' //\\n")')
+        finally:
+            cmds.undoInfo(closeChunk=True)
+
+    def runDragCommand(self):
+        '''
+        用于处理 'drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag' 触发的命令
+        不开启撤销块
+        添加mel变量
+        '''
+        if not self.ckeckCommand(): return
+        if self.trigger not in ['drag', 'ctrlDrag', 'shiftDrag', 'altDrag', 'ctrlShiftDrag', 'ctrlAltDrag', 'altShiftDrag', 'ctrlAltShiftDrag']:
+            return
+        try:
+            if self.command[self.trigger][0] == 'python': 
+                self.runPythonCommand(self.command[self.trigger][1])
+            elif self.command[self.trigger][0] == 'mel':
+                commendText = repr(self.command[self.trigger][1])
+                commendText = "mel.eval(" + commendText + ")"
+                mel.eval("string $mouseState=\""+str(self.widget.mouseState)+"\";")
+                mel.eval("int $deltaX="+str(self.widget.delta.x())+";")
+                mel.eval("int $deltaY="+str(self.widget.delta.y())+";")
+                exec(commendText)
+            elif self.command[self.trigger][0] == 'function': 
+                self.command[self.trigger][1]()
+        except Exception as e:
+            if self.command[self.trigger][0] == 'mel':
+                pass
+            else:
                 mel.eval('print("// 错误: '+str(e)+' //\\n")')

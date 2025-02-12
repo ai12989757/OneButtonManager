@@ -29,7 +29,6 @@ class gifIconMenuAction(QAction):
         self.annotation = kwargs.get('annotation', None)
         self.command = kwargs.get('command', {})
         self.checkable = kwargs.get('checkable', False)
-        self.type = 'QAction'
 
         if self.checkable:
             self.setCheckable(True)
