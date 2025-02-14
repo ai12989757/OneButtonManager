@@ -36,6 +36,10 @@ class ChangeCommandLineBGC():
     调用时直接使用 commandLineBG.setBGColor('#ff5a5a', flicker=True)
     '''
     def __init__(self):
+        '''
+        初始化得到命令行输出控件 QLineEdit
+        连接 textChanged 信号，当文本中包含特定字符时改变背景颜色
+        '''
         self.commandLineUI = mayaToQT('commandLine1')
         self.outMessageUI = None
         # 获取 commandLineUI 下的所有子控件
@@ -49,6 +53,12 @@ class ChangeCommandLineBGC():
         self.outMessageUI.textChanged.connect(self.textChangedChangeBGColor)
 
     def flickerBG(self, color, times=2):
+        '''
+        闪烁背景颜色
+        args:
+            color: str 颜色 '#ff5a5a' or 'red' or 'rgb(255, 90, 90)' or 'rgba(255, 90, 90, 255)'
+            times: int 闪烁次数 默认 2 次
+        '''
         index = 0
         def flicker():
             nonlocal index, times
@@ -62,12 +72,21 @@ class ChangeCommandLineBGC():
         flicker()
 
     def setBGColor(self, color, flicker=False):
+        '''
+        设置背景颜色
+        args:
+            color: str 颜色 '#ff5a5a' or 'red' or 'rgb(255, 90, 90)' or 'rgba(255, 90, 90, 255)'
+            flicker: bool 是否闪烁 默认 False
+        '''
         if flicker:
             self.flickerBG(color=color)
         else:
             self.outMessageUI.setStyleSheet(f'QLineEdit {{ background-color: {color}; color: #2b2b2b;}}')
 
     def textChangedChangeBGColor(self):
+        '''
+        根据文本内容改变背景颜色
+        '''
         text = self.outMessageUI.text()
         if text.startswith('// Error: ') or text.startswith(u'// 错误: ') or text.startswith('\n// Error: ') or text.startswith(u'\n// 错误: '):
             self.setBGColor('#ff5a5a')
