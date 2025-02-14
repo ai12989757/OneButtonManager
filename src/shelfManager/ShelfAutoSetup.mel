@@ -8,8 +8,6 @@ string $pythonCode = "import sys\n" +
                     "    sys.path.append(PATH)\n" +
                     "if 'ShelfButtonManager' not in sys.modules:\n" +
                     "    from OneButtonManager.src.shelfManager import ShelfButtonManager\n" +
-                    "    from OneButtonManager.src.utils import changeCommandLineBGC\n" +
-                    "commandLineBG = changeCommandLineBGC.ChangeCommandLineBGC()\n" +
                     "try:\n" +
                     "    reload(ShelfButtonManager)\n" +
                     "except:\n" +

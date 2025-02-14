@@ -34,6 +34,8 @@ string $command="import sys\n"+
 "    sys.path.append(PATH)\n"+
 "if 'ShelfButtonManager' not in sys.modules:\n"+
 "    from OneButtonManager.src.shelfManager import ShelfButtonManager\n"+
+"    from OneButtonManager.src.utils import changeCommandLineBGC\n" +
+"    commandLineBG = changeCommandLineBGC.ChangeCommandLineBGC()\n" +
 "try:\n"+
 "    reload(ShelfButtonManager)\n"+
 "except:\n"+
@@ -45,9 +47,9 @@ string $command="import sys\n"+
 python($command);
 
 if($Language == 0)
-    warning -n "初始化完成，试着右击工具栏看看吧";
+    print "// 成功: 初始化完成，请尝试右键工具栏";
 else if($Language == 1)
-    warning -n "Initialization completed, try right-clicking the toolbar";
+    print "// Success: Initialization completed, please try right-clicking the toolbar";
 
 
 global proc asInstallScriptLocator (){}

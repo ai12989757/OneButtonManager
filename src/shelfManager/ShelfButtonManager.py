@@ -392,9 +392,9 @@ class ShelfButtonManager(QWidget):
                         f.write(setupCode)
                     
                     if self.language == 0:
-                        mel.eval(u'print("\n// 信息: 开启自动加载工具栏\\n")')
+                        mel.eval(u'print("\\n// 信息: 开启自动加载工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("\n// Info: Auto load GIFShelf when Maya starts\\n")')
+                        mel.eval('print("\\n// Info: Auto load GIFShelf when Maya starts\\n")')
                     break
                 elif i.switch == True:
                     i.setIcon(QIcon(':\\switchOff.png'))
@@ -406,9 +406,9 @@ class ShelfButtonManager(QWidget):
                         f.write(userSetup)
                     i.switch = False
                     if self.language == 0:
-                        mel.eval(u'print("\n// 信息: 关闭自动加载工具栏\\n")')
+                        mel.eval(u'print("\\n// 信息: 关闭自动加载工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("\n// Info: Close auto load GIFShelf\\n")')
+                        mel.eval('print("\\n// Info: Close auto load GIFShelf\\n")')
                     break
 
     def setAutoSaveJob(self):
@@ -429,9 +429,9 @@ class ShelfButtonManager(QWidget):
                         mel.eval(jboCode)
                     i.switch = True
                     if self.language == 0:
-                        mel.eval(u'print("\n// 结果: 开启自动保存工具栏\\n")')
+                        mel.eval(u'print("\\n// 结果: 开启自动保存工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("\n// Result: Auto save GIFShelf when Maya closes\\n")')
+                        mel.eval('print("\\n// Result: Auto save GIFShelf when Maya closes\\n")')
                     break
                 elif i.switch == True:
                     i.setIcon(QIcon(':\\switchOff.png'))
@@ -447,9 +447,9 @@ class ShelfButtonManager(QWidget):
                             mel.eval('scriptJob -kill '+str(job))
                     i.switch = False
                     if self.language == 0:
-                        mel.eval(u'print("\n// 信息: 关闭自动保存工具栏\\n")')
+                        mel.eval(u'print("\\n// 信息: 关闭自动保存工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("\n// Info: Close auto save GIFShelf\\n")')
+                        mel.eval('print("\\n// Info: Close auto save GIFShelf\\n")')
                     break
 
     def menuShowCheck(self):
@@ -654,9 +654,9 @@ class ShelfButtonManager(QWidget):
         # for i in oldShelfButtonList:
         #     deleteUI(i)
         if self.language == 0:
-            mel.eval(u'print("\n// 信息: 转换成功\\n")')
+            mel.eval(u'print("\\n// 信息: 转换成功\\n")')
         elif self.language == 1:
-            mel.eval('print("\n// Info: Conversion successful\\n")')
+            mel.eval('print("\\n// Info: Conversion successful\\n")')
 
     def toDef(self):
         # 根据保存备份的 mel 文件恢复 shelf
@@ -665,9 +665,9 @@ class ShelfButtonManager(QWidget):
 
         if fileList is None:
             if self.language == 0:
-                mel.eval(u'print("\n// 错误: 未找到备份文件\\n")')
+                mel.eval(u'print("\\n// 错误: 未找到备份文件\\n")')
             elif self.language == 1:
-                mel.eval('print("\n// Error: Backup file not found\\n")')
+                mel.eval('print("\\n// Error: Backup file not found\\n")')
             return 
         try:
             self.shelf2DefUI.close()
@@ -943,7 +943,7 @@ class ShelfButtonManager(QWidget):
         jsonData['shelfName'] = self.currentShelf
         jsonData['shelfData'] = data
         jsonManager.write(jsonPath, jsonData)
-        mel.eval(u'print("\n// 信息: '+jsonPath+'")')
+        mel.eval(u'print("\\n// 信息: '+jsonPath+'")')
 
     def autoSaveGifShelf(self):
         '''
@@ -980,7 +980,7 @@ class ShelfButtonManager(QWidget):
                     jsonData['shelfName'] = jsonName
                     jsonData['shelfData'] = data
                     jsonManager.write(jsonPath, jsonData)
-                    mel.eval(u'print("\n// 信息: '+jsonPath+'")')
+                    mel.eval(u'print("\\n// 信息: '+jsonPath+'")')
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
 
