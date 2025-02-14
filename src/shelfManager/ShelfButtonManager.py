@@ -23,9 +23,10 @@ from functools import partial
 from collections import OrderedDict
 
 from ..utils.switchLanguage import *
-from .getBackShelfList import getBackShelfList
+from ..utils.getBackShelfList import getBackShelfList
+from ..utils import jsonManager
 from ..widgets import GIFWidget, GIFAction, Separator
-from . import shelfRestoreWindow
+from ..ui import shelfRestoreWindow
 
 try:
     reload(GIFWidget)
@@ -106,12 +107,8 @@ class ShelfButtonManager(QWidget):
             data[1] = data[1].replace('int $Language = 1', 'int $Language = 0')
         elif language == 1:
             data[1] = data[1].replace('int $Language = 0', 'int $Language = 1')
-        try:
-            with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'w', encoding='utf-8') as f:
-                f.writelines(data)
-        except:
-            with open(self.PATH+'/ShelfAutoSetup.mel', 'w') as f:
-                f.writelines(data)
+        jsonManager.write(self.PATH+'/ShelfAutoSetup.mel', data)
+
 
         currentShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
         
@@ -125,13 +122,7 @@ class ShelfButtonManager(QWidget):
             if i.endswith('.json') and ' ' not in i:
                 self.shelfList.append(i)
                 jsonPath = self.OneToolsDataDir + i
-
-                try:
-                    with codecs.open(jsonPath, 'r', encoding='utf-8') as f:
-                        jsonData = json.load(f, object_pairs_hook=OrderedDict)
-                except:
-                    with open(jsonPath, 'r') as f:
-                        jsonData = json.load(f, object_pairs_hook=OrderedDict)
+                jsonData = jsonManager.read(jsonPath)
                 shelfName = jsonData['shelfName']
 
                 # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
@@ -234,12 +225,7 @@ class ShelfButtonManager(QWidget):
         recycleFile = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
         if not os.path.exists(recycleFile):
             return None
-        try:
-            with codecs.open(recycleFile, 'r', 'utf-8') as f:
-                data = json.load(f)
-        except:
-            with open(recycleFile, 'r') as f:
-                data = json.load(f)
+        data = jsonManager.read(recycleFile)
         jsonData = data['shelfData']
         # 创建一个新的菜单
         self.recycleMenu.clear()
@@ -256,12 +242,7 @@ class ShelfButtonManager(QWidget):
     def pasteButton(self):
         shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
         shelf_copy = shelf_backup + 'shelf_copy.json'
-        try:
-            with codecs.open(shelf_copy, 'r', encoding='utf-8') as f:
-                jsonData = json.load(f)
-        except:
-            with open(shelf_copy, 'r') as f:
-                jsonData = json.load(f)
+        jsonData = jsonManager.read(shelf_copy)
         newButtonData = jsonData['shelfData']
         if newButtonData is None: return
         self.addButton(
@@ -272,7 +253,6 @@ class ShelfButtonManager(QWidget):
         )
         
         if newButtonData['menuItem'] is not None and newButtonData['menuItem'] != {}:
-            print(newButtonData['menuItem'])
             for i in newButtonData['menuItem'].keys():
                 if newButtonData['menuItem'][i] == 'separator':
                     self.gifButton.menu.addSeparator()
@@ -287,12 +267,7 @@ class ShelfButtonManager(QWidget):
 
     def recycleDeleteAllButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
-        try:
-            with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
-                json.dump({"shelfName": "buttonRecycle","shelfData": {}}, f)
-        except:
-            with open(shelf_recycle, 'w') as f:
-                json.dump({"shelfName": "buttonRecycle","shelfData": {}}, f)
+        jsonManager.write(shelf_recycle, {"shelfName": "buttonRecycle","shelfData": {}})
 
     def getRecycleRestoreButtonIndex(self):
         # 获取当前 action 的 menu
@@ -340,12 +315,7 @@ class ShelfButtonManager(QWidget):
 
     def recycleDeleteButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
-        try:
-            with codecs.open(shelf_recycle, 'r', encoding='utf-8') as f:
-                jsonData = json.load(f)
-        except:
-            with open(shelf_recycle, 'r') as f:
-                jsonData = json.load(f)
+        jsonData = jsonManager.read(shelf_recycle)
         shelfData = jsonData['shelfData']
         index = self.getRecycleRestoreButtonIndex()
         restoreButtonData = list(shelfData.values())[index]
@@ -356,12 +326,7 @@ class ShelfButtonManager(QWidget):
         for i, key in enumerate(shelfData.keys()):
             newShelfData[i] = shelfData[key]
         jsonData['shelfData'] = newShelfData
-        try:
-            with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
-                json.dump(jsonData, f)
-        except:
-            with open(shelf_recycle, 'w') as f:
-                json.dump(jsonData, f)
+        jsonManager.write(shelf_recycle, jsonData)
 
         return restoreButtonData
 
@@ -427,9 +392,9 @@ class ShelfButtonManager(QWidget):
                         f.write(setupCode)
                     
                     if self.language == 0:
-                        mel.eval(u'print("// 结果: 开启自动加载工具栏\\n")')
+                        mel.eval(u'print("\n// 信息: 开启自动加载工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("// Result: Auto load GIFShelf when Maya starts\\n")')
+                        mel.eval('print("\n// Info: Auto load GIFShelf when Maya starts\\n")')
                     break
                 elif i.switch == True:
                     i.setIcon(QIcon(':\\switchOff.png'))
@@ -441,9 +406,9 @@ class ShelfButtonManager(QWidget):
                         f.write(userSetup)
                     i.switch = False
                     if self.language == 0:
-                        mel.eval(u'print("// 结果: 关闭自动加载工具栏\\n")')
+                        mel.eval(u'print("\n// 信息: 关闭自动加载工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("// Result: Close auto load GIFShelf\\n")')
+                        mel.eval('print("\n// Info: Close auto load GIFShelf\\n")')
                     break
 
     def setAutoSaveJob(self):
@@ -464,9 +429,9 @@ class ShelfButtonManager(QWidget):
                         mel.eval(jboCode)
                     i.switch = True
                     if self.language == 0:
-                        mel.eval(u'print("// 结果: 开启自动保存工具栏\\n")')
+                        mel.eval(u'print("\n// 结果: 开启自动保存工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("// Result: Auto save GIFShelf when Maya closes\\n")')
+                        mel.eval('print("\n// Result: Auto save GIFShelf when Maya closes\\n")')
                     break
                 elif i.switch == True:
                     i.setIcon(QIcon(':\\switchOff.png'))
@@ -482,9 +447,9 @@ class ShelfButtonManager(QWidget):
                             mel.eval('scriptJob -kill '+str(job))
                     i.switch = False
                     if self.language == 0:
-                        mel.eval(u'print("// 结果: 关闭自动保存工具栏\\n")')
+                        mel.eval(u'print("\n// 信息: 关闭自动保存工具栏\\n")')
                     elif self.language == 1:
-                        mel.eval('print("// Result: Close auto save GIFShelf\\n")')
+                        mel.eval('print("\n// Info: Close auto save GIFShelf\\n")')
                     break
 
     def menuShowCheck(self):
@@ -662,12 +627,7 @@ class ShelfButtonManager(QWidget):
         shelfData['shelfData'] = data
         
         jsonPath = self.OneToolsDataDir + 'shelf_backup/shelf_'+self.currentShelf+'.json'
-        try:
-            with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
-                json.dump(shelfData, f, ensure_ascii=False, indent=4)
-        except:
-            with open(jsonPath, 'w') as f:
-                json.dump(shelfData, f, ensure_ascii=False, indent=4)
+        jsonManager.write(jsonPath, shelfData)
         os.rename(jsonPath,jsonPath+'.'+formatted_datetime)
         # 删除当前shelf的所有按钮
         for index,i in enumerate(self.buttonList):
@@ -693,7 +653,10 @@ class ShelfButtonManager(QWidget):
         # # 删除旧按钮
         # for i in oldShelfButtonList:
         #     deleteUI(i)
-        mel.eval(u'print("// 结果: 转换成功\\n")') 
+        if self.language == 0:
+            mel.eval(u'print("\n// 信息: 转换成功\\n")')
+        elif self.language == 1:
+            mel.eval('print("\n// Info: Conversion successful\\n")')
 
     def toDef(self):
         # 根据保存备份的 mel 文件恢复 shelf
@@ -702,9 +665,9 @@ class ShelfButtonManager(QWidget):
 
         if fileList is None:
             if self.language == 0:
-                mel.eval(u'warning -n "没有找到备份文件"')
+                mel.eval(u'print("\n// 错误: 未找到备份文件\\n")')
             elif self.language == 1:
-                mel.eval('warning -n "No backup file found"')
+                mel.eval('print("\n// Error: Backup file not found\\n")')
             return 
         try:
             self.shelf2DefUI.close()
@@ -907,13 +870,7 @@ class ShelfButtonManager(QWidget):
         jsonPath = QFileDialog.getOpenFileName(self, u"打开文件", self.OneToolsDataDir, u"JSON文件(*.json)")[0]
         if not jsonPath:
             return
-        jsonData = {}
-        try:
-            with codecs.open(jsonPath, 'r', encoding='utf-8') as f:
-                jsonData = json.load(f, object_pairs_hook=OrderedDict)
-        except:
-            with open(jsonPath, 'r') as f:
-                jsonData = json.load(f, object_pairs_hook=OrderedDict)
+        jsonData = jsonManager.read(jsonPath)
         shelfName = jsonData['shelfName']
 
         # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
@@ -947,13 +904,7 @@ class ShelfButtonManager(QWidget):
     def autoLoadGifShelf(self, jsonPath):
         if not jsonPath:
             return
-        jsonData = {}
-        try:
-            with codecs.open(jsonPath, 'r', encoding='utf-8') as f:
-                jsonData = json.load(f, object_pairs_hook=OrderedDict)
-        except:
-            with open(jsonPath, 'r') as f:
-                jsonData = json.load(f, object_pairs_hook=OrderedDict)
+        jsonData = jsonManager.read(jsonPath)
         shelfName = jsonData['shelfName']
         # 查询 shelfName 是否存在 shelfTabLayout -q -ca $self.gShelfTopLevel
         if shelfName not in mel.eval('shelfTabLayout -q -ca $gShelfTopLevel'):
@@ -991,13 +942,8 @@ class ShelfButtonManager(QWidget):
         jsonData = OrderedDict()
         jsonData['shelfName'] = self.currentShelf
         jsonData['shelfData'] = data
-        try:
-            with codecs.open(jsonPath, 'w', 'utf-8') as f:
-                json.dump(jsonData, f, ensure_ascii=False, indent=4)
-        except:
-            with open(jsonPath, 'w') as f:
-                json.dump(jsonData, f, ensure_ascii=False, indent=4)
-        mel.eval(u'print("// 结果: '+jsonPath+'")')
+        jsonManager.write(jsonPath, jsonData)
+        mel.eval(u'print("\n// 信息: '+jsonPath+'")')
 
     def autoSaveGifShelf(self):
         '''
@@ -1033,13 +979,8 @@ class ShelfButtonManager(QWidget):
                     jsonData = OrderedDict()
                     jsonData['shelfName'] = jsonName
                     jsonData['shelfData'] = data
-                    try:
-                        with codecs.open(jsonPath, 'w', 'utf-8') as f:
-                            json.dump(jsonData, f, ensure_ascii=False, indent=4)
-                    except:
-                        with open(jsonPath, 'w') as f:
-                            json.dump(jsonData, f, ensure_ascii=False, indent=4)
-                    mel.eval(u'print("// 结果: '+jsonPath+'")')
+                    jsonManager.write(jsonPath, jsonData)
+                    mel.eval(u'print("\n// 信息: '+jsonPath+'")')
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
 
@@ -1122,7 +1063,7 @@ class ShelfButtonManager(QWidget):
         self.addButton(
             icon=ICONPATH + 'components/woodenFish.png', 
             command={
-                'leftPress': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFishClicked.png")\nmel.eval(u\'print("\\\\n// 结果: 功德+"+$gongDe)\')\nmel.eval(\'$gongDe += 1;\')'],
+                'leftPress': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFishClicked.png")\nmel.eval(u\'print("\\\\n// 信息: 功德+"+$gongDe)\')\nmel.eval(\'$gongDe += 1;\')'],
                 'leftRelease': ['python','self.setIconImage("'+ICONPATH + 'components/woodenFish.png")']
                 }
             )
