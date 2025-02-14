@@ -324,10 +324,10 @@ class toDefUI(QWidget):
         if os.path.exists(filePath):
             os.remove(filePath)
             item.setHidden(True)
-            mel.eval('print "// 结果: 文件已删除\\n"')
+            mel.eval('print "\\n// 结果: 文件已删除"')
         else:
             item.setHidden(True)
-            mel.eval('warning -n "文件不存在，已/移除列表项"')
+            mel.eval('print "\\n// 错误: 文件不存在，已移除列表项 //"')
 
     def on_item_double_clicked(self, item):
         index = self.fileListWidget.indexOfTopLevelItem(item)

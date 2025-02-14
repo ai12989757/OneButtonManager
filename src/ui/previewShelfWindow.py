@@ -69,7 +69,7 @@ def returnShelfData(shelfFile):
     elif '.json' in shelfFile:
         shelfType = 'json'
     else:
-        return mel.eval('warning -n "不支持的文件类型";')
+        return mel.eval('print("\\n// 错误: 不支持的文件类型 //")')
 
     if shelfType == 'mel':
         returnMelShelfData(shelfFile)
@@ -88,13 +88,13 @@ def returnMelShelfData(shelfFile):
     with open(shelfFile, 'r') as f:
         firstLine = f.readline()
     if 'global proc' not in firstLine:
-        return mel.eval('warning -n "该shelf文件内容有误";')
+        return mel.eval('ptint "// 错误: 该shelf文件内容有误 //"')
     funcName = firstLine.split('global proc ')[1].split(' ')[0]
     try:
         mel.eval('%s()' % funcName)
-        return mel.eval('print("// 结果: '+shelfName+' 还原成功")')
+        return mel.eval('print("// 成功: '+shelfName+' 还原成功")')
     except:
-        return mel.eval('warning -n "该shelf文件内容有误";')
+        return mel.eval('ptint "// 错误: 该shelf文件内容有误 //"')
     
 def returnJsonShelfData(shelfFile):
     data = {}
@@ -236,14 +236,14 @@ class PreviewShelfWindow(QWidget):
         except:
             cmds.deleteUI(PreViewShelfLayout)
             self.close()
-            return cmds.warning('该shelf文件内容有误')
+            return mel.eval('print "\\n// 错误: 该shelf文件内容有误 //"')
         # 读取文件第一行，获取函数名
         with open(self.shelfFile, 'r') as f:
             firstLine = f.readline()
         if 'global proc' not in firstLine:
             cmds.deleteUI(PreViewShelfLayout)
             self.close()
-            return cmds.warning('该shelf文件内容有误')
+            return mel.eval('print "\\n// 错误: 该shelf文件内容有误 //"')
         # 获取函数名
         funcName = firstLine.split('global proc ')[1].split(' ')[0]
         # 执行函数
@@ -252,12 +252,12 @@ class PreviewShelfWindow(QWidget):
         except:
             cmds.deleteUI(PreViewShelfLayout)
             self.close()
-            return cmds.warning('该shelf文件内容有误')
+            return mel.eval('print "\\n// 错误: 该shelf文件内容有误 //"')
         layoutChildren = cmds.shelfLayout(PreViewShelfLayout, q=True, fullPathName=True, ca=True)
         if not layoutChildren:
             cmds.deleteUI(PreViewShelfLayout)
             self.close()
-            return cmds.warning('该shelf文件没有内容')
+            return mel.eval('print "\\n// 错误: 该shelf文件内容有误 //"')
         self.width = 15
         for child in layoutChildren:
             if 'separator' in child or 'Separator' in child:
