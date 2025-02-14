@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
@@ -27,25 +28,57 @@ def mayaToQT(name):
         ptr = omui.MQtUtil.findMenuItem(name)
     if ptr is not None:
         return wrapInstance(int(ptr), QWidget)
-        
-commandLineUI = mayaToQT('commandLine1')
-outMessageUI = None
-# 获取 commandLineUI 下的所有子控件
-for child in commandLineUI.children():
-    # 如果是 QLineEdit 类型的控件
-    if isinstance(child, QLineEdit):
-        # 如果 line 是可编辑的
-        if child.isReadOnly():
-            outMessageUI = child
-            break
 
-def textChangedChangeBGColor():
-    # 获取控件文本
-    text = outMessageUI.text()
-    # 如果文本包含 'Error'，则设置控件样式
-    if text.startswith('// Error: ') or text.startswith('// 错误: ') or text.startswith('\n// Error: ') or text.startswith('\n// 错误: '):
-        outMessageUI.setStyleSheet('QLineEdit { background-color: #ff5a5a; color: #2b2b2b; }')
-    else:
-        outMessageUI.setStyleSheet('')
+class ChangeCommandLineBGC():
+    '''
+    maya打开时自动加载了
+    commandLineBG = changeCommandLineBGC.ChangeCommandLineBGC()
+    调用时直接使用 commandLineBG.setBGColor('#ff5a5a', flicker=True)
+    '''
+    def __init__(self):
+        self.commandLineUI = mayaToQT('commandLine1')
+        self.outMessageUI = None
+        # 获取 commandLineUI 下的所有子控件
+        for child in self.commandLineUI.children():
+            # 如果是 QLineEdit 类型的控件
+            if isinstance(child, QLineEdit):
+                # 如果 line 是可编辑的
+                if child.isReadOnly():
+                    self.outMessageUI = child
+                    break
+        self.outMessageUI.textChanged.connect(self.textChangedChangeBGColor)
 
-outMessageUI.textChanged.connect(textChangedChangeBGColor)
+    def flickerBG(self, color, times=2):
+        index = 0
+        def flicker():
+            nonlocal index, times
+            if index < times:
+                if self.outMessageUI.styleSheet() is None or self.outMessageUI.styleSheet() == '':
+                    self.outMessageUI.setStyleSheet(f'QLineEdit {{ background-color: {color}; color: #2b2b2b;}}')
+                    index += 1
+                else:
+                    self.outMessageUI.setStyleSheet('')
+                QTimer.singleShot(200, flicker)
+        flicker()
+
+    def setBGColor(self, color, flicker=False):
+        if flicker:
+            self.flickerBG(color=color)
+        else:
+            self.outMessageUI.setStyleSheet(f'QLineEdit {{ background-color: {color}; color: #2b2b2b;}}')
+
+    def textChangedChangeBGColor(self):
+        text = self.outMessageUI.text()
+        if text.startswith('// Error: ') or text.startswith(u'// 错误: ') or text.startswith('\n// Error: ') or text.startswith(u'\n// 错误: '):
+            self.setBGColor('#ff5a5a')
+        elif text.startswith('// Warning: ') or text.startswith(u'// 警告: ') or text.startswith('\n// Warning: ') or text.startswith(u'\n// 警告: '):
+            self.setBGColor('#dcce87')
+        elif text.startswith('// Info: ') or text.startswith(u'// 信息: ') or text.startswith('\n// Info: ') or text.startswith(u'\n// 信息: '):
+            self.setBGColor('#00BFFF')
+        elif(
+            text.startswith('// Success: ') or text.startswith('\n// Success: ') or text.startswith(u'// 成功: ') or text.startswith(u'\n// 成功: ')
+            or text.startswith('// Finished: ') or text.startswith('\n// Finished: ') or text.startswith(u'// 完成: ') or text.startswith(u'\n// 完成: ')
+            ):
+            self.setBGColor('#5aff5a')
+        else:
+            self.outMessageUI.setStyleSheet('')

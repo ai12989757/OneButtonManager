@@ -23,9 +23,9 @@ from functools import partial
 from collections import OrderedDict
 
 from ..utils.switchLanguage import *
-from ..utils.getBackShelfList import getBackShelfList
+from .getBackShelfList import getBackShelfList
 from ..widgets import GIFWidget, GIFAction, Separator
-from ..ui import shelfRestoreWindow
+from . import shelfRestoreWindow
 
 try:
     reload(GIFWidget)
@@ -96,14 +96,22 @@ class ShelfButtonManager(QWidget):
         self.language = language
         self.autoSetShelf()
         # 修改 ShelfAutoSetup.mel 文件，第二行的语言设置
-        with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'r', encoding='utf-8') as f:
-            data = f.readlines()
+        try:
+            with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'r', encoding='utf-8') as f:
+                data = f.readlines()
+        except:
+            with open(self.PATH+'/ShelfAutoSetup.mel', 'r') as f:
+                data = f.readlines()
         if language == 0:
             data[1] = data[1].replace('int $Language = 1', 'int $Language = 0')
         elif language == 1:
             data[1] = data[1].replace('int $Language = 0', 'int $Language = 1')
-        with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'w', encoding='utf-8') as f:
-            f.writelines(data)
+        try:
+            with codecs.open(self.PATH+'/ShelfAutoSetup.mel', 'w', encoding='utf-8') as f:
+                f.writelines(data)
+        except:
+            with open(self.PATH+'/ShelfAutoSetup.mel', 'w') as f:
+                f.writelines(data)
 
         currentShelf = mel.eval('shelfTabLayout -q -st $gShelfTopLevel')
         
@@ -226,8 +234,12 @@ class ShelfButtonManager(QWidget):
         recycleFile = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
         if not os.path.exists(recycleFile):
             return None
-        with codecs.open(recycleFile, 'r', 'utf-8') as f:
-            data = json.load(f)
+        try:
+            with codecs.open(recycleFile, 'r', 'utf-8') as f:
+                data = json.load(f)
+        except:
+            with open(recycleFile, 'r') as f:
+                data = json.load(f)
         jsonData = data['shelfData']
         # 创建一个新的菜单
         self.recycleMenu.clear()
@@ -244,9 +256,12 @@ class ShelfButtonManager(QWidget):
     def pasteButton(self):
         shelf_backup = mel.eval('internalVar -uad').replace('maya','OneTools/data/shelf_backup/')
         shelf_copy = shelf_backup + 'shelf_copy.json'
-
-        with codecs.open(shelf_copy, 'r', encoding='utf-8') as f:
-            jsonData = json.load(f)
+        try:
+            with codecs.open(shelf_copy, 'r', encoding='utf-8') as f:
+                jsonData = json.load(f)
+        except:
+            with open(shelf_copy, 'r') as f:
+                jsonData = json.load(f)
         newButtonData = jsonData['shelfData']
         if newButtonData is None: return
         self.addButton(
@@ -272,8 +287,12 @@ class ShelfButtonManager(QWidget):
 
     def recycleDeleteAllButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
-        with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
-            json.dump({"shelfName": "buttonRecycle","shelfData": {}}, f)
+        try:
+            with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
+                json.dump({"shelfName": "buttonRecycle","shelfData": {}}, f)
+        except:
+            with open(shelf_recycle, 'w') as f:
+                json.dump({"shelfName": "buttonRecycle","shelfData": {}}, f)
 
     def getRecycleRestoreButtonIndex(self):
         # 获取当前 action 的 menu
@@ -321,8 +340,12 @@ class ShelfButtonManager(QWidget):
 
     def recycleDeleteButton(self):
         shelf_recycle = self.OneToolsDataDir + 'shelf_backup/shelf_recycle.json'
-        with codecs.open(shelf_recycle, 'r', encoding='utf-8') as f:
-            jsonData = json.load(f)
+        try:
+            with codecs.open(shelf_recycle, 'r', encoding='utf-8') as f:
+                jsonData = json.load(f)
+        except:
+            with open(shelf_recycle, 'r') as f:
+                jsonData = json.load(f)
         shelfData = jsonData['shelfData']
         index = self.getRecycleRestoreButtonIndex()
         restoreButtonData = list(shelfData.values())[index]
@@ -333,8 +356,12 @@ class ShelfButtonManager(QWidget):
         for i, key in enumerate(shelfData.keys()):
             newShelfData[i] = shelfData[key]
         jsonData['shelfData'] = newShelfData
-        with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
-            json.dump(jsonData, f)
+        try:
+            with codecs.open(shelf_recycle, 'w', encoding='utf-8') as f:
+                json.dump(jsonData, f)
+        except:
+            with open(shelf_recycle, 'w') as f:
+                json.dump(jsonData, f)
 
         return restoreButtonData
 
@@ -356,8 +383,12 @@ class ShelfButtonManager(QWidget):
                 return
             
             # 按行读取 userSetup 文件
-            with codecs.open(userSetupFile, 'r', 'utf-8') as f:
-                userSetup = f.readlines()
+            try:
+                with codecs.open(userSetupFile, 'r', 'utf-8') as f:
+                    userSetup = f.readlines() 
+            except:
+                with open(userSetupFile, 'r') as f:
+                    userSetup = f.readlines()
             # 删除 'ShelfAutoSetup' 行
             userSetup = [line for line in userSetup if 'ShelfAutoSetup' not in line]
             # 检查并添加 'GifButton_AutoLoad;' 行 如果有则删除
@@ -371,8 +402,12 @@ class ShelfButtonManager(QWidget):
             # 添加 setupCode 到 userSetup
             userSetup.append(setupCode)
             # 写入 userSetup 文件
-            with codecs.open(userSetupFile, 'w', 'utf-8') as f:
-                f.writelines(userSetup)
+            try:
+                with codecs.open(userSetupFile, 'w', 'utf-8') as f:
+                    f.writelines(userSetup)
+            except:
+                with open(userSetupFile, 'w') as f:
+                    f.writelines(userSetup)
         mel.eval('shelfTabLayout -e -st '+currShelf+' $gShelfTopLevel')
 
     def setAutoLoadJob(self):
@@ -627,8 +662,12 @@ class ShelfButtonManager(QWidget):
         shelfData['shelfData'] = data
         
         jsonPath = self.OneToolsDataDir + 'shelf_backup/shelf_'+self.currentShelf+'.json'
-        with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
-            json.dump(shelfData, f, ensure_ascii=False, indent=4)
+        try:
+            with codecs.open(jsonPath, 'w', encoding='utf-8') as f:
+                json.dump(shelfData, f, ensure_ascii=False, indent=4)
+        except:
+            with open(jsonPath, 'w') as f:
+                json.dump(shelfData, f, ensure_ascii=False, indent=4)
         os.rename(jsonPath,jsonPath+'.'+formatted_datetime)
         # 删除当前shelf的所有按钮
         for index,i in enumerate(self.buttonList):
@@ -952,8 +991,12 @@ class ShelfButtonManager(QWidget):
         jsonData = OrderedDict()
         jsonData['shelfName'] = self.currentShelf
         jsonData['shelfData'] = data
-        with codecs.open(jsonPath, 'w', 'utf-8') as f:
-            json.dump(jsonData, f, ensure_ascii=False, indent=4)
+        try:
+            with codecs.open(jsonPath, 'w', 'utf-8') as f:
+                json.dump(jsonData, f, ensure_ascii=False, indent=4)
+        except:
+            with open(jsonPath, 'w') as f:
+                json.dump(jsonData, f, ensure_ascii=False, indent=4)
         mel.eval(u'print("// 结果: '+jsonPath+'")')
 
     def autoSaveGifShelf(self):
@@ -990,8 +1033,12 @@ class ShelfButtonManager(QWidget):
                     jsonData = OrderedDict()
                     jsonData['shelfName'] = jsonName
                     jsonData['shelfData'] = data
-                    with codecs.open(jsonPath, 'w', 'utf-8') as f:
-                        json.dump(jsonData, f, ensure_ascii=False, indent=4)
+                    try:
+                        with codecs.open(jsonPath, 'w', 'utf-8') as f:
+                            json.dump(jsonData, f, ensure_ascii=False, indent=4)
+                    except:
+                        with open(jsonPath, 'w') as f:
+                            json.dump(jsonData, f, ensure_ascii=False, indent=4)
                     mel.eval(u'print("// 结果: '+jsonPath+'")')
         # 切换回当前工具栏
         mel.eval('shelfTabLayout -e -st '+currentShelf+' $gShelfTopLevel;')
