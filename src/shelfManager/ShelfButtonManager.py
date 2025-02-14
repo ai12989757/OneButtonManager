@@ -618,9 +618,9 @@ class ShelfButtonManager(QWidget):
                         data[index] = self.getMayaShelfButtonData(i.objectName())
             else:
                 if self.language == 0:
-                    mel.eval(u'warning -n "未知类型: ' + i.__class__.__name__ + ', 请联系开发者"')
+                    mel.eval('print "\\n// 错误: 转换中断，未知类型: '+i.__class__.__name__+', 请联系开发者\\n"')
                 elif self.language == 1:
-                    mel.eval('warning -n "Unknown type: ' + i.__class__.__name__ + ', please contact the developer"')
+                    mel.eval('print "\\n// Error: Conversion interrupted, unknown type: '+i.__class__.__name__+', please contact the developer\\n"')
                 return
 
         # 保存按钮数据到json文件
