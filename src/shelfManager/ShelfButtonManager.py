@@ -602,6 +602,8 @@ class ShelfButtonManager(QWidget):
         for index,i in enumerate(self.buttonList):
             if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'GIFButtonWidget':
                 data[index] = self.getGIFButtonData(i)
+            elif i.__class__.__name__ == 'ComponentWidget':
+                data[index] = ['Component', i.objectName().split('_')[-2]]
             elif i.__class__.__name__ == 'Separator':
                 data[index] = 'separator'
             elif i.__class__.__name__ == 'QFrame':
