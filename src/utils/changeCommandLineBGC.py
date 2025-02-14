@@ -33,7 +33,7 @@ class ChangeCommandLineBGC():
     '''
     maya打开时自动加载了
     commandLineBG = changeCommandLineBGC.ChangeCommandLineBGC()
-    调用时直接使用 commandLineBG.setBGColor('#ff5a5a', flicker=True)
+    调用时直接使用 commandLineBG.setBGColor(color='#ff5a5a', flicker=True)
     '''
     def __init__(self):
         '''
