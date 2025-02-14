@@ -33,7 +33,7 @@ def GIFButtonJsonDataSwitch(data):
     if 'image' in data.keys(): newDict['image'] = data['image']
     if not os.path.exists(data['image']) and ':\\' not in newDict['image']:
         try:
-            if mel.eval('resourceManager -nameFilter '+newDict['image']):
+            if mel.eval('resourceManager -nameFilter "'+newDict['image']+'"'):
                 newDict['image'] = ':\\'+newDict['image']
         except:
             pass
