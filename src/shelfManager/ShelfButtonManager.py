@@ -654,9 +654,9 @@ class ShelfButtonManager(QWidget):
         # for i in oldShelfButtonList:
         #     deleteUI(i)
         if self.language == 0:
-            mel.eval(u'print("\\n// 信息: 转换成功\\n")')
+            mel.eval(u'print("\\n// 成功: 转换成功\\n")')
         elif self.language == 1:
-            mel.eval('print("\\n// Info: Conversion successful\\n")')
+            mel.eval('print("\\n// Success: Conversion successful\\n")')
 
     def toDef(self):
         # 根据保存备份的 mel 文件恢复 shelf
