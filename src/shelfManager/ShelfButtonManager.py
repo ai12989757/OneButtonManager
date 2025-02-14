@@ -604,15 +604,14 @@ class ShelfButtonManager(QWidget):
                 data[index] = self.getGIFButtonData(i)
             elif i.__class__.__name__ == 'ComponentWidget':
                 data[index] = ['Component', i.objectName().split('_')[-2]]
-            elif i.__class__.__name__ == 'Separator':
-                data[index] = 'separator'
-            elif i.__class__.__name__ == 'QFrame':
-                data[index] = 'separator'
+                print(index,data[index])
+            elif i.__class__.__name__ == 'Separator' or i.__class__.__name__ == 'QFrame':
+                data[index] = ['separator', i.color]
             elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
                 if not i.objectName():
                     continue
                 if 'separator' in i.objectName() or 'Separator' in i.objectName():
-                    data[index] = 'separator'
+                    data[index] = ['separator', (158, 158, 158, 255)]
                 else:
                     if mel.eval('shelfButton -q -ex '+i.objectName()):
                         data[index] = self.getMayaShelfButtonData(i.objectName())
@@ -633,10 +632,9 @@ class ShelfButtonManager(QWidget):
         os.rename(jsonPath,jsonPath+'.'+formatted_datetime)
         # 删除当前shelf的所有按钮
         for index,i in enumerate(self.buttonList):
-            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'Separator' or i.__class__.__name__ == 'GIFButtonWidget':
+            if i.__class__.__name__ == 'GIFButton' or i.__class__.__name__ == 'Separator' or i.__class__.__name__ == 'GIFButtonWidget' or i.__class__.__name__ == 'ComponentWidget':
                 i.deleteLater()
             elif i.__class__.__name__ == 'QFrame':
-                data[index] = 'separator'
                 mel.eval('deleteUI '+i.objectName())
             elif i.__class__.__name__ == 'QPushButton' or i.__class__.__name__ == 'QWidget':
                 try:
@@ -646,11 +644,19 @@ class ShelfButtonManager(QWidget):
         #oldShelfButtonList = shelfLayout(self.currentShelf, q=True, ca=True)
         # 重新添加GIFButton
         for i in data.keys():
-            if data[i] == 'separator':
-                self.addSeparator()
+            # 如果 data[i] 的类型是字典，则添加按钮
+            if type(data[i]) == OrderedDict or type(data[i]) == dict:
+                self.addButton4ButtonData(data[i])
             else:
-                buttonData = data[i]
-                self.addButton4ButtonData(buttonData)
+                
+                if data[i] == 'separator' or 'separator' in data[i] or 'Separator' in data[i]:
+                    if len(data[i]) == 2:
+                        self.addSeparator(color=data[i][1])
+                    else:
+                        self.addSeparator()
+                elif 'Component ' in data[i]:
+                    print(data[i])
+                    self.addComponent(data[i][1])
 
         # # 删除旧按钮
         # for i in oldShelfButtonList:
