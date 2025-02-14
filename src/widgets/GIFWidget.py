@@ -261,6 +261,7 @@ class GIFButtonWidget(QWidget):
                 self.movie.setPaused(True)
 
     def enterEvent(self, event):
+        if not hasattr(self, 'pixmap'): return
         self.setGIFStyle(self.style)
         imageName = self.iconPath.split('/')[-1].split('.')[0]
         self.hiIconPath = self.iconPath.replace(imageName, imageName+'_hi') if self.iconPath else None
@@ -297,6 +298,7 @@ class GIFButtonWidget(QWidget):
         #QObject.event(self, event)
 
     def leaveEvent(self, event):
+        if not hasattr(self, 'pixmap'): return
         if self.hiIconPath:
             self.setIconImage(self.iconPath)
         self.setGIFStyle(self.style)
