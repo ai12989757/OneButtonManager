@@ -184,10 +184,10 @@ class FansThread(QThread):
             data = json.load(response)
             if data['code'] == 0:
                 return "{:05d}".format(data['data']['follower'])
-            else:
-                print("Error: {}".format(data['message']))
-        else:
-            print("HTTP Error: {}".format(response.getcode()))
+        #     else:
+        #         print("Error: {}".format(data['message']))
+        # else:
+        #     print("HTTP Error: {}".format(response.getcode()))
         return "00000"
 
 if __name__ == "__main__":
